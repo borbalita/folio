@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from typing import Annotated
+
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 
 app = FastAPI(title="Document Copilot API")
@@ -17,6 +20,11 @@ app.add_middleware(
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/me")
+async def me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> CurrentUser:
+    return user
 
 
 if __name__ == "__main__":
