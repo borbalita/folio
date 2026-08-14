@@ -162,7 +162,7 @@ backend/app/
 │   └── validator.py            # Ensures citations map to retrieved passages
 └── database/
     ├── supabase.py             # Supabase client construction
-    ├── models.py               # SQLAlchemy table models used by Alembic autogenerate
+    ├── models/                 # SQLAlchemy table models used by Alembic autogenerate
     ├── chats.py                # Chat, thread, message, and citation persistence
     └── documents.py            # Source document, chunk, embedding, and search queries
 ```
@@ -299,7 +299,7 @@ Database schema changes are managed from the backend with SQLAlchemy models and 
 
 The workflow is:
 
-1. Update SQLAlchemy models in `app/database/models.py`.
+1. Update SQLAlchemy models in `app/database/models/`.
 2. Generate a candidate migration with `uv run alembic revision --autogenerate -m "<change>"`.
 3. Review the generated migration file in `backend/alembic/versions/`.
 4. Add explicit migration operations for Postgres/Supabase features that autogenerate cannot infer reliably.

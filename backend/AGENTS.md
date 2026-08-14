@@ -41,7 +41,7 @@ backend/
 │   ├── assistant/       # PydanticAI agent, deps, outputs, instructions
 │   ├── retrieval/       # pgvector/full-text queries, RRF fusion, source passage lookup
 │   ├── grounding/       # citation validation and answer grounding checks
-│   ├── database/        # SQLAlchemy models, Supabase client wrapper, typed query helpers
+│   ├── database/        # models/, Supabase client wrapper, typed query helpers
 │   └── prompts/         # prompt/instruction templates if not colocated with assistant
 ├── ingest/              # one-off ingestion scripts (Markdown extraction, chunking, embedding, Supabase writes)
 ├── tests/
