@@ -50,6 +50,11 @@ Before adding a runtime dep, answer in the commit message:
 
 Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
 
+## Testing
+
+- **Backend:** add or update pytest tests in the same change. Run `uv run pytest -m "not integration"` from `backend/` before finishing. Details in `backend/AGENTS.md`.
+- **Frontend:** no test runner — manual QA, `pnpm tsc --noEmit`, `pnpm lint`. Details in `frontend/AGENTS.md`.
+
 ## Configuration
 
 A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.

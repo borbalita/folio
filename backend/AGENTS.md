@@ -24,7 +24,7 @@ See universal policy in [../AGENTS.md](../AGENTS.md). Backend-specific:
 - **Not OK without justification:** `python-dateutil`, `toolz`, `funcy`, `more-itertools`, small JSON/string micro-libs, "ergonomic" wrappers on top of declared SDKs.
 - Dev deps (test/lint/build) have a looser bar but still pick widely-used, low-footprint tools (`pytest`, `ruff`, `httpx`).
 
-## Layout (to be created during build)
+## Layout
 
 ```text
 backend/
@@ -71,11 +71,12 @@ backend/
 
 ## Tests
 
-- **Prefer unit over integration.** Mock at the service boundary.
-- Fast suite (`pytest -m "not integration"`) must stay green and hit no network / no DB.
-- Integration tests go behind `@pytest.mark.integration` and may require live OpenAI / Supabase credentials.
-- Tests live next to what they test (`retrieval/retriever.py` → `tests/retrieval/test_retriever.py`).
-- Required test coverage: ingestion logic, retrieval, citation extraction, grounding enforcement.
+- **Add or update pytest tests in the same change** when you touch routes, auth, chat/streaming, retrieval, grounding, or ingest logic. Frontend-only work is exempt.
+- Remove tests which become superfluous or duplicated.
+- Prefer unit tests; mock DB, Supabase auth, and OpenAI at the boundary.
+- Fast suite: `uv run pytest -m "not integration"` — no network, no live DB. Tag live-dependency tests `@pytest.mark.integration`.
+- Mirror `app/` under `tests/` (`app/chat/streaming.py` → `tests/chat/test_streaming.py`). Create `tests/conftest.py` if missing.
+- Priority areas: ingestion, retrieval, citations, grounding.
 
 ## Anti-patterns (rejected)
 
