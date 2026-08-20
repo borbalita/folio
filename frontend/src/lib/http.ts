@@ -71,6 +71,65 @@ async function request<T>(method: string, path: string, options: RequestOptions 
   return responseBody as T
 }
 
+function tryParseJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+function detailFromBody(body: unknown): string | null {
+  if (body && typeof body === 'object' && 'detail' in body) {
+    const detail = (body as { detail: unknown }).detail
+    if (typeof detail === 'string' && detail.trim()) {
+      return detail
+    }
+  }
+  return null
+}
+
+function friendlyDetail(detail: string): string {
+  if (detail === 'Forbidden') {
+    return "You don't have access to this thread."
+  }
+  if (detail === 'Thread not found') {
+    return 'This thread was not found.'
+  }
+  if (detail === 'Not authenticated') {
+    return 'Your session expired. Please sign in again.'
+  }
+  return detail
+}
+
+/** User-facing message for API and stream failures. */
+export function describeApiError(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.isNetworkError) {
+      return "Can't reach the API. Check that the backend is running."
+    }
+    if (error.status === 401) {
+      return 'Your session expired. Please sign in again.'
+    }
+    if (error.status === 403) {
+      return "You don't have access to this thread."
+    }
+    if (error.status === 404) {
+      return 'This thread was not found.'
+    }
+    const detail = detailFromBody(error.body)
+    return detail ? friendlyDetail(detail) : error.message
+  }
+  if (error instanceof Error) {
+    const detail = detailFromBody(tryParseJson(error.message))
+    if (detail) {
+      return friendlyDetail(detail)
+    }
+    return error.message
+  }
+  return 'Something went wrong.'
+}
+
 export const http = {
   get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
