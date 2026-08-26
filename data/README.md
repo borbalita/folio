@@ -3,5 +3,7 @@
 Local data artifacts for development live here.
 
 - `downloads/` holds raw source files fetched from SEC EDGAR, grouped by year.
+- `markdowns/` holds Docling-converted Markdown versions of the same filings, grouped by year.
 - Downloaded payloads are gitignored because the corpus can get large.
-- Fetch a sample corpus with `uv run data/download.py` 
+- Fetch a sample corpus with `uv run data/download.py`
+- Convert HTML to Markdown with `uv run data/convert_to_markdown.py`

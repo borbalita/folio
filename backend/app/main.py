@@ -1,11 +1,16 @@
 from typing import Annotated
 
+import structlog
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.chat import router as chat_router
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
+from app.logging import configure_logging
+
+configure_logging()
+log = structlog.get_logger(__name__)
 
 app = FastAPI(title="Document Copilot API")
 
@@ -19,6 +24,11 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+
+
+@app.on_event("startup")
+async def on_startup() -> None:
+    log.info("application_started", title=app.title)
 
 
 @app.get("/health")

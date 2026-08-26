@@ -28,6 +28,8 @@ pnpm-debug.log*
 # Data / artifacts (downloaded corpus files are large, never check in)
 /data/downloads/*
 !/data/downloads/.gitkeep
+/data/markdowns/*
+!/data/markdowns/.gitkeep
 *.parquet
 
 # IDE / OS
@@ -39,3 +41,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Todo
+docs/todo.md
