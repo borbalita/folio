@@ -1,4 +1,4 @@
-"""AI SDK UI message wire format helpers for the chat stub."""
+"""AI SDK UI message wire format helpers."""
 
 from __future__ import annotations
 
@@ -53,9 +53,20 @@ def user_message_for_storage(messages: list[dict[str, Any]]) -> dict[str, Any]:
     return {"role": "user", "content": ""}
 
 
-def assistant_message_for_storage(text: str) -> dict[str, Any]:
-    return {
+def assistant_message_for_storage(
+    text: str,
+    *,
+    usage: dict[str, int] | None = None,
+    citations: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    parts: list[dict[str, Any]] = [{"type": "text", "text": text}]
+    if citations:
+        parts.extend(citations)
+    stored: dict[str, Any] = {
         "role": "assistant",
         "content": text,
-        "parts": [{"type": "text", "text": text}],
+        "parts": parts,
     }
+    if usage is not None:
+        stored["usage"] = usage
+    return stored

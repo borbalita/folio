@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.chat.messages import CreateThreadRequest, StreamChatRequest
-from app.chat.orchestrator import run_stub_turn
+from app.chat.orchestrator import run_turn
 from app.database import chats
 
 router = APIRouter(tags=["chat"])
@@ -54,7 +54,7 @@ async def chat_stream(
     await asyncio.to_thread(chats.get_thread_for_user, body.thread_id, user.id)
 
     return StreamingResponse(
-        run_stub_turn(user, body.thread_id, body.messages),
+        run_turn(user, body.thread_id, body.messages),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

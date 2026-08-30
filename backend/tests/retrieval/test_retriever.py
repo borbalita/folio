@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 from uuid import UUID
 
 import pytest
@@ -36,7 +37,15 @@ def _document() -> SimpleNamespace:
     )
 
 
+def _patch_search(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.retrieval.retriever.extract_fts_keywords",
+        lambda query: query,
+    )
+
+
 def test_retriever_fuses_and_attaches_neighbors(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_search(monkeypatch)
     document = _document()
     chunks = {
         A: (_chunk(A, 0, "Hit A"), document),
@@ -89,6 +98,7 @@ def test_retriever_fuses_and_attaches_neighbors(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_retriever_returns_empty_when_no_hits(monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_search(monkeypatch)
     monkeypatch.setattr("app.retrieval.retriever.embed_query", lambda _query: [0.1])
     monkeypatch.setattr(
         "app.retrieval.retriever.semantic_search",
@@ -100,3 +110,53 @@ def test_retriever_returns_empty_when_no_hits(monkeypatch: pytest.MonkeyPatch) -
     )
 
     assert DocumentRetriever().search("nothing", session=object()) == []
+
+
+def test_passage_by_id_hydrates(monkeypatch: pytest.MonkeyPatch) -> None:
+    document = _document()
+    monkeypatch.setattr(
+        "app.retrieval.retriever.documents.get_chunks_by_ids",
+        lambda _session, _ids: {A: (_chunk(A, 0, "Hit A"), document)},
+    )
+
+    passage = DocumentRetriever().passage_by_id(A, session=object())
+
+    assert passage is not None
+    assert passage.chunk_id == A
+    assert passage.form == "10-K"
+    assert passage.neighbors == []
+
+
+def test_surrounding_passages(monkeypatch: pytest.MonkeyPatch) -> None:
+    document = _document()
+    neighbor = _chunk(C, 2, "Neighbor C")
+    monkeypatch.setattr(
+        "app.retrieval.retriever.documents.get_surrounding_chunks",
+        lambda _session, _chunk_id, _radius: [(neighbor, document)],
+    )
+
+    passages = DocumentRetriever().surrounding_passages(A, session=object())
+
+    assert [p.chunk_id for p in passages] == [C]
+    assert passages[0].text == "Neighbor C"
+
+
+def test_retriever_passes_extracted_keywords_to_fts(monkeypatch: pytest.MonkeyPatch) -> None:
+    question = "Across Apple's 10-Ks, how did the revenue mix change?"
+    monkeypatch.setattr("app.retrieval.retriever.embed_query", lambda query: [0.1] if query == question else None)
+    monkeypatch.setattr(
+        "app.retrieval.retriever.extract_fts_keywords",
+        lambda _query: "apple revenue mix",
+    )
+    monkeypatch.setattr(
+        "app.retrieval.retriever.semantic_search",
+        lambda *_args, **_kwargs: [],
+    )
+    fts = MagicMock(return_value=[])
+    monkeypatch.setattr("app.retrieval.retriever.full_text_search", fts)
+
+    DocumentRetriever().search(question, session=object())
+
+    fts.assert_called_once()
+    assert fts.call_args.args[1] == "apple revenue mix"
+

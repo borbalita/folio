@@ -143,3 +143,23 @@ def append_messages(
     ).eq("id", str(thread_id)).execute()
 
     return [_message_row_to_api(row) for row in result.data]
+
+
+def insert_citations(
+    message_id: uuid.UUID,
+    citations: list[dict[str, Any]],
+) -> None:
+    if not citations:
+        return
+
+    rows = [
+        {
+            "id": str(uuid.uuid4()),
+            "message_id": str(message_id),
+            "chunk_id": str(item["chunk_id"]),
+            "citation_index": item["citation_index"],
+            "excerpt": item.get("excerpt"),
+        }
+        for item in citations
+    ]
+    get_admin_client().table("message_citations").insert(rows).execute()

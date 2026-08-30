@@ -38,12 +38,12 @@ backend/
 │   ├── api/             # FastAPI routers (chat, ingest, auth)
 │   ├── auth/            # Supabase JWT verification + current user dependency
 │   ├── chat/            # turn orchestration, AI SDK message conversion, streaming
-│   ├── assistant/       # PydanticAI agent, deps, outputs, instructions
+│   ├── assistant/       # PydanticAI agent, deps, outputs, instructions, citation grounding
 │   ├── retrieval/       # pgvector/full-text queries, RRF fusion, source passage lookup
-│   ├── grounding/       # citation validation and answer grounding checks
 │   ├── database/        # models/, Supabase client wrapper, typed query helpers
 │   └── prompts/         # prompt/instruction templates if not colocated with assistant
 ├── ingest/              # one-off ingestion scripts (Markdown extraction, chunking, embedding, Supabase writes)
+├── scripts/             # live smoke (retrieval, agent); edit queries in the file, not CLI
 ├── tests/
 └── pyproject.toml
 ```

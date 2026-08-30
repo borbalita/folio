@@ -13,6 +13,7 @@ from app.database import documents
 from app.database.engine import get_session
 from app.database.models import DocumentChunk, SourceDocument
 from app.retrieval.fusion import reciprocal_rank_fusion
+from app.retrieval.keywords import extract_fts_keywords
 from app.retrieval.queries import SearchFilters, full_text_search, semantic_search
 from ingest.embeddings import embed_query
 
@@ -76,7 +77,7 @@ class DocumentRetriever:
         )
         fts_hits = full_text_search(
             session,
-            query,
+            extract_fts_keywords(query),
             limit=settings.retrieval_candidate_k,
             filters=filters,
         )
@@ -120,6 +121,49 @@ class DocumentRetriever:
             )
 
         return passages
+
+    def passage_by_id(
+        self,
+        chunk_id: UUID,
+        *,
+        session: Session | None = None,
+    ) -> RetrievedPassage | None:
+        if session is not None:
+            return _passage_by_id(session, chunk_id)
+
+        with get_session() as owned_session:
+            return _passage_by_id(owned_session, chunk_id)
+
+    def surrounding_passages(
+        self,
+        chunk_id: UUID,
+        *,
+        session: Session | None = None,
+    ) -> list[RetrievedPassage]:
+        if session is not None:
+            return _surrounding_passages(session, chunk_id)
+
+        with get_session() as owned_session:
+            return _surrounding_passages(owned_session, chunk_id)
+
+
+def _passage_by_id(session: Session, chunk_id: UUID) -> RetrievedPassage | None:
+    loaded = documents.get_chunks_by_ids(session, [chunk_id]).get(chunk_id)
+    if loaded is None:
+        return None
+    chunk, document = loaded
+    return _passage_from_chunk(chunk, document, fusion_score=0.0)
+
+
+def _surrounding_passages(session: Session, chunk_id: UUID) -> list[RetrievedPassage]:
+    return [
+        _passage_from_chunk(chunk, document, fusion_score=0.0)
+        for chunk, document in documents.get_surrounding_chunks(
+            session,
+            chunk_id,
+            settings.retrieval_neighbor_radius,
+        )
+    ]
 
 
 def _neighbors_for_chunk(
