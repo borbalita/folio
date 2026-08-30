@@ -78,6 +78,18 @@ backend/
 - Mirror `app/` under `tests/` (`app/chat/streaming.py` → `tests/chat/test_streaming.py`). Create `tests/conftest.py` if missing.
 - Priority areas: ingestion, retrieval, citations, grounding.
 
+## Testing rules (always apply)
+
+- Never weaken an assertion, delete a test, or mark a test as skipped just to
+  make a suite pass. If a test fails, first diagnose whether the *test* or the
+  *implementation* is wrong — fix whichever is actually broken, and say which
+  one and why.
+- Tests should verify observable behavior (what the system does), not mirror
+  the implementation (how it does it). Don't write a test for every private
+  method; test the public contract.
+- If you find yourself editing a test's expected value with no corresponding
+  spec/requirement change, stop and flag it instead of proceeding.
+
 ## Anti-patterns (rejected)
 
 - `os.getenv` / `load_dotenv` in modules.

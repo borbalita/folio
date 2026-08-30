@@ -1,7 +1,9 @@
-"""SQLAlchemy engine for direct Postgres access (migrations, ingest)."""
+"""SQLAlchemy engine for direct Postgres access (migrations, ingest, retrieval)."""
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from functools import lru_cache
 
 from sqlalchemy import create_engine
@@ -26,3 +28,12 @@ def get_engine() -> Engine:
 @lru_cache(maxsize=1)
 def get_session_factory() -> sessionmaker[Session]:
     return sessionmaker(bind=get_engine(), expire_on_commit=False)
+
+
+@contextmanager
+def get_session() -> Iterator[Session]:
+    session = get_session_factory()()
+    try:
+        yield session
+    finally:
+        session.close()

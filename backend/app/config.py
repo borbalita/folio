@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     openai_embedding_dimensions: int = Field(gt=0)
     allowed_origins: Annotated[list[str], NoDecode]
     log_level: LogLevel = "INFO"
+    retrieval_candidate_k: int = Field(default=50, gt=0)
+    retrieval_top_k: int = Field(default=10, gt=0)
+    retrieval_rrf_k: int = Field(default=60, gt=0)
+    retrieval_neighbor_radius: int = Field(default=1, ge=0)
+    retrieval_fts_config: str = "english"
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.database.engine import get_session_factory
@@ -91,6 +91,47 @@ def insert_document_chunks(
                 embedding=embedding,
             ),
         )
+
+
+def get_chunks_by_ids(
+    session: Session,
+    chunk_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, tuple[DocumentChunk, SourceDocument]]:
+    if not chunk_ids:
+        return {}
+
+    rows = session.execute(
+        select(DocumentChunk, SourceDocument).join(
+            SourceDocument,
+            SourceDocument.id == DocumentChunk.document_id,
+        ).where(DocumentChunk.id.in_(chunk_ids)),
+    ).all()
+    return {chunk.id: (chunk, document) for chunk, document in rows}
+
+
+def get_surrounding_chunks(
+    session: Session,
+    chunk_id: uuid.UUID,
+    radius: int,
+) -> list[tuple[DocumentChunk, SourceDocument]]:
+    chunk = session.get(DocumentChunk, chunk_id)
+    if chunk is None or radius <= 0:
+        return []
+
+    rows = session.execute(
+        select(DocumentChunk, SourceDocument)
+        .join(SourceDocument, SourceDocument.id == DocumentChunk.document_id)
+        .where(
+            and_(
+                DocumentChunk.document_id == chunk.document_id,
+                DocumentChunk.chunk_index >= chunk.chunk_index - radius,
+                DocumentChunk.chunk_index <= chunk.chunk_index + radius,
+                DocumentChunk.id != chunk_id,
+            ),
+        )
+        .order_by(DocumentChunk.chunk_index),
+    ).all()
+    return list(rows)
 
 
 def session_scope() -> Session:
