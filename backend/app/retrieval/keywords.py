@@ -33,7 +33,6 @@ def extract_fts_keywords(query: str) -> str:
             {"role": "user", "content": query},
         ],
         response_format=FtsKeywords,
-        temperature=0,
     )
     parsed = completion.choices[0].message.parsed
     if parsed is None:

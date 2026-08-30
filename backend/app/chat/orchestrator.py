@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
+from openai import APIError
 from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
 
 from app.assistant.agent import run_agent
@@ -40,8 +41,10 @@ def _citation_stream_payloads(answer: GroundedAnswer, deps: DocumentAgentDeps) -
             payload.update(
                 {
                     "ticker": passage.ticker,
+                    "companyName": passage.company_name,
                     "form": passage.form,
                     "fiscalYear": passage.fiscal_year,
+                    "filingDate": passage.filing_date.isoformat(),
                     "page": passage.page,
                     "section": passage.section,
                 },
@@ -84,7 +87,7 @@ async def run_turn(
         log.warning("grounding_failed", error=str(exc), thread_id=str(thread_id))
         yield format_error(str(exc))
         return
-    except (AgentRunError, ModelAPIError, UnexpectedModelBehavior) as exc:
+    except (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIError) as exc:
         log.exception("agent_run_failed", error=str(exc), thread_id=str(thread_id))
         yield format_error("The assistant failed to complete this turn.")
         return
@@ -103,7 +106,7 @@ async def run_turn(
                 "message": assistant_message_for_storage(
                     turn.answer.answer,
                     usage=turn.usage,
-                    citations=[{"type": "data-citation", **part} for part in citation_parts],
+                    citations=[{"type": "data-citation", "data": part} for part in citation_parts],
                 ),
             },
         ],

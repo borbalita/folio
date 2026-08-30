@@ -63,7 +63,7 @@ def format_error(message: str) -> str:
 
 
 def format_citation_part(payload: dict) -> str:
-    return _sse({"type": "data-citation", **payload})
+    return _sse({"type": "data-citation", "data": payload})
 
 
 def chunk_text(text: str, size: int = 24) -> list[str]:

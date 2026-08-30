@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from datetime import date
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,10 +11,27 @@ from app.assistant.outputs import AgentTurnResult, Citation, GroundedAnswer
 from app.auth.dependencies import CurrentUser
 from app.chat.orchestrator import run_turn
 from app.database import chats
+from app.retrieval.retriever import RetrievedPassage
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
 
 A = uuid.UUID("00000000-0000-0000-0000-00000000000a")
 USER = CurrentUser(id=TEST_USER_ID, email="test@example.com")
+
+PASSAGE = RetrievedPassage(
+    chunk_id=A,
+    document_id=uuid.UUID("00000000-0000-0000-0000-00000000000d"),
+    chunk_index=0,
+    text="Services revenue increased.",
+    page="12",
+    section="Item 1",
+    fusion_score=0.02,
+    ticker="AAPL",
+    company_name="Apple Inc.",
+    form="10-K",
+    filing_date=date(2023, 11, 3),
+    fiscal_year=2023,
+    accession_number="0000320193-23-000106",
+)
 
 
 def _collect(messages: list[dict]) -> list[str]:
@@ -42,6 +60,7 @@ def test_run_turn_streams_answer_and_persists(monkeypatch: pytest.MonkeyPatch) -
 
     async def fake_run(prompt: str, deps: object) -> AgentTurnResult:
         deps.seen_ids.add(A)  # type: ignore[attr-defined]
+        deps.seen_passages[A] = PASSAGE  # type: ignore[attr-defined]
         return AgentTurnResult(
             answer=GroundedAnswer(
                 answer="Services revenue increased.",
@@ -59,7 +78,12 @@ def test_run_turn_streams_answer_and_persists(monkeypatch: pytest.MonkeyPatch) -
 
     assert "Services revenue increased." in joined
     assert "data-citation" in joined
+    assert '"data":' in joined
     assert str(A) in joined
+    assert '"companyName":"Apple Inc."' in joined
+    assert '"filingDate":"2023-11-03"' in joined
+    assert '"ticker":"AAPL"' in joined
+    assert '"form":"10-K"' in joined
     append.assert_called_once()
     chats.insert_citations.assert_called_once()
 
