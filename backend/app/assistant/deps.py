@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from uuid import UUID
 
@@ -15,3 +16,4 @@ class DocumentAgentDeps:
     retriever: DocumentRetriever
     seen_ids: set[UUID] = field(default_factory=set)
     seen_passages: dict[UUID, RetrievedPassage] = field(default_factory=dict)
+    status_queue: asyncio.Queue[str] | None = None

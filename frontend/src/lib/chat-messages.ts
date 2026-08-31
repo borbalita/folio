@@ -15,7 +15,11 @@ export type CitationData = {
   section?: string | null
 }
 
-export type CopilotUIMessage = UIMessage<unknown, { citation: CitationData }>
+export type StatusData = {
+  label: string
+}
+
+export type CopilotUIMessage = UIMessage<unknown, { citation: CitationData; status: StatusData }>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

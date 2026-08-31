@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useOutletContext, useParams } from 'react-router-dom'
-import type { UIMessage } from 'ai'
 
 import { ChatThreadView } from '@/components/chat/ChatThreadView'
 import { Button } from '@/components/ui/button'
 import { api } from '@/lib/api'
-import { toUIMessages } from '@/lib/chat-messages'
+import { toUIMessages, type CopilotUIMessage } from '@/lib/chat-messages'
 import { describeApiError } from '@/lib/http'
 
 import type { ChatOutletContext } from './ChatPage'
@@ -15,7 +14,7 @@ export function ChatThreadPage() {
   const { refreshThreads } = useOutletContext<ChatOutletContext>()
   const [loaded, setLoaded] = useState<{
     threadId: string
-    messages: UIMessage[]
+    messages: CopilotUIMessage[]
   } | null>(null)
   const [error, setError] = useState<{ threadId: string; message: string } | null>(null)
 

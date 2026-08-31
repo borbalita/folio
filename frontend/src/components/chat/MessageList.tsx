@@ -1,15 +1,20 @@
-import type { UIMessage } from 'ai'
-
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { AssistantMarkdown } from '@/components/chat/AssistantMarkdown'
+import { CitationChips } from '@/components/chat/CitationChips'
+import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
 
-function textOf(message: UIMessage): string {
-  return message.parts
-    .filter((part) => part.type === 'text')
-    .map((part) => part.text)
-    .join('')
+export type SelectedCitation = {
+  messageId: string
+  citationIndex: number
 }
 
-export function MessageList({ messages }: { messages: UIMessage[] }) {
+interface MessageListProps {
+  messages: CopilotUIMessage[]
+  selected: SelectedCitation | null
+  onSelect: (messageId: string, citationIndex: number) => void
+}
+
+export function MessageList({ messages, selected, onSelect }: MessageListProps) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
@@ -23,6 +28,8 @@ export function MessageList({ messages }: { messages: UIMessage[] }) {
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
         {messages.map((message) => {
           const isUser = message.role === 'user'
+          const body = textOf(message)
+          const citations = citationsOf(message)
           return (
             <div
               key={message.id}
@@ -32,10 +39,25 @@ export function MessageList({ messages }: { messages: UIMessage[] }) {
                 className={
                   isUser
                     ? 'max-w-[80%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground'
-                    : 'max-w-[80%] rounded-lg bg-muted px-3 py-2 text-sm'
+                    : 'max-w-[80%] overflow-x-auto rounded-lg bg-muted px-3 py-2 text-sm'
                 }
               >
-                <p className="whitespace-pre-wrap">{textOf(message)}</p>
+                {isUser ? (
+                  <p className="whitespace-pre-wrap">{body}</p>
+                ) : (
+                  <>
+                    <AssistantMarkdown>{body}</AssistantMarkdown>
+                    <CitationChips
+                      citations={citations}
+                      selectedIndex={
+                        selected?.messageId === message.id ? selected.citationIndex : null
+                      }
+                      onSelect={(citationIndex) => {
+                        onSelect(message.id, citationIndex)
+                      }}
+                    />
+                  </>
+                )}
               </div>
             </div>
           )

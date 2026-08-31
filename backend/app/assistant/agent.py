@@ -22,6 +22,21 @@ from app.config import settings
 
 INSTRUCTIONS_PATH = Path(__file__).with_name("instructions.md")
 
+LOOKING_THROUGH_FILINGS = "Looking through filings"
+
+
+async def _emit_status(deps: DocumentAgentDeps, label: str) -> None:
+    if deps.status_queue is None:
+        return
+    await deps.status_queue.put(label)
+
+
+def looking_through_label(ticker: str | None) -> str:
+    symbol = ticker.strip() if ticker else ""
+    if symbol:
+        return f"Looking through {symbol} filings"
+    return LOOKING_THROUGH_FILINGS
+
 
 def _chat_model() -> OpenAIChatModel:
     return OpenAIChatModel(
@@ -53,6 +68,7 @@ async def search_filings(
     form: str | None = None,
 ) -> str:
     """Search the SEC 10-K corpus. Optional ticker, fiscal_years, and form narrow the filings."""
+    await _emit_status(ctx.deps, looking_through_label(ticker))
     return await asyncio.to_thread(
         execute_search_filings,
         ctx.deps,

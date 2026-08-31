@@ -66,6 +66,10 @@ def format_citation_part(payload: dict) -> str:
     return _sse({"type": "data-citation", "data": payload})
 
 
+def format_status_part(label: str) -> str:
+    return _sse({"type": "data-status", "data": {"label": label}, "transient": True})
+
+
 def chunk_text(text: str, size: int = 24) -> list[str]:
     if not text:
         return [""]
@@ -85,10 +89,16 @@ async def iter_canned_text_stream(text: str) -> AsyncIterator[str]:
     yield format_done()
 
 
-async def iter_grounded_stream(text: str, citations: list[dict]) -> AsyncIterator[str]:
+async def iter_grounded_stream(
+    text: str,
+    citations: list[dict],
+    *,
+    include_envelope: bool = True,
+) -> AsyncIterator[str]:
     """Yield SSE frames for a grounded answer, then citation parts."""
-    yield format_stream_start()
-    yield format_start_step()
+    if include_envelope:
+        yield format_stream_start()
+        yield format_start_step()
     yield format_text_start()
     for piece in chunk_text(text):
         yield format_text_delta(piece)

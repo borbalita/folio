@@ -10,6 +10,8 @@ from fastapi import HTTPException, status
 
 from app.database.supabase import get_admin_client
 
+DEFAULT_THREAD_TITLE = "New chat"
+
 
 def ensure_user(user_id: uuid.UUID, email: str) -> None:
     """Upsert a public.users row so chat FKs succeed (Auth only writes auth.users)."""
@@ -49,7 +51,7 @@ def create_thread_for_user(
             {
                 "id": str(uuid.uuid4()),
                 "user_id": str(user_id),
-                "title": title or "New chat",
+                "title": title or DEFAULT_THREAD_TITLE,
             }
         )
         .execute()
@@ -143,6 +145,10 @@ def append_messages(
     ).eq("id", str(thread_id)).execute()
 
     return [_message_row_to_api(row) for row in result.data]
+
+
+def update_thread_title(thread_id: uuid.UUID, title: str) -> None:
+    get_admin_client().table("chat_threads").update({"title": title}).eq("id", str(thread_id)).execute()
 
 
 def insert_citations(
