@@ -14,7 +14,7 @@ from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModel
 from app.assistant.agent import LOOKING_THROUGH_FILINGS, run_agent
 from app.assistant.deps import DocumentAgentDeps
 from app.assistant.grounding import GroundingError, grounding_user_answer, validate_grounded_answer
-from app.assistant.outputs import GroundedAnswer
+from app.assistant.outputs import AgentTurnResult, GroundedAnswer
 from app.auth.dependencies import CurrentUser
 from app.chat.messages import (
     assistant_message_for_storage,
@@ -22,6 +22,7 @@ from app.chat.messages import (
     user_message_for_storage,
 )
 from app.chat.streaming import (
+    format_done,
     format_error,
     format_start_step,
     format_status_part,
@@ -34,8 +35,10 @@ from app.retrieval.retriever import DocumentRetriever
 
 log = structlog.get_logger(__name__)
 
-WRITING_THE_ANSWER = "Writing the answer"
-_STATUS_POLL_SECONDS = 0.15
+AGENT_FAILURES = (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIError)
+
+ASSISTANT_UNAVAILABLE = "The assistant couldn't complete this answer. Try again."
+UNEXPECTED_TURN_ERROR = "Something went wrong. Try again."
 
 
 def _citation_stream_payloads(answer: GroundedAnswer, deps: DocumentAgentDeps) -> list[dict[str, Any]]:
@@ -74,49 +77,62 @@ def _citation_rows(answer: GroundedAnswer) -> list[dict[str, Any]]:
     ]
 
 
-async def _flush_status(queue: asyncio.Queue[str]) -> AsyncIterator[str]:
-    while True:
-        try:
-            label = queue.get_nowait()
-        except asyncio.QueueEmpty:
-            return
-        yield format_status_part(label)
+async def _run_agent_then_close_queue(
+    user_text: str,
+    deps: DocumentAgentDeps,
+    status_queue: asyncio.Queue[str | None],
+) -> AgentTurnResult:
+    try:
+        return await run_agent(user_text, deps)
+    finally:
+        await status_queue.put(None)
 
 
 async def run_turn(
     user: CurrentUser,
     thread_id: uuid.UUID,
     messages: list[dict],
+    *,
+    thread: dict[str, Any] | None = None,
 ) -> AsyncIterator[str]:
-    """Run the document agent, stream a grounded reply, persist on success or grounding failure."""
-    thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
+    """Stream search status while the agent runs, then a grounded reply."""
+    if thread is None:
+        thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
     await asyncio.to_thread(chats.ensure_user, user.id, user.email)
 
+    yield format_stream_start()
+    yield format_start_step()
+    yield format_status_part(LOOKING_THROUGH_FILINGS)
+
     user_text = extract_latest_user_text(messages)
-    status_queue: asyncio.Queue[str] = asyncio.Queue()
+    status_queue: asyncio.Queue[str | None] = asyncio.Queue()
     deps = DocumentAgentDeps(
         user_id=user.id,
         thread_id=thread_id,
         retriever=DocumentRetriever(),
         status_queue=status_queue,
     )
-
-    yield format_stream_start()
-    yield format_start_step()
-    yield format_status_part(LOOKING_THROUGH_FILINGS)
-
-    agent_task = asyncio.create_task(run_agent(user_text, deps))
-    while not agent_task.done():
-        try:
-            label = await asyncio.wait_for(status_queue.get(), timeout=_STATUS_POLL_SECONDS)
-            yield format_status_part(label)
-        except TimeoutError:
-            pass
-    async for frame in _flush_status(status_queue):
-        yield frame
+    agent_task = asyncio.create_task(_run_agent_then_close_queue(user_text, deps, status_queue))
 
     try:
+        while True:
+            label = await status_queue.get()
+            if label is None:
+                break
+            yield format_status_part(label)
         turn = await agent_task
+    except AGENT_FAILURES:
+        log.exception("agent_run_failed", thread_id=str(thread_id))
+        yield format_error(ASSISTANT_UNAVAILABLE)
+        yield format_done()
+        return
+    except Exception:
+        log.exception("turn_failed", thread_id=str(thread_id))
+        yield format_error(UNEXPECTED_TURN_ERROR)
+        yield format_done()
+        return
+
+    try:
         validate_grounded_answer(turn.answer, deps.seen_ids)
     except GroundingError as exc:
         log.warning(
@@ -126,32 +142,50 @@ async def run_turn(
             thread_id=str(thread_id),
         )
         canned = grounding_user_answer(exc)
-        yield format_status_part(WRITING_THE_ANSWER)
         async for frame in iter_grounded_stream(canned, [], include_envelope=False):
             yield frame
-        await asyncio.to_thread(
-            chats.append_messages,
+        await _persist_turn(
+            thread,
             thread_id,
-            [
-                {"role": "user", "message": user_message_for_storage(messages)},
-                {
-                    "role": "assistant",
-                    "message": assistant_message_for_storage(canned),
-                },
-            ],
+            messages,
+            user_text,
+            canned,
+            citation_parts=[],
+            citation_rows=None,
+            usage=None,
         )
-        await _title_if_new(thread, thread_id, user_text, canned)
-        return
-    except (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIError) as exc:
-        log.exception("agent_run_failed", error=str(exc), thread_id=str(thread_id))
-        yield format_error("The assistant failed to complete this turn.")
         return
 
-    yield format_status_part(WRITING_THE_ANSWER)
     citation_parts = _citation_stream_payloads(turn.answer, deps)
-    async for frame in iter_grounded_stream(turn.answer.answer, citation_parts, include_envelope=False):
+    async for frame in iter_grounded_stream(
+        turn.answer.answer,
+        citation_parts,
+        include_envelope=False,
+    ):
         yield frame
+    await _persist_turn(
+        thread,
+        thread_id,
+        messages,
+        user_text,
+        turn.answer.answer,
+        citation_parts=citation_parts,
+        citation_rows=_citation_rows(turn.answer),
+        usage=turn.usage,
+    )
 
+
+async def _persist_turn(
+    thread: dict[str, Any],
+    thread_id: uuid.UUID,
+    messages: list[dict],
+    user_text: str,
+    answer_text: str,
+    *,
+    citation_parts: list[dict[str, Any]],
+    citation_rows: list[dict[str, Any]] | None,
+    usage: dict[str, int] | None,
+) -> None:
     stored = await asyncio.to_thread(
         chats.append_messages,
         thread_id,
@@ -160,16 +194,21 @@ async def run_turn(
             {
                 "role": "assistant",
                 "message": assistant_message_for_storage(
-                    turn.answer.answer,
-                    usage=turn.usage,
-                    citations=[{"type": "data-citation", "data": part} for part in citation_parts],
+                    answer_text,
+                    usage=usage,
+                    citations=(
+                        [{"type": "data-citation", "data": part} for part in citation_parts]
+                        if citation_parts
+                        else None
+                    ),
                 ),
             },
         ],
     )
-    assistant_id = uuid.UUID(stored[1]["id"])
-    await asyncio.to_thread(chats.insert_citations, assistant_id, _citation_rows(turn.answer))
-    await _title_if_new(thread, thread_id, user_text, turn.answer.answer)
+    if citation_rows is not None:
+        assistant_id = uuid.UUID(stored[1]["id"])
+        await asyncio.to_thread(chats.insert_citations, assistant_id, citation_rows)
+    await _title_if_new(thread, thread_id, user_text, answer_text)
 
 
 async def _title_if_new(

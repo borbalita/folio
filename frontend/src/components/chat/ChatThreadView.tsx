@@ -13,7 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { citationsOf, type CopilotUIMessage } from '@/lib/chat-messages'
+import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
 import { env } from '@/lib/env'
 import { getAccessToken } from '@/lib/supabase'
 
@@ -108,6 +108,9 @@ export function ChatThreadView({
   })
 
   const busy = status === 'submitted' || status === 'streaming'
+  const lastMessage = messages.at(-1)
+  const hasAssistantText =
+    lastMessage?.role === 'assistant' && textOf(lastMessage).length > 0
   const citation = citationForSelection(messages, selected)
 
   function onSelect(messageId: string, citationIndex: number) {
@@ -126,7 +129,12 @@ export function ChatThreadView({
     <div className="flex min-h-0 flex-1">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <MessageList messages={messages} selected={selected} onSelect={onSelect} />
-        <ChatStatus status={status} error={error} stage={stage} />
+        <ChatStatus
+          status={status}
+          error={error}
+          stage={stage}
+          hasAssistantText={hasAssistantText}
+        />
         <ChatInput
           disabled={busy}
           onSend={(text) => {

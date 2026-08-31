@@ -4,9 +4,10 @@ interface ChatStatusProps {
   status: 'submitted' | 'streaming' | 'ready' | 'error'
   error: Error | undefined
   stage: string | null
+  hasAssistantText: boolean
 }
 
-export function ChatStatus({ status, error, stage }: ChatStatusProps) {
+export function ChatStatus({ status, error, stage, hasAssistantText }: ChatStatusProps) {
   if (status === 'error' || error) {
     return (
       <p className="px-4 pb-2 text-center text-xs text-destructive">
@@ -14,7 +15,8 @@ export function ChatStatus({ status, error, stage }: ChatStatusProps) {
       </p>
     )
   }
-  if (status === 'submitted' || status === 'streaming') {
+  const waiting = status === 'submitted' || (status === 'streaming' && !hasAssistantText)
+  if (waiting) {
     const label = stage ?? 'Looking through filings'
     return (
       <p className="flex items-center justify-center gap-2 px-4 pb-2 text-xs text-muted-foreground">

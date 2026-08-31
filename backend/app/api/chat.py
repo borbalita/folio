@@ -49,12 +49,9 @@ async def chat_stream(
     body: StreamChatRequest,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> StreamingResponse:
-    # Ownership check before opening the stream so clients get HTTP 403/404,
-    # not a mid-stream error frame.
-    await asyncio.to_thread(chats.get_thread_for_user, body.thread_id, user.id)
-
+    thread = await asyncio.to_thread(chats.get_thread_for_user, body.thread_id, user.id)
     return StreamingResponse(
-        run_turn(user, body.thread_id, body.messages),
+        run_turn(user, body.thread_id, body.messages, thread=thread),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

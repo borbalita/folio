@@ -49,11 +49,48 @@ You also need accounts/keys for external services once the app is wired up. Star
 
 ## Running locally
 
-To be added during the build. Setup guides:
+Setup guides (credentials, schema, why this stack):
 
 - [Supabase](docs/guides/supabase-setup.md) — account, hosted project (dashboard or CLI)
 - [Backend](docs/guides/backend-setup.md)
 - [Frontend](docs/guides/frontend-setup.md)
+
+Copy env templates (do not commit filled files):
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Fill `backend/.env` and `frontend/.env` from the Supabase dashboard and an OpenAI key. Use the **direct** Postgres URL for `DATABASE_URL` (not the transaction pooler).
+
+```bash
+# schema
+cd backend
+uv sync
+uv run alembic upgrade head
+
+# corpus (from repo root): download HTML, convert to Markdown, ingest
+cd ..
+uv run data/download.py
+uv run data/convert_to_markdown.py
+cd backend
+uv run python -m ingest.load_source_documents
+uv run python -m ingest.chunk_and_embed --all
+
+# API
+uv run uvicorn app.main:app --reload
+```
+
+In another terminal:
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Sign in at http://localhost:5173 (email auth). Fast tests: `cd backend && uv run pytest -m "not integration"`. Live agent smoke (OpenAI + Postgres, does not persist chats): `cd backend && uv run python -m scripts.smoke_agent`.
 
 ## Sample SEC data
 

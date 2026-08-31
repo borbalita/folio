@@ -8,11 +8,14 @@ Chat (`run_turn`) owns stream and persist. This package owns the LLM, tools, out
 
 ```mermaid
 flowchart TD
-    userText[User question] --> runAgent[run_agent]
+    userText[User question] --> sse[Open SSE]
+    sse --> status["Looking through filings"]
+    status --> runAgent[run_agent]
     runAgent --> llm[PydanticAI agent]
     llm --> searchFilings[search_filings]
     llm --> readChunk[read_chunk]
     llm --> readAround[read_surrounding_chunks]
+    searchFilings --> tickerStatus["Looking through TICKER filings"]
     searchFilings --> retriever[DocumentRetriever]
     readChunk --> retriever
     readAround --> retriever
@@ -22,13 +25,14 @@ flowchart TD
     result --> validate[validate_grounded_answer]
     validate -->|ok| stream[stream and persist]
     validate -->|GroundingError| canned[canned answer, persist, no citations]
+    runAgent -->|LLM or API error| streamErr[SSE error, no persist]
 ```
 
-1. **Turn setup.** `run_turn` builds `DocumentAgentDeps` (user id, thread id, `DocumentRetriever`, empty `seen_ids` / `seen_passages`) and calls `run_agent` with the latest user text.
+1. **Turn setup.** Auth and thread checks stay HTTP (401/403/404). Then `run_turn` opens SSE, emits **Looking through filings**, builds `DocumentAgentDeps` (user id, thread id, `DocumentRetriever`, empty `seen_ids` / `seen_passages`, `status_queue`), and runs the agent **while** draining that queue into `data-status` parts.
 2. **Agent loop.** PydanticAI agent (`output_type=GroundedAnswer`, instructions from `instructions.md`) may call tools until it returns structured output. Instructions: answer only from tool passages, cite every claim, set `insufficient_evidence` when the corpus cannot support an answer, no investment advice.
-3. **Tools.** Implementations in `tools.py` go through `DocumentRetriever` (see [retrieval README](../retrieval/README.md)). Tool responses are formatted excerpts. Each hit and its neighbors are registered into `seen_ids` and `seen_passages` so later citations can be checked and streamed with filing metadata.
+3. **Tools.** Implementations in `tools.py` go through `DocumentRetriever` (see [retrieval README](../retrieval/README.md)). Tool responses are formatted excerpts. Each hit and its neighbors are registered into `seen_ids` and `seen_passages` so later citations can be checked and streamed with filing metadata. `search_filings` also emits **Looking through filings** or **Looking through {TICKER} filings**.
 4. **Result.** `run_agent` returns `AgentTurnResult`: the `GroundedAnswer` plus a usage dict (`requests`, `input_tokens`, `output_tokens`, `tool_calls`).
-5. **Grounding.** `validate_grounded_answer` (no LLM) checks the answer against `seen_ids`. Failure raises `GroundingError` with a `code`. The orchestrator streams a canned user-facing answer for that code and persists it with no citations. It does not stream the ungrounded model text or validator wording.
+5. **Grounding.** `validate_grounded_answer` (no LLM) checks the answer against `seen_ids`. Failure raises `GroundingError` with a `code`. The orchestrator streams a canned user-facing answer for that code and persists it with no citations. It does not stream the ungrounded model text or validator wording. LLM/API failures yield an SSE `error` with user-facing copy and do not persist.
 6. **Stream and persist.** On success, the orchestrator streams answer text then `data-citation` parts (ticker, form, year, page, section from `seen_passages`) and writes messages plus `message_citations`.
 
 ## Tools

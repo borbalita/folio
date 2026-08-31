@@ -7,11 +7,13 @@ from datetime import date
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic_ai.exceptions import ModelHTTPError
 
+from app.assistant.agent import LOOKING_THROUGH_FILINGS
 from app.assistant.grounding import UNKNOWN_CHUNK, GroundingError, grounding_user_answer
 from app.assistant.outputs import AgentTurnResult, Citation, GroundedAnswer
 from app.auth.dependencies import CurrentUser
-from app.chat.orchestrator import WRITING_THE_ANSWER, run_turn
+from app.chat.orchestrator import ASSISTANT_UNAVAILABLE, UNEXPECTED_TURN_ERROR, run_turn
 from app.chat.titles import DEFAULT_THREAD_TITLE
 from app.database import chats
 from app.retrieval.retriever import RetrievedPassage
@@ -151,8 +153,9 @@ def test_run_turn_emits_search_status_before_answer(monkeypatch: pytest.MonkeyPa
     assert types[0] == "start"
     assert types.count("start") == 1
     assert types.index("start") < types.index("text-delta")
+    assert LOOKING_THROUGH_FILINGS in labels
     assert "Looking through AAPL filings" in labels
-    assert WRITING_THE_ANSWER in labels
+    assert "Writing the answer" not in labels
 
 
 def test_run_turn_grounding_error_streams_canned_answer(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -228,3 +231,40 @@ def test_run_turn_grounding_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> 
     _collect([{"role": "user", "content": "What is revenue?"}])
 
     chats.update_thread_title.assert_called_once_with(TEST_THREAD_ID, "Revenue question")
+
+
+def test_run_turn_agent_failure_streams_user_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    append = _patch_chats(monkeypatch)
+
+    async def boom(prompt: str, deps: object) -> None:
+        raise ModelHTTPError(status_code=429, model_name="gpt-5.5", body={"message": "no credits"})
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
+
+    frames = _collect([{"role": "user", "content": "How did Services do?"}])
+    payloads = _payloads(frames)
+    errors = [payload for payload in payloads if payload.get("type") == "error"]
+
+    assert errors == [{"type": "error", "errorText": ASSISTANT_UNAVAILABLE}]
+    assert "no credits" not in "".join(frames)
+    append.assert_not_called()
+    chats.insert_citations.assert_not_called()
+
+
+def test_run_turn_unexpected_error_streams_generic_user_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    append = _patch_chats(monkeypatch)
+
+    async def boom(prompt: str, deps: object) -> None:
+        raise RuntimeError("secret boom")
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
+
+    frames = _collect([{"role": "user", "content": "How did Services do?"}])
+    payloads = _payloads(frames)
+    errors = [payload for payload in payloads if payload.get("type") == "error"]
+
+    assert errors == [{"type": "error", "errorText": UNEXPECTED_TURN_ERROR}]
+    assert "secret boom" not in "".join(frames)
+    append.assert_not_called()

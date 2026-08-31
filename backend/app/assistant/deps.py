@@ -16,4 +16,4 @@ class DocumentAgentDeps:
     retriever: DocumentRetriever
     seen_ids: set[UUID] = field(default_factory=set)
     seen_passages: dict[UUID, RetrievedPassage] = field(default_factory=dict)
-    status_queue: asyncio.Queue[str] | None = None
+    status_queue: asyncio.Queue[str | None] | None = None

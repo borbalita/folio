@@ -89,17 +89,43 @@ function detailFromBody(body: unknown): string | null {
   return null
 }
 
-function friendlyDetail(detail: string): string {
-  if (detail === 'Forbidden') {
-    return "You don't have access to this thread."
+const ASSISTANT_UNAVAILABLE = "The assistant couldn't complete this answer. Try again."
+const UNEXPECTED_ERROR = 'Something went wrong. Try again.'
+
+const KNOWN_USER_MESSAGES = new Set([
+  ASSISTANT_UNAVAILABLE,
+  UNEXPECTED_ERROR,
+  "Can't reach the API. Check that the backend is running.",
+  'Your session expired. Please sign in again.',
+  "You don't have access to this thread.",
+  'This thread was not found.',
+  'This request is invalid.',
+])
+
+const FASTAPI_DETAILS: Record<string, string> = {
+  Forbidden: "You don't have access to this thread.",
+  'Thread not found': 'This thread was not found.',
+  'Not authenticated': 'Your session expired. Please sign in again.',
+}
+
+function mappedDetail(detail: string): string | null {
+  return FASTAPI_DETAILS[detail] ?? null
+}
+
+function fromUnknownMessage(message: string): string {
+  if (KNOWN_USER_MESSAGES.has(message)) {
+    return message
   }
-  if (detail === 'Thread not found') {
-    return 'This thread was not found.'
+  for (const known of KNOWN_USER_MESSAGES) {
+    if (message.includes(known)) {
+      return known
+    }
   }
-  if (detail === 'Not authenticated') {
-    return 'Your session expired. Please sign in again.'
+  const detail = detailFromBody(tryParseJson(message))
+  if (detail) {
+    return mappedDetail(detail) ?? UNEXPECTED_ERROR
   }
-  return detail
+  return UNEXPECTED_ERROR
 }
 
 /** User-facing message for API and stream failures. */
@@ -117,17 +143,25 @@ export function describeApiError(error: unknown): string {
     if (error.status === 404) {
       return 'This thread was not found.'
     }
+    if (error.status === 422) {
+      return 'This request is invalid.'
+    }
+    if (error.status === 502) {
+      return ASSISTANT_UNAVAILABLE
+    }
+    if (error.status === 500) {
+      return UNEXPECTED_ERROR
+    }
     const detail = detailFromBody(error.body)
-    return detail ? friendlyDetail(detail) : error.message
+    if (detail) {
+      return mappedDetail(detail) ?? UNEXPECTED_ERROR
+    }
+    return UNEXPECTED_ERROR
   }
   if (error instanceof Error) {
-    const detail = detailFromBody(tryParseJson(error.message))
-    if (detail) {
-      return friendlyDetail(detail)
-    }
-    return error.message
+    return fromUnknownMessage(error.message)
   }
-  return 'Something went wrong.'
+  return UNEXPECTED_ERROR
 }
 
 export const http = {

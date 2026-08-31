@@ -6,7 +6,9 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pydantic_ai.exceptions import ModelHTTPError
 
+from app.chat.orchestrator import ASSISTANT_UNAVAILABLE, UNEXPECTED_TURN_ERROR
 from app.database import chats
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
 
@@ -120,3 +122,67 @@ def test_create_thread_calls_persistence(
         "test@example.com",
         "My thread",
     )
+
+
+def test_chat_stream_invalid_body_returns_422(authed_client: TestClient) -> None:
+    response = authed_client.post("/chat/stream", json={})
+
+    assert response.status_code == 422
+
+
+def _patch_stream_deps(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
+    monkeypatch.setattr(
+        chats,
+        "get_thread_for_user",
+        lambda thread_id, user_id: {"id": str(thread_id), "title": "Test"},
+    )
+    monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
+    append = MagicMock()
+    monkeypatch.setattr(chats, "append_messages", append)
+    return append
+
+
+def test_chat_stream_agent_failure_is_sse_error(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    append = _patch_stream_deps(monkeypatch)
+
+    async def boom(prompt: str, deps: object) -> None:
+        raise ModelHTTPError(status_code=429, model_name="gpt-5.5", body={"message": "no credits"})
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
+
+    response = authed_client.post(
+        "/chat/stream",
+        json={"threadId": str(TEST_THREAD_ID), "messages": [{"role": "user", "content": "hi"}]},
+    )
+
+    assert response.status_code == 200
+    assert '"type":"error"' in response.text
+    assert ASSISTANT_UNAVAILABLE in response.text
+    assert "no credits" not in response.text
+    append.assert_not_called()
+
+
+def test_chat_stream_unexpected_is_sse_error(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    append = _patch_stream_deps(monkeypatch)
+
+    async def boom(prompt: str, deps: object) -> None:
+        raise RuntimeError("secret boom")
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
+
+    response = authed_client.post(
+        "/chat/stream",
+        json={"threadId": str(TEST_THREAD_ID), "messages": [{"role": "user", "content": "hi"}]},
+    )
+
+    assert response.status_code == 200
+    assert '"type":"error"' in response.text
+    assert UNEXPECTED_TURN_ERROR in response.text
+    assert "secret boom" not in response.text
+    append.assert_not_called()
