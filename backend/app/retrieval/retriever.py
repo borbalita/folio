@@ -88,7 +88,7 @@ class DocumentRetriever:
                 [hit.chunk_id for hit in fts_hits],
             ],
             k=settings.retrieval_rrf_k,
-        )[:settings.retrieval_top_k]
+        )[: settings.retrieval_top_k]
 
         if not fused:
             return []

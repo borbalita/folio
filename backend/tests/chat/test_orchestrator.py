@@ -72,7 +72,9 @@ def _streamed_text(frames: list[str]) -> str:
     return "".join(pieces)
 
 
-def _patch_chats(monkeypatch: pytest.MonkeyPatch, *, title: str = "Existing") -> MagicMock:
+def _patch_chats(
+    monkeypatch: pytest.MonkeyPatch, *, title: str = "Existing"
+) -> MagicMock:
     monkeypatch.setattr(
         chats,
         "get_thread_for_user",
@@ -100,9 +102,20 @@ def test_run_turn_streams_answer_and_persists(monkeypatch: pytest.MonkeyPatch) -
         return AgentTurnResult(
             answer=GroundedAnswer(
                 answer="Services revenue increased.",
-                citations=[Citation(chunk_id=A, citation_index=1, excerpt="Services revenue increased.")],
+                citations=[
+                    Citation(
+                        chunk_id=A,
+                        citation_index=1,
+                        excerpt="Services revenue increased.",
+                    )
+                ],
             ),
-            usage={"requests": 1, "input_tokens": 10, "output_tokens": 5, "tool_calls": 1},
+            usage={
+                "requests": 1,
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "tool_calls": 1,
+            },
         )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
@@ -125,7 +138,9 @@ def test_run_turn_streams_answer_and_persists(monkeypatch: pytest.MonkeyPatch) -
     chats.update_thread_title.assert_not_called()
 
 
-def test_run_turn_emits_search_status_before_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_turn_emits_search_status_before_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _patch_chats(monkeypatch)
 
     async def fake_run(prompt: str, deps: object) -> AgentTurnResult:
@@ -135,9 +150,20 @@ def test_run_turn_emits_search_status_before_answer(monkeypatch: pytest.MonkeyPa
         return AgentTurnResult(
             answer=GroundedAnswer(
                 answer="Services revenue increased.",
-                citations=[Citation(chunk_id=A, citation_index=1, excerpt="Services revenue increased.")],
+                citations=[
+                    Citation(
+                        chunk_id=A,
+                        citation_index=1,
+                        excerpt="Services revenue increased.",
+                    )
+                ],
             ),
-            usage={"requests": 1, "input_tokens": 10, "output_tokens": 5, "tool_calls": 1},
+            usage={
+                "requests": 1,
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "tool_calls": 1,
+            },
         )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
@@ -158,7 +184,9 @@ def test_run_turn_emits_search_status_before_answer(monkeypatch: pytest.MonkeyPa
     assert "Writing the answer" not in labels
 
 
-def test_run_turn_grounding_error_streams_canned_answer(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_turn_grounding_error_streams_canned_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     append = _patch_chats(monkeypatch)
 
     async def fake_run(prompt: str, deps: object) -> AgentTurnResult:
@@ -167,7 +195,12 @@ def test_run_turn_grounding_error_streams_canned_answer(monkeypatch: pytest.Monk
                 answer="Invented number.",
                 citations=[Citation(chunk_id=A, citation_index=1)],
             ),
-            usage={"requests": 1, "input_tokens": 1, "output_tokens": 1, "tool_calls": 0},
+            usage={
+                "requests": 1,
+                "input_tokens": 1,
+                "output_tokens": 1,
+                "tool_calls": 0,
+            },
         )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
@@ -194,9 +227,20 @@ def test_run_turn_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> None:
         return AgentTurnResult(
             answer=GroundedAnswer(
                 answer="Services revenue increased.",
-                citations=[Citation(chunk_id=A, citation_index=1, excerpt="Services revenue increased.")],
+                citations=[
+                    Citation(
+                        chunk_id=A,
+                        citation_index=1,
+                        excerpt="Services revenue increased.",
+                    )
+                ],
             ),
-            usage={"requests": 1, "input_tokens": 10, "output_tokens": 5, "tool_calls": 1},
+            usage={
+                "requests": 1,
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "tool_calls": 1,
+            },
         )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
@@ -207,7 +251,9 @@ def test_run_turn_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> None:
 
     _collect([{"role": "user", "content": "How did Services do?"}])
 
-    chats.update_thread_title.assert_called_once_with(TEST_THREAD_ID, "AAPL Services FY2023")
+    chats.update_thread_title.assert_called_once_with(
+        TEST_THREAD_ID, "AAPL Services FY2023"
+    )
 
 
 def test_run_turn_grounding_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -219,7 +265,12 @@ def test_run_turn_grounding_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> 
                 answer="Invented number.",
                 citations=[Citation(chunk_id=A, citation_index=1)],
             ),
-            usage={"requests": 1, "input_tokens": 1, "output_tokens": 1, "tool_calls": 0},
+            usage={
+                "requests": 1,
+                "input_tokens": 1,
+                "output_tokens": 1,
+                "tool_calls": 0,
+            },
         )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
@@ -230,14 +281,20 @@ def test_run_turn_grounding_titles_new_chat(monkeypatch: pytest.MonkeyPatch) -> 
 
     _collect([{"role": "user", "content": "What is revenue?"}])
 
-    chats.update_thread_title.assert_called_once_with(TEST_THREAD_ID, "Revenue question")
+    chats.update_thread_title.assert_called_once_with(
+        TEST_THREAD_ID, "Revenue question"
+    )
 
 
-def test_run_turn_agent_failure_streams_user_error(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_run_turn_agent_failure_streams_user_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     append = _patch_chats(monkeypatch)
 
     async def boom(prompt: str, deps: object) -> None:
-        raise ModelHTTPError(status_code=429, model_name="gpt-5.5", body={"message": "no credits"})
+        raise ModelHTTPError(
+            status_code=429, model_name="gpt-5.5", body={"message": "no credits"}
+        )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
 

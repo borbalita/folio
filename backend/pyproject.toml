@@ -42,3 +42,7 @@ dev = [
 markers = [
     "integration: tests that require live Supabase or OpenAI",
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "ingest", "tests"]
+known-third-party = ["alembic"]

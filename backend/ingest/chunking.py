@@ -178,7 +178,9 @@ def chunk_document(
             break
         if _chunk_contains_table(chunk):
             contextualized = chunker.contextualize(chunk=chunk)
-            table = _matching_table_for_chunk(contextualized, tables, used_table_indexes)
+            table = _matching_table_for_chunk(
+                contextualized, tables, used_table_indexes
+            )
             narrative_text = _narrative_text_without_tables(contextualized)
             if narrative_text:
                 section = _section_from_chunk(chunk.meta, narrative_text)
@@ -286,7 +288,9 @@ def _table_matches_chunk(chunk_text: str, table: ExtractedTable) -> bool:
     first_row = table.rows[0]
     if first_row.label and first_row.label in chunk_text:
         return True
-    return any(cell.text.strip("$") in chunk_text for cell in first_row.cells if cell.text)
+    return any(
+        cell.text.strip("$") in chunk_text for cell in first_row.cells if cell.text
+    )
 
 
 def _narrative_text_without_tables(text: str) -> str:
@@ -318,7 +322,7 @@ def _markdown_for_row(table: ExtractedTable, row: TableRow) -> str:
     header = "| " + " | ".join(column.label for column in table.columns) + " |"
     separator = "| " + " | ".join("---" for _ in table.columns) + " |"
     body = "| " + " | ".join([row.label, *[cell.text for cell in row.cells]]) + " |"
-    return "\n".join([header, separator, body])
+    return f"{header}\n{separator}\n{body}"
 
 
 def iter_all_html_paths() -> Iterator[tuple[str, Path]]:

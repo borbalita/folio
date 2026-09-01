@@ -35,6 +35,10 @@ class ChatMessage(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("thread_id", "sequence_number", name="uq_chat_messages_thread_sequence"),
-        Index("ix_chat_messages_thread_id_sequence_number", "thread_id", "sequence_number"),
+        UniqueConstraint(
+            "thread_id", "sequence_number", name="uq_chat_messages_thread_sequence"
+        ),
+        Index(
+            "ix_chat_messages_thread_id_sequence_number", "thread_id", "sequence_number"
+        ),
     )

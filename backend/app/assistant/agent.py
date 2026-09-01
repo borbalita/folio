@@ -84,7 +84,9 @@ async def read_chunk(ctx: RunContext[DocumentAgentDeps], chunk_id: UUID) -> str:
     return await asyncio.to_thread(execute_read_chunk, ctx.deps, chunk_id)
 
 
-async def read_surrounding_chunks(ctx: RunContext[DocumentAgentDeps], chunk_id: UUID) -> str:
+async def read_surrounding_chunks(
+    ctx: RunContext[DocumentAgentDeps], chunk_id: UUID
+) -> str:
     """Read neighboring chunks around a chunk id in the same filing."""
     return await asyncio.to_thread(execute_read_surrounding_chunks, ctx.deps, chunk_id)
 

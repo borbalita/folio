@@ -39,7 +39,9 @@ class MessageCitation(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("message_id", "citation_index", name="uq_message_citations_message_index"),
+        UniqueConstraint(
+            "message_id", "citation_index", name="uq_message_citations_message_index"
+        ),
         Index("ix_message_citations_message_id", "message_id"),
         Index("ix_message_citations_chunk_id", "chunk_id"),
     )

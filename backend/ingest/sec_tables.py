@@ -11,7 +11,19 @@ from typing import Any
 _AMOUNT_RE = re.compile(r"^\(?\$?[\d,]+(?:\.\d+)?\)?$")
 _FOOTNOTE_RE = re.compile(r"^\(\d+\)")
 _UNIT_RE = re.compile(r"\(([^)]*(?:million|thousand|billion)[^)]*)\)", re.IGNORECASE)
-_VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param"}
+_VOID_TAGS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,7 +260,12 @@ def _facts(node: _Node) -> list[InlineFact]:
     for child in node.children:
         if not isinstance(child, _Node):
             continue
-        if child.tag in {"ix:nonfraction", "ix:nonnumeric", "nonfraction", "nonnumeric"}:
+        if child.tag in {
+            "ix:nonfraction",
+            "ix:nonnumeric",
+            "nonfraction",
+            "nonnumeric",
+        }:
             facts.append(
                 InlineFact(
                     name=child.attrs.get("name"),
@@ -411,7 +428,9 @@ def _sales_change_row(row: list[_RawCell], *, expected_values: int) -> TableRow 
         if not text or consumed == 0:
             index += 1
             continue
-        facts = tuple(fact for cell in tokens[index : index + consumed] for fact in cell.facts)
+        facts = tuple(
+            fact for cell in tokens[index : index + consumed] for fact in cell.facts
+        )
         values.append(TableCell(text=text, facts=facts))
         index += consumed
 
@@ -479,7 +498,9 @@ def _normalize_simple_table(
             if not text:
                 text = _normalize_value_cell(tokens[index].text)
                 consumed = 1
-            facts = tuple(fact for cell in tokens[index : index + consumed] for fact in cell.facts)
+            facts = tuple(
+                fact for cell in tokens[index : index + consumed] for fact in cell.facts
+            )
             values.append(TableCell(text=text, facts=facts))
             index += consumed
         if len(values) == expected_values:
@@ -516,9 +537,7 @@ def _to_markdown(
     header = "| " + " | ".join(column.label for column in columns) + " |"
     separator = "| " + " | ".join("---" for _ in columns) + " |"
     body = [
-        "| "
-        + " | ".join([row.label, *[cell.text for cell in row.cells]])
-        + " |"
+        "| " + " | ".join([row.label, *[cell.text for cell in row.cells]]) + " |"
         for row in rows
     ]
     lines = [header, separator, *body]

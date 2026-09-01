@@ -33,5 +33,9 @@ def test_chunk_document_hierarchical() -> None:
     assert all(record.chunk_text.strip() for record in records)
     assert all(record.token_count <= EMBEDDING_MAX_TOKENS for record in records)
     assert records[0].metadata["ticker"] == "TEST"
-    sections = {record.metadata.get("section") for record in records if record.metadata.get("section")}
+    sections = {
+        record.metadata.get("section")
+        for record in records
+        if record.metadata.get("section")
+    }
     assert "Item 1. Business" in sections or "Item 1A. Risk Factors" in sections

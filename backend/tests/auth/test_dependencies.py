@@ -16,7 +16,9 @@ def test_me_requires_authorization(client: TestClient) -> None:
     assert response.status_code == 401
 
 
-def test_me_rejects_invalid_token(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_me_rejects_invalid_token(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     get_user = AsyncMock(side_effect=AuthApiError("invalid", 401, None))
     monkeypatch.setattr(
         auth_dependencies,
@@ -30,7 +32,9 @@ def test_me_rejects_invalid_token(client: TestClient, monkeypatch: pytest.Monkey
     assert response.json()["detail"] == "Invalid or expired token"
 
 
-def test_me_returns_current_user(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_me_returns_current_user(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
     user_id = uuid.UUID("00000000-0000-0000-0000-000000000001")
     get_user = AsyncMock(
         return_value=SimpleNamespace(

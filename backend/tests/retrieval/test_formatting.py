@@ -50,7 +50,9 @@ def test_excerpt_is_truncated() -> None:
     assert "AAPL 10-K FY2023" in output
 
 
-def test_total_output_stays_within_character_cap(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_total_output_stays_within_character_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr("app.retrieval.formatting.MAX_AGENT_OUTPUT_CHARS", 80)
     output = format_passages_for_agent([_passage(text="Services revenue increased.")])
     assert len(output) == 80

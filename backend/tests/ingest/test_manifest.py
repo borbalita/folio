@@ -15,9 +15,7 @@ def test_markdown_path_from_local_path() -> None:
     path = markdown_path_from_local_path(
         "2021/aapl_10-k_2021-10-29_0000320193-21-000105.htm",
     )
-    assert path == (
-        MARKDOWNS_DIR / "2021/aapl_10-k_2021-10-29_0000320193-21-000105.md"
-    )
+    assert path == (MARKDOWNS_DIR / "2021/aapl_10-k_2021-10-29_0000320193-21-000105.md")
 
 
 def test_filing_record_company_and_fiscal_year() -> None:

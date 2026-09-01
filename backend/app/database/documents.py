@@ -128,10 +128,12 @@ def get_chunks_by_ids(
         return {}
 
     rows = session.execute(
-        select(DocumentChunk, SourceDocument).join(
+        select(DocumentChunk, SourceDocument)
+        .join(
             SourceDocument,
             SourceDocument.id == DocumentChunk.document_id,
-        ).where(DocumentChunk.id.in_(chunk_ids)),
+        )
+        .where(DocumentChunk.id.in_(chunk_ids)),
     ).all()
     return {chunk.id: (chunk, document) for chunk, document in rows}
 

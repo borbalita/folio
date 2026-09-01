@@ -36,7 +36,9 @@ class DocumentChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     chunk_text: Mapped[str] = mapped_column(Text, nullable=False)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, default=dict)
+    metadata_: Mapped[dict] = mapped_column(
+        "metadata", JSONB, nullable=False, default=dict
+    )
     embedding: Mapped[list[float]] = mapped_column(
         Vector(settings.openai_embedding_dimensions), nullable=False
     )
@@ -50,9 +52,13 @@ class DocumentChunk(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("document_id", "chunk_index", name="uq_document_chunks_document_index"),
+        UniqueConstraint(
+            "document_id", "chunk_index", name="uq_document_chunks_document_index"
+        ),
         Index("ix_document_chunks_document_id", "document_id"),
-        Index("ix_document_chunks_search_vector", "search_vector", postgresql_using="gin"),
+        Index(
+            "ix_document_chunks_search_vector", "search_vector", postgresql_using="gin"
+        ),
         Index(
             "ix_document_chunks_embedding_hnsw",
             "embedding",

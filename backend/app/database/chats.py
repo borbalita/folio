@@ -81,7 +81,9 @@ def get_thread_for_user(thread_id: uuid.UUID, user_id: uuid.UUID) -> dict[str, A
         .execute()
     )
     if not result.data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found"
+        )
 
     row = result.data[0]
     if row["user_id"] != str(user_id):
@@ -148,7 +150,9 @@ def append_messages(
 
 
 def update_thread_title(thread_id: uuid.UUID, title: str) -> None:
-    get_admin_client().table("chat_threads").update({"title": title}).eq("id", str(thread_id)).execute()
+    get_admin_client().table("chat_threads").update({"title": title}).eq(
+        "id", str(thread_id)
+    ).execute()
 
 
 def insert_citations(

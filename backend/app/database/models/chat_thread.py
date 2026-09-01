@@ -28,4 +28,6 @@ class ChatThread(Base):
         nullable=False,
     )
 
-    __table_args__ = (Index("ix_chat_threads_user_id_updated_at", "user_id", "updated_at"),)
+    __table_args__ = (
+        Index("ix_chat_threads_user_id_updated_at", "user_id", "updated_at"),
+    )

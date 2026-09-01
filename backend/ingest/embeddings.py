@@ -16,7 +16,9 @@ def _client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
 
 
-def embed_texts(texts: list[str], *, batch_size: int = EMBED_BATCH_SIZE) -> list[list[float]]:
+def embed_texts(
+    texts: list[str], *, batch_size: int = EMBED_BATCH_SIZE
+) -> list[list[float]]:
     if not texts:
         return []
 

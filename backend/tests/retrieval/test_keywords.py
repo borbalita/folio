@@ -17,7 +17,10 @@ def _patch_parse(monkeypatch, parsed: object) -> MagicMock:
 
 def test_extract_fts_keywords_joins_terms(monkeypatch) -> None:
     _patch_parse(monkeypatch, FtsKeywords(keywords=["Apple", "iPhone", "Services"]))
-    assert extract_fts_keywords("How did Apple's iPhone Services mix change?") == "Apple iPhone Services"
+    assert (
+        extract_fts_keywords("How did Apple's iPhone Services mix change?")
+        == "Apple iPhone Services"
+    )
 
 
 def test_extract_fts_keywords_falls_back_when_unparsed(monkeypatch) -> None:

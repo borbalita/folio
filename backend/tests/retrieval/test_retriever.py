@@ -44,7 +44,9 @@ def _patch_search(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_retriever_fuses_and_attaches_neighbors(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_retriever_fuses_and_attaches_neighbors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _patch_search(monkeypatch)
     document = _document()
     chunks = {
@@ -141,9 +143,14 @@ def test_surrounding_passages(monkeypatch: pytest.MonkeyPatch) -> None:
     assert passages[0].text == "Neighbor C"
 
 
-def test_retriever_passes_extracted_keywords_to_fts(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_retriever_passes_extracted_keywords_to_fts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     question = "Across Apple's 10-Ks, how did the revenue mix change?"
-    monkeypatch.setattr("app.retrieval.retriever.embed_query", lambda query: [0.1] if query == question else None)
+    monkeypatch.setattr(
+        "app.retrieval.retriever.embed_query",
+        lambda query: [0.1] if query == question else None,
+    )
     monkeypatch.setattr(
         "app.retrieval.retriever.extract_fts_keywords",
         lambda _query: "apple revenue mix",
@@ -159,4 +166,3 @@ def test_retriever_passes_extracted_keywords_to_fts(monkeypatch: pytest.MonkeyPa
 
     fts.assert_called_once()
     assert fts.call_args.args[1] == "apple revenue mix"
-

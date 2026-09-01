@@ -13,7 +13,11 @@ from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModel
 
 from app.assistant.agent import LOOKING_THROUGH_FILINGS, run_agent
 from app.assistant.deps import DocumentAgentDeps
-from app.assistant.grounding import GroundingError, grounding_user_answer, validate_grounded_answer
+from app.assistant.grounding import (
+    GroundingError,
+    grounding_user_answer,
+    validate_grounded_answer,
+)
 from app.assistant.outputs import AgentTurnResult, GroundedAnswer
 from app.auth.dependencies import CurrentUser
 from app.chat.messages import (
@@ -41,7 +45,9 @@ ASSISTANT_UNAVAILABLE = "The assistant couldn't complete this answer. Try again.
 UNEXPECTED_TURN_ERROR = "Something went wrong. Try again."
 
 
-def _citation_stream_payloads(answer: GroundedAnswer, deps: DocumentAgentDeps) -> list[dict[str, Any]]:
+def _citation_stream_payloads(
+    answer: GroundedAnswer, deps: DocumentAgentDeps
+) -> list[dict[str, Any]]:
     payloads: list[dict[str, Any]] = []
     for citation in answer.citations:
         payload: dict[str, Any] = {
@@ -112,7 +118,9 @@ async def run_turn(
         retriever=DocumentRetriever(),
         status_queue=status_queue,
     )
-    agent_task = asyncio.create_task(_run_agent_then_close_queue(user_text, deps, status_queue))
+    agent_task = asyncio.create_task(
+        _run_agent_then_close_queue(user_text, deps, status_queue)
+    )
 
     try:
         while True:
@@ -197,7 +205,10 @@ async def _persist_turn(
                     answer_text,
                     usage=usage,
                     citations=(
-                        [{"type": "data-citation", "data": part} for part in citation_parts]
+                        [
+                            {"type": "data-citation", "data": part}
+                            for part in citation_parts
+                        ]
                         if citation_parts
                         else None
                     ),
@@ -220,7 +231,9 @@ async def _title_if_new(
     if thread.get("title") != DEFAULT_THREAD_TITLE:
         return
     try:
-        title = await asyncio.to_thread(generate_thread_title, user_text, assistant_text)
+        title = await asyncio.to_thread(
+            generate_thread_title, user_text, assistant_text
+        )
         await asyncio.to_thread(chats.update_thread_title, thread_id, title)
     except Exception:
         log.exception("thread_title_failed", thread_id=str(thread_id))

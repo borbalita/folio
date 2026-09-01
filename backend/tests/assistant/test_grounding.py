@@ -29,7 +29,11 @@ CODES = (
 def _answer(**overrides: object) -> GroundedAnswer:
     values: dict[str, object] = {
         "answer": "Services revenue increased.",
-        "citations": [Citation(chunk_id=A, citation_index=1, excerpt="Services revenue increased.")],
+        "citations": [
+            Citation(
+                chunk_id=A, citation_index=1, excerpt="Services revenue increased."
+            )
+        ],
         "insufficient_evidence": False,
     }
     values.update(overrides)
@@ -84,7 +88,9 @@ def test_duplicate_citation_index_rejected() -> None:
 
 def test_grounding_user_answers_are_not_validator_text() -> None:
     for code in CODES:
-        text = grounding_user_answer(GroundingError(code, "Answers must cite at least one retrieved passage."))
+        text = grounding_user_answer(
+            GroundingError(code, "Answers must cite at least one retrieved passage.")
+        )
         assert text.strip()
         assert "retrieved passage" not in text
         assert "citation_index" not in text

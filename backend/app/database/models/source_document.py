@@ -19,7 +19,9 @@ class SourceDocument(Base):
     filing_type: Mapped[str] = mapped_column(String(16), nullable=False)
     filing_date: Mapped[date] = mapped_column(Date, nullable=False)
     fiscal_year: Mapped[int] = mapped_column(Integer, nullable=False)
-    accession_number: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    accession_number: Mapped[str] = mapped_column(
+        String(64), nullable=False, unique=True
+    )
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     markdown_content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

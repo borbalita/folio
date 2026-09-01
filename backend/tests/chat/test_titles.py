@@ -36,9 +36,9 @@ def test_title_from_question_empty_is_default() -> None:
 
 def test_generate_thread_title_uses_parsed_title(monkeypatch) -> None:
     _patch_parse(monkeypatch, ThreadTitle(title="AAPL Services FY2023"))
-    assert generate_thread_title("How did Services do?", "Services revenue increased.") == (
-        "AAPL Services FY2023"
-    )
+    assert generate_thread_title(
+        "How did Services do?", "Services revenue increased."
+    ) == ("AAPL Services FY2023")
 
 
 def test_generate_thread_title_strips_quotes(monkeypatch) -> None:

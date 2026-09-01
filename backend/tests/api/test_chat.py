@@ -149,13 +149,18 @@ def test_chat_stream_agent_failure_is_sse_error(
     append = _patch_stream_deps(monkeypatch)
 
     async def boom(prompt: str, deps: object) -> None:
-        raise ModelHTTPError(status_code=429, model_name="gpt-5.5", body={"message": "no credits"})
+        raise ModelHTTPError(
+            status_code=429, model_name="gpt-5.5", body={"message": "no credits"}
+        )
 
     monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
 
     response = authed_client.post(
         "/chat/stream",
-        json={"threadId": str(TEST_THREAD_ID), "messages": [{"role": "user", "content": "hi"}]},
+        json={
+            "threadId": str(TEST_THREAD_ID),
+            "messages": [{"role": "user", "content": "hi"}],
+        },
     )
 
     assert response.status_code == 200
@@ -178,7 +183,10 @@ def test_chat_stream_unexpected_is_sse_error(
 
     response = authed_client.post(
         "/chat/stream",
-        json={"threadId": str(TEST_THREAD_ID), "messages": [{"role": "user", "content": "hi"}]},
+        json={
+            "threadId": str(TEST_THREAD_ID),
+            "messages": [{"role": "user", "content": "hi"}],
+        },
     )
 
     assert response.status_code == 200

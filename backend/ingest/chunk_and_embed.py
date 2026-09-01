@@ -47,10 +47,20 @@ def ingest_document(
 ) -> int:
     if force and not dry_run:
         documents.delete_chunks(session, document.id)
-        log.info("chunks_deleted_for_reingest", accession_number=document.accession_number)
+        log.info(
+            "chunks_deleted_for_reingest", accession_number=document.accession_number
+        )
 
-    if not dry_run and not force and documents.document_has_chunks(session, document.id):
-        log.info("filing_skipped", accession_number=document.accession_number, reason="has_chunks")
+    if (
+        not dry_run
+        and not force
+        and documents.document_has_chunks(session, document.id)
+    ):
+        log.info(
+            "filing_skipped",
+            accession_number=document.accession_number,
+            reason="has_chunks",
+        )
         return 0
 
     if not html_path.is_file():
@@ -111,7 +121,9 @@ def ingest_accessions(
     skip_existing: bool = True,
     force: bool = False,
 ) -> IngestCounts:
-    filings_by_accession = {filing.accession_number: filing for filing in load_manifest()}
+    filings_by_accession = {
+        filing.accession_number: filing for filing in load_manifest()
+    }
     counts = IngestCounts()
 
     with documents.session_scope() as session:
@@ -134,7 +146,9 @@ def ingest_accessions(
                 and skip_existing
                 and documents.document_has_chunks(session, document.id)
             ):
-                log.info("filing_skipped", accession_number=accession, reason="has_chunks")
+                log.info(
+                    "filing_skipped", accession_number=accession, reason="has_chunks"
+                )
                 counts = IngestCounts(
                     processed=counts.processed,
                     skipped=counts.skipped + 1,
@@ -186,7 +200,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument("--accession", help="Process one filing by accession number")
-    target.add_argument("--all", action="store_true", help="Process all manifest filings")
+    target.add_argument(
+        "--all", action="store_true", help="Process all manifest filings"
+    )
     parser.add_argument(
         "--max-chunks",
         type=int,

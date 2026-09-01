@@ -12,6 +12,7 @@ repos:
     hooks:
       - id: ruff
         files: ^backend/
+        args: ["--config", "backend/pyproject.toml"]
 
   - repo: local
     hooks:

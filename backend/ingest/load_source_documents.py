@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import argparse
+from pathlib import Path
 
 import structlog
 
@@ -49,10 +48,14 @@ def load_source_documents(
             documents.upsert_source_document(session, filing, markdown)
             if was_existing:
                 counts["updated"] += 1
-                log.info("source_document_updated", accession_number=filing.accession_number)
+                log.info(
+                    "source_document_updated", accession_number=filing.accession_number
+                )
             else:
                 counts["inserted"] += 1
-                log.info("source_document_inserted", accession_number=filing.accession_number)
+                log.info(
+                    "source_document_inserted", accession_number=filing.accession_number
+                )
 
         session.commit()
 
