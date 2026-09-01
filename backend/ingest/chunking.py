@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -24,6 +23,7 @@ from docling_core.transforms.serializer.markdown import (
 )
 
 from app.config import settings
+from app.database.documents import ChunkRecord
 from ingest.sec_tables import ExtractedTable, TableRow, extract_sec_tables
 
 CHUNK_MAX_TOKENS = 512
@@ -55,14 +55,6 @@ class MarkdownTableSerializerProvider(ChunkingSerializerProvider):
             table_serializer=MarkdownTableSerializer(),
             params=MarkdownParams(compact_tables=True),
         )
-
-
-@dataclass(frozen=True, slots=True)
-class ChunkRecord:
-    chunk_index: int
-    chunk_text: str
-    token_count: int
-    metadata: dict[str, Any]
 
 
 @lru_cache(maxsize=1)

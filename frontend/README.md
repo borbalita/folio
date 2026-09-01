@@ -1,3 +1,5 @@
+Typecheck and lint: `pnpm tsc --noEmit` and `pnpm lint`. CI and git hooks: [root README](../README.md#ci-and-git-hooks).
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

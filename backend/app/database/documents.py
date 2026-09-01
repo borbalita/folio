@@ -3,14 +3,41 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path
+from typing import Any
 
 from sqlalchemy import and_, delete, func, select
 from sqlalchemy.orm import Session
 
 from app.database.engine import get_session_factory
 from app.database.models import DocumentChunk, MessageCitation, SourceDocument
-from ingest.chunking import ChunkRecord
-from ingest.manifest import FilingRecord
+
+
+@dataclass(frozen=True, slots=True)
+class FilingRecord:
+    ticker: str
+    form: str
+    filing_date: date
+    report_date: date
+    accession_number: str
+    source_url: str
+    html_path: Path
+    markdown_path: Path
+    company_name: str
+
+    @property
+    def fiscal_year(self) -> int:
+        return self.report_date.year
+
+
+@dataclass(frozen=True, slots=True)
+class ChunkRecord:
+    chunk_index: int
+    chunk_text: str
+    token_count: int
+    metadata: dict[str, Any]
 
 
 def document_by_accession(

@@ -1,0 +1,35 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: ruff
+        files: ^backend/
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (fast)
+        language: system
+        pass_filenames: false
+        files: ^backend/
+        entry: bash -c 'cd backend && uv run pytest -m "not integration"'
+      - id: frontend-tsc
+        name: frontend tsc
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        entry: bash -c 'cd frontend && pnpm exec tsc --noEmit'
+      - id: frontend-lint
+        name: frontend lint
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        entry: bash -c 'cd frontend && pnpm lint'

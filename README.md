@@ -92,6 +92,20 @@ pnpm dev
 
 Sign in at http://localhost:5173 (email auth). Fast tests: `cd backend && uv run pytest -m "not integration"`. Live agent smoke (OpenAI + Postgres, does not persist chats): `cd backend && uv run python -m scripts.smoke_agent`.
 
+## CI and git hooks
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on pull requests and pushes to `main`: backend `ruff` + `pytest -m "not integration"`, frontend `tsc` + `eslint`.
+
+Install pre-commit after a backend `uv sync` (the hook CLI is a backend dev dependency):
+
+```bash
+cd backend
+uv sync
+uv run pre-commit install
+```
+
+Hooks run on `git commit` (ruff, fast pytest, frontend tsc/lint). Same checks as CI.
+
 ## Sample SEC data
 
 Use the standalone downloader to fetch a small local 10-K sample from SEC EDGAR.

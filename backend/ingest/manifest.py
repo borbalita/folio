@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+
+from app.database.documents import FilingRecord
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DOWNLOADS_DIR = REPO_ROOT / "data" / "downloads"
@@ -19,26 +20,6 @@ COMPANY_NAMES: dict[str, str] = {
     "AMZN": "Amazon.com, Inc.",
     "GOOGL": "Alphabet Inc.",
 }
-
-
-@dataclass(frozen=True, slots=True)
-class FilingRecord:
-    ticker: str
-    form: str
-    filing_date: date
-    report_date: date
-    accession_number: str
-    source_url: str
-    html_path: Path
-    markdown_path: Path
-
-    @property
-    def company_name(self) -> str:
-        return COMPANY_NAMES.get(self.ticker, self.ticker)
-
-    @property
-    def fiscal_year(self) -> int:
-        return self.report_date.year
 
 
 def html_path_to_markdown_path(html_path: Path) -> Path:
@@ -56,9 +37,10 @@ def load_manifest(manifest_path: Path = DEFAULT_MANIFEST_PATH) -> list[FilingRec
 
     for item in payload["filings"]:
         html_path = DOWNLOADS_DIR / item["local_path"]
+        ticker = item["ticker"]
         records.append(
             FilingRecord(
-                ticker=item["ticker"],
+                ticker=ticker,
                 form=item["form"],
                 filing_date=date.fromisoformat(item["filing_date"]),
                 report_date=date.fromisoformat(item["report_date"]),
@@ -66,6 +48,7 @@ def load_manifest(manifest_path: Path = DEFAULT_MANIFEST_PATH) -> list[FilingRec
                 source_url=item["source_url"],
                 html_path=html_path,
                 markdown_path=markdown_path_from_local_path(item["local_path"]),
+                company_name=COMPANY_NAMES.get(ticker, ticker),
             ),
         )
 
