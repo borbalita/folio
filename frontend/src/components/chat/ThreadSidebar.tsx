@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 
+import { ChatIcon } from '@/components/chat/ChatIcon'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { Thread } from '@/lib/api'
@@ -27,7 +28,8 @@ export function ThreadSidebar({
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex flex-col gap-2 border-b p-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ChatIcon className="size-8" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">Document Copilot</p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>

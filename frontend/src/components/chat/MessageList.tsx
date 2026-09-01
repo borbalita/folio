@@ -1,5 +1,6 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantMarkdown } from '@/components/chat/AssistantMarkdown'
+import { ChatIcon } from '@/components/chat/ChatIcon'
 import { CitationChips } from '@/components/chat/CitationChips'
 import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
 
@@ -33,8 +34,9 @@ export function MessageList({ messages, selected, onSelect }: MessageListProps) 
           return (
             <div
               key={message.id}
-              className={isUser ? 'flex justify-end' : 'flex justify-start'}
+              className={isUser ? 'flex justify-end' : 'flex items-start justify-start gap-2'}
             >
+              {isUser ? null : <ChatIcon className="size-7" />}
               <div
                 className={
                   isUser
@@ -46,7 +48,17 @@ export function MessageList({ messages, selected, onSelect }: MessageListProps) 
                   <p className="whitespace-pre-wrap">{body}</p>
                 ) : (
                   <>
-                    <AssistantMarkdown>{body}</AssistantMarkdown>
+                    <AssistantMarkdown
+                      citationIndexes={citations.map((citation) => citation.citationIndex)}
+                      selectedIndex={
+                        selected?.messageId === message.id ? selected.citationIndex : null
+                      }
+                      onSelect={(citationIndex) => {
+                        onSelect(message.id, citationIndex)
+                      }}
+                    >
+                      {body}
+                    </AssistantMarkdown>
                     <CitationChips
                       citations={citations}
                       selectedIndex={
