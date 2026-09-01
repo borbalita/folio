@@ -1,0 +1,30 @@
+{
+	auto_https off
+}
+
+:{$PORT}
+
+handle /health* {
+	reverse_proxy {$BACKEND_UPSTREAM}
+}
+
+handle /me* {
+	reverse_proxy {$BACKEND_UPSTREAM}
+}
+
+handle /threads* {
+	reverse_proxy {$BACKEND_UPSTREAM}
+}
+
+handle /chat/stream* {
+	reverse_proxy {$BACKEND_UPSTREAM} {
+		flush_interval -1
+	}
+}
+
+handle {
+	root * dist
+	encode gzip
+	try_files {path} /index.html
+	file_server
+}
