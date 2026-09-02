@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     retrieval_rrf_k: int = Field(default=60, gt=0)
     retrieval_neighbor_radius: int = Field(default=1, ge=0)
     retrieval_fts_config: str = "english"
+    environment: Literal["local", "production"] = "local"
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str | None = None
 
     @field_validator("allowed_origins", mode="before")
     @classmethod

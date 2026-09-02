@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 import structlog
+from langfuse import get_client, propagate_attributes
 from openai import APIError
 from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
 
@@ -111,76 +112,114 @@ async def run_turn(
     yield format_status_part(LOOKING_THROUGH_FILINGS)
 
     user_text = extract_latest_user_text(messages)
-    status_queue: asyncio.Queue[str | None] = asyncio.Queue()
-    deps = DocumentAgentDeps(
-        user_id=user.id,
-        thread_id=thread_id,
-        retriever=DocumentRetriever(),
-        status_queue=status_queue,
-    )
-    agent_task = asyncio.create_task(
-        _run_agent_then_close_queue(user_text, deps, status_queue)
-    )
-
-    try:
-        while True:
-            label = await status_queue.get()
-            if label is None:
-                break
-            yield format_status_part(label)
-        turn = await agent_task
-    except AGENT_FAILURES:
-        log.exception("agent_run_failed", thread_id=str(thread_id))
-        yield format_error(ASSISTANT_UNAVAILABLE)
-        yield format_done()
-        return
-    except Exception:
-        log.exception("turn_failed", thread_id=str(thread_id))
-        yield format_error(UNEXPECTED_TURN_ERROR)
-        yield format_done()
-        return
-
-    try:
-        validate_grounded_answer(turn.answer, deps.seen_ids)
-    except GroundingError as exc:
-        log.warning(
-            "grounding_failed",
-            code=exc.code,
-            error=str(exc),
-            thread_id=str(thread_id),
+    langfuse = get_client()
+    with (
+        langfuse.start_as_current_observation(
+            as_type="span",
+            name="generate-chat-response",
+            input=user_text,
+        ) as turn_span,
+        propagate_attributes(
+            user_id=str(user.id),
+            session_id=str(thread_id),
+            trace_name="generate-chat-response",
+            tags=["chat"],
+        ),
+    ):
+        status_queue: asyncio.Queue[str | None] = asyncio.Queue()
+        deps = DocumentAgentDeps(
+            user_id=user.id,
+            thread_id=thread_id,
+            retriever=DocumentRetriever(),
+            status_queue=status_queue,
         )
-        canned = grounding_user_answer(exc)
-        async for frame in iter_grounded_stream(canned, [], include_envelope=False):
+        agent_task = asyncio.create_task(
+            _run_agent_then_close_queue(user_text, deps, status_queue)
+        )
+
+        try:
+            while True:
+                label = await status_queue.get()
+                if label is None:
+                    break
+                yield format_status_part(label)
+            turn = await agent_task
+        except AGENT_FAILURES:
+            log.exception("agent_run_failed", thread_id=str(thread_id))
+            turn_span.update(
+                output=ASSISTANT_UNAVAILABLE,
+                level="ERROR",
+                status_message="agent_run_failed",
+            )
+            yield format_error(ASSISTANT_UNAVAILABLE)
+            yield format_done()
+            return
+        except Exception:
+            log.exception("turn_failed", thread_id=str(thread_id))
+            turn_span.update(
+                output=UNEXPECTED_TURN_ERROR,
+                level="ERROR",
+                status_message="turn_failed",
+            )
+            yield format_error(UNEXPECTED_TURN_ERROR)
+            yield format_done()
+            return
+
+        try:
+            validate_grounded_answer(turn.answer, deps.seen_ids)
+        except GroundingError as exc:
+            log.warning(
+                "grounding_failed",
+                code=exc.code,
+                error=str(exc),
+                thread_id=str(thread_id),
+            )
+            canned = grounding_user_answer(exc)
+            turn_span.update(
+                output=canned,
+                level="WARNING",
+                status_message=exc.code,
+                metadata={"grounding_failure_code": exc.code},
+            )
+            async for frame in iter_grounded_stream(canned, [], include_envelope=False):
+                yield frame
+            await _persist_turn(
+                thread,
+                thread_id,
+                messages,
+                user_text,
+                canned,
+                citation_parts=[],
+                citation_rows=None,
+                usage=None,
+            )
+            return
+
+        citation_parts = _citation_stream_payloads(turn.answer, deps)
+        turn_span.update(
+            output=turn.answer.answer,
+            metadata={
+                "citation_count": len(turn.answer.citations),
+                "insufficient_evidence": turn.answer.insufficient_evidence,
+                "retrieved_chunk_count": len(deps.seen_ids),
+            },
+        )
+        async for frame in iter_grounded_stream(
+            turn.answer.answer,
+            citation_parts,
+            include_envelope=False,
+        ):
             yield frame
         await _persist_turn(
             thread,
             thread_id,
             messages,
             user_text,
-            canned,
-            citation_parts=[],
-            citation_rows=None,
-            usage=None,
+            turn.answer.answer,
+            citation_parts=citation_parts,
+            citation_rows=_citation_rows(turn.answer),
+            usage=turn.usage,
         )
-        return
-
-    citation_parts = _citation_stream_payloads(turn.answer, deps)
-    async for frame in iter_grounded_stream(
-        turn.answer.answer,
-        citation_parts,
-        include_envelope=False,
-    ):
-        yield frame
-    await _persist_turn(
-        thread,
-        thread_id,
-        messages,
-        user_text,
-        turn.answer.answer,
-        citation_parts=citation_parts,
-        citation_rows=_citation_rows(turn.answer),
-        usage=turn.usage,
-    )
 
 
 async def _persist_turn(
