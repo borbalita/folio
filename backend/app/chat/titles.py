@@ -5,8 +5,12 @@ from __future__ import annotations
 from functools import lru_cache
 
 import structlog
-from openai import APIError, OpenAI
+from openai import APIError
 from pydantic import BaseModel, Field
+from pydantic_ai import Agent
+from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 
 from app.config import settings
 
@@ -28,8 +32,16 @@ class ThreadTitle(BaseModel):
 
 
 @lru_cache(maxsize=1)
-def _client() -> OpenAI:
-    return OpenAI(api_key=settings.openai_api_key)
+def _title_agent() -> Agent[None, ThreadTitle]:
+    return Agent(
+        OpenAIChatModel(
+            settings.openai_chat_model,
+            provider=OpenAIProvider(api_key=settings.openai_api_key),
+        ),
+        output_type=ThreadTitle,
+        instructions=_SYSTEM_PROMPT,
+        name="thread-title",
+    )
 
 
 def title_from_question(question: str) -> str:
@@ -56,22 +68,9 @@ def generate_thread_title(question: str, answer: str) -> str:
     fallback = title_from_question(question)
     preview = " ".join(answer.split())[:ANSWER_PREVIEW_CHARS]
     try:
-        completion = _client().chat.completions.parse(
-            model=settings.openai_chat_model,
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {
-                    "role": "user",
-                    "content": f"Question: {question}\nAnswer: {preview}",
-                },
-            ],
-            response_format=ThreadTitle,
-        )
-    except APIError as exc:
+        result = _title_agent().run_sync(f"Question: {question}\nAnswer: {preview}")
+    except (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIError) as exc:
         log.warning("thread_title_llm_failed", error=str(exc))
         return fallback
 
-    parsed = completion.choices[0].message.parsed
-    if parsed is None or not parsed.title.strip():
-        return fallback
-    return _normalize_title(parsed.title, fallback)
+    return _normalize_title(result.output.title, fallback)

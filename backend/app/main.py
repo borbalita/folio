@@ -15,7 +15,7 @@ from app.api.chat import router as chat_router
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.config import settings
 from app.logging import configure_logging
-from app.observability import configure_tracing
+from app.observability import configure_tracing, shutdown_tracing
 
 configure_logging()
 configure_tracing()
@@ -49,6 +49,11 @@ app.include_router(chat_router)
 @app.on_event("startup")
 async def on_startup() -> None:
     log.info("application_started", title=app.title)
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    shutdown_tracing()
 
 
 @app.get("/health")
