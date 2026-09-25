@@ -6,7 +6,7 @@ An internal AI chatbot that lets analysts query a corpus of documents in plain E
 
 **Driftwood Capital** — fictional independent investment research firm. Their analysts spend half their week reading 10-Ks and 10-Qs before they can produce any original analysis. Document Copilot eats that intake work so they can skip straight to insight.
 
-Full brief: [docs/client-brief.md](docs/client-brief.md)
+Full brief: [docs/01-document-copilot/client-brief.md](docs/01-document-copilot/client-brief.md)
 
 ## Stack
 
@@ -28,8 +28,7 @@ document-copilot/
 ├── AGENTS.md           # agent instructions (read first)
 ├── README.md           # this file
 ├── data/               # local corpus + download script (payloads gitignored)
-├── docs/
-│   └── client-brief.md # the client one-pager
+├── docs/               # numbered by when each folder started; see docs/README.md
 ├── backend/            # FastAPI service
 └── frontend/           # React SPA (Vite)
 ```
@@ -45,15 +44,15 @@ Install these before setting up `backend/` or `frontend/`:
 | [Node.js](https://nodejs.org/) | 20+ (LTS) | Frontend toolchain | nodejs.org or `nvm install --lts` |
 | [pnpm](https://pnpm.io/installation) | latest | Frontend package manager | `corepack enable && corepack prepare pnpm@latest --activate` |
 
-You also need accounts/keys for external services once the app is wired up. Start with [docs/guides/supabase-setup.md](docs/guides/supabase-setup.md) (account + project), then create an [OpenAI API key](https://platform.openai.com/api-keys) when the LLM layer is wired up.
+You also need accounts/keys for external services once the app is wired up. Start with [docs/00-guides/supabase-setup.md](docs/00-guides/supabase-setup.md) (account + project), then create an [OpenAI API key](https://platform.openai.com/api-keys) when the LLM layer is wired up.
 
 ## Running locally
 
 Setup guides (credentials, schema, why this stack):
 
-- [Supabase](docs/guides/supabase-setup.md) — account, hosted project (dashboard or CLI)
-- [Backend](docs/guides/backend-setup.md)
-- [Frontend](docs/guides/frontend-setup.md)
+- [Supabase](docs/00-guides/supabase-setup.md) — account, hosted project (dashboard or CLI)
+- [Backend](docs/00-guides/backend-setup.md)
+- [Frontend](docs/00-guides/frontend-setup.md)
 
 Copy env templates (do not commit filled files):
 

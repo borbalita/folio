@@ -22,7 +22,7 @@ document-copilot/
 ├── AGENTS.md           # this file
 ├── README.md
 ├── data/               # local corpus + download script (payloads gitignored)
-├── docs/               # specs, briefs, design notes
+├── docs/               # numbered folders; map in docs/README.md
 ├── backend/            # FastAPI service (see backend/AGENTS.md)
 └── frontend/           # React SPA (see frontend/AGENTS.md)
 ```

@@ -4,7 +4,7 @@ Companion to [todo.md](todo.md), same format. Work top to bottom; each step list
 
 **Decision:** [Langfuse](https://langfuse.com) Cloud, Hobby (free) tier. OpenTelemetry-native, so instrumentation is vendor-neutral — swapping the export target later (self-hosted Langfuse, Phoenix, Logfire) is a config change, not a rewrite. `pydantic-evals` (already in the lockfile via `pydantic-ai`'s `evals` extra) is the offline eval runner; Langfuse is where traces, production metrics, and eval scores are viewed.
 
-References: [client-brief.md](client-brief.md) (trust requirements + gold questions), [architecture.md](architecture.md).
+References: [client-brief.md](../01-document-copilot/client-brief.md) (trust requirements + gold questions), [architecture.md](../01-document-copilot/architecture.md).
 
 ---
 
@@ -122,7 +122,7 @@ generate-chat-response (SPAN, root)
 
 ## Step 8 — Docs
 
-- [ ] Add a short "Observability" section to [README.md](../README.md) — env vars required, how to view traces, how to run evals
+- [ ] Add a short "Observability" section to [README.md](../../README.md) — env vars required, how to view traces, how to run evals
 - [ ] Update `AGENTS.md` / `backend/AGENTS.md` if the eval-run command becomes part of the standard pre-merge checklist
 
 **Verify:** a fresh clone + `.env` fill-in gets someone from zero to seeing their first trace in Langfuse, following only the README.

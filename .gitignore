@@ -43,5 +43,5 @@ Thumbs.db
 *.log
 logs/
 
-# Todo
-docs/todo.md
+# Working build list; lives next to the email spec and is not committed.
+docs/03-email/todo.md

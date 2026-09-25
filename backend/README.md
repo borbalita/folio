@@ -42,4 +42,4 @@ uv run pytest -m "not integration"
 
 Git hooks and GitHub Actions: [root README](../README.md#ci-and-git-hooks). Enable hooks with `uv run pre-commit install` from `backend/` after `uv sync`.
 
-More detail: [docs/guides/backend-setup.md](../docs/guides/backend-setup.md)
+More detail: [docs/00-guides/backend-setup.md](../docs/00-guides/backend-setup.md)
