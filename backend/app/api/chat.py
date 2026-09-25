@@ -6,11 +6,11 @@ import asyncio
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.chat.messages import CreateThreadRequest, StreamChatRequest
+from app.chat.messages import AgentName, CreateThreadRequest, StreamChatRequest
 from app.chat.orchestrator import run_turn
 from app.database import chats
 
@@ -23,16 +23,18 @@ async def create_thread(
     body: CreateThreadRequest | None = None,
 ) -> dict[str, Any]:
     title = body.title if body else None
+    agent = body.agent if body else "documents"
     return await asyncio.to_thread(
-        chats.create_thread_for_user, user.id, user.email, title
+        chats.create_thread_for_user, user.id, user.email, title, agent
     )
 
 
 @router.get("/threads")
 async def list_threads(
     user: Annotated[CurrentUser, Depends(get_current_user)],
+    agent: AgentName = Query(default="documents"),
 ) -> list[dict[str, Any]]:
-    return await asyncio.to_thread(chats.list_threads, user.id)
+    return await asyncio.to_thread(chats.list_threads, user.id, agent)
 
 
 @router.get("/threads/{thread_id}/messages")

@@ -25,6 +25,7 @@ def _thread_row_to_api(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": row["id"],
         "title": row["title"],
+        "agent": row["agent"],
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }
@@ -41,7 +42,10 @@ def _message_row_to_api(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def create_thread_for_user(
-    user_id: uuid.UUID, email: str, title: str | None = None
+    user_id: uuid.UUID,
+    email: str,
+    title: str | None = None,
+    agent: str = "documents",
 ) -> dict[str, Any]:
     ensure_user(user_id, email)
     result = (
@@ -52,6 +56,9 @@ def create_thread_for_user(
                 "id": str(uuid.uuid4()),
                 "user_id": str(user_id),
                 "title": title or DEFAULT_THREAD_TITLE,
+                "agent": agent,
+                "created_at": datetime.now(UTC).isoformat(),
+                "updated_at": datetime.now(UTC).isoformat(),
             }
         )
         .execute()
@@ -59,12 +66,13 @@ def create_thread_for_user(
     return _thread_row_to_api(result.data[0])
 
 
-def list_threads(user_id: uuid.UUID) -> list[dict[str, Any]]:
+def list_threads(user_id: uuid.UUID, agent: str = "documents") -> list[dict[str, Any]]:
     result = (
         get_admin_client()
         .table("chat_threads")
-        .select("id, title, created_at, updated_at")
+        .select("id, title, agent, created_at, updated_at")
         .eq("user_id", str(user_id))
+        .eq("agent", agent)
         .order("updated_at", desc=True)
         .execute()
     )
@@ -75,7 +83,7 @@ def get_thread_for_user(thread_id: uuid.UUID, user_id: uuid.UUID) -> dict[str, A
     result = (
         get_admin_client()
         .table("chat_threads")
-        .select("id, user_id, title, created_at, updated_at")
+        .select("id, user_id, title, agent, created_at, updated_at")
         .eq("id", str(thread_id))
         .limit(1)
         .execute()

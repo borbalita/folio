@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+AgentName = Literal["documents", "email"]
 
 
 class StreamChatRequest(BaseModel):
@@ -17,6 +19,7 @@ class StreamChatRequest(BaseModel):
 
 class CreateThreadRequest(BaseModel):
     title: str | None = None
+    agent: AgentName = "documents"
 
 
 def extract_latest_user_text(messages: list[dict[str, Any]]) -> str:

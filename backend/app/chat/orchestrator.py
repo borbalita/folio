@@ -13,6 +13,7 @@ from openai import APIError
 from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
 
 from app.assistant.agent import LOOKING_THROUGH_FILINGS, run_agent
+from app.email_assistant import STUB_REPLY
 from app.assistant.deps import DocumentAgentDeps
 from app.assistant.grounding import (
     GroundingError,
@@ -32,6 +33,7 @@ from app.chat.streaming import (
     format_start_step,
     format_status_part,
     format_stream_start,
+    iter_canned_text_stream,
     iter_grounded_stream,
 )
 from app.chat.titles import DEFAULT_THREAD_TITLE, generate_thread_title
@@ -106,6 +108,11 @@ async def run_turn(
     if thread is None:
         thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
     await asyncio.to_thread(chats.ensure_user, user.id, user.email)
+
+    if thread.get("agent", "documents") == "email":
+        async for frame in iter_canned_text_stream(STUB_REPLY):
+            yield frame
+        return
 
     yield format_stream_start()
     yield format_start_step()

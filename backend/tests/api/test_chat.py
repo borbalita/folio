@@ -121,6 +121,7 @@ def test_create_thread_calls_persistence(
         TEST_USER_ID,
         "test@example.com",
         "My thread",
+        "documents",
     )
 
 

@@ -67,6 +67,7 @@ def test_get_thread_for_user_success(monkeypatch: pytest.MonkeyPatch) -> None:
                     "id": str(THREAD_ID),
                     "user_id": str(USER_ID),
                     "title": "Mine",
+                    "agent": "documents",
                     "created_at": "2026-01-01T00:00:00Z",
                     "updated_at": "2026-01-01T00:00:00Z",
                 },

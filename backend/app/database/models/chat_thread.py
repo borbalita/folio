@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,6 +18,9 @@ class ChatThread(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New chat")
+    agent: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="documents"
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -29,5 +32,9 @@ class ChatThread(Base):
     )
 
     __table_args__ = (
+        CheckConstraint(
+            "agent IN ('documents', 'email')",
+            name="ck_chat_threads_agent",
+        ),
         Index("ix_chat_threads_user_id_updated_at", "user_id", "updated_at"),
     )
