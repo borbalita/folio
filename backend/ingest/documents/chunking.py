@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-import tiktoken
 from docling.document_converter import DocumentConverter
 from docling_core.transforms.chunker import HybridChunker
 from docling_core.transforms.chunker.doc_chunk import DocChunk
@@ -22,13 +20,9 @@ from docling_core.transforms.serializer.markdown import (
     MarkdownTableSerializer,
 )
 
-from app.config import settings
 from app.database.documents import ChunkRecord
-from ingest.sec_tables import ExtractedTable, TableRow, extract_sec_tables
-
-CHUNK_MAX_TOKENS = 512
-# OpenAI embedding models accept at most 8192 tokens per input.
-EMBEDDING_MAX_TOKENS = 8192
+from ingest.tokens import CHUNK_MAX_TOKENS, embedding_tokenizer
+from ingest.documents.sec_tables import ExtractedTable, TableRow, extract_sec_tables
 
 _ITEM_SECTION_RE = re.compile(r"\bItem\s+[\dA-Z.]+\b", re.IGNORECASE)
 
@@ -57,26 +51,9 @@ class MarkdownTableSerializerProvider(ChunkingSerializerProvider):
         )
 
 
-@lru_cache(maxsize=1)
-def _embedding_tokenizer() -> tiktoken.Encoding:
-    return tiktoken.encoding_for_model(settings.openai_embedding_model)
-
-
-def count_tokens(text: str) -> int:
-    if not text:
-        return 1
-    return len(
-        _embedding_tokenizer().encode(
-            text,
-            allowed_special=set(),
-            disallowed_special=(),
-        ),
-    )
-
-
 def build_tokenizer(max_tokens: int = CHUNK_MAX_TOKENS) -> PatchedOpenAITokenizer:
     return PatchedOpenAITokenizer(
-        tokenizer=_embedding_tokenizer(),
+        tokenizer=embedding_tokenizer(),
         max_tokens=max_tokens,
     )
 
@@ -326,7 +303,7 @@ def _markdown_for_row(table: ExtractedTable, row: TableRow) -> str:
 
 
 def iter_all_html_paths() -> Iterator[tuple[str, Path]]:
-    from ingest.manifest import load_manifest
+    from ingest.documents.manifest import load_manifest
 
     for filing in load_manifest():
         yield filing.accession_number, filing.html_path

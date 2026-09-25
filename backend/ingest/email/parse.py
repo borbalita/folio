@@ -1,0 +1,121 @@
+"""Turn a raw RFC822 message into the fields the email pipeline stores."""
+
+from __future__ import annotations
+
+import hashlib
+import re
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from email import message_from_bytes
+from email.message import Message
+from email.utils import getaddresses, parsedate_to_datetime
+from html.parser import HTMLParser
+
+_WHITESPACE = re.compile(r"\s+")
+
+
+@dataclass(frozen=True, slots=True)
+class ParsedMessage:
+    message_id: str | None
+    provider_message_id: str
+    folder: str
+    subject: str
+    from_address: str
+    to_addresses: list[str]
+    sent_at: datetime
+    body: str
+
+
+def normalize_whitespace(text: str) -> str:
+    return _WHITESPACE.sub(" ", text).strip()
+
+
+def parse_message_id(header: str | None) -> str | None:
+    if header is None:
+        return None
+    cleaned = header.strip().removeprefix("<").removesuffix(">").strip()
+    return cleaned or None
+
+
+def content_hash(body: str, subject: str) -> str:
+    payload = f"{normalize_whitespace(body)}\n{normalize_whitespace(subject)}"
+    return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def html_to_text(html: str) -> str:
+    parser = _TextExtractor()
+    parser.feed(html)
+    parser.close()
+    return normalize_whitespace(" ".join(parser.parts))
+
+
+def parse_rfc822(
+    raw: bytes, *, provider_message_id: str, folder: str
+) -> ParsedMessage:
+    message = message_from_bytes(raw)
+    subject = normalize_whitespace(message.get("Subject", ""))
+    from_values = getaddresses(message.get_all("From", []))
+    from_address = from_values[0][1] if from_values else ""
+    to_addresses = [addr for _, addr in getaddresses(message.get_all("To", [])) if addr]
+    sent_at = _sent_at(message)
+    return ParsedMessage(
+        message_id=parse_message_id(message.get("Message-ID")),
+        provider_message_id=provider_message_id,
+        folder=folder,
+        subject=subject,
+        from_address=from_address,
+        to_addresses=to_addresses,
+        sent_at=sent_at,
+        body=_body(message),
+    )
+
+
+class _TextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+
+    def handle_data(self, data: str) -> None:
+        if data.strip():
+            self.parts.append(data)
+
+
+def _body(message: Message) -> str:
+    plain = _part_text(message, "text/plain")
+    if plain is not None:
+        return normalize_whitespace(plain)
+    html = _part_text(message, "text/html")
+    if html is not None:
+        return html_to_text(html)
+    return ""
+
+
+def _part_text(message: Message, content_type: str) -> str | None:
+    if message.get_content_type() == content_type and not message.is_multipart():
+        return _decode(message)
+    if not message.is_multipart():
+        return None
+    for part in message.walk():
+        if part.get_content_type() == content_type and part.get_content_disposition() != "attachment":
+            text = _decode(part)
+            if text is not None:
+                return text
+    return None
+
+
+def _decode(part: Message) -> str | None:
+    payload = part.get_payload(decode=True)
+    if not isinstance(payload, bytes):
+        return None
+    charset = part.get_content_charset() or "utf-8"
+    return payload.decode(charset, errors="replace")
+
+
+def _sent_at(message: Message) -> datetime:
+    header = message.get("Date")
+    if not header:
+        return datetime.now(UTC)
+    parsed = parsedate_to_datetime(header)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)

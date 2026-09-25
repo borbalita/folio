@@ -1,3 +1,4 @@
+import uuid
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -35,6 +36,9 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_base_url: str | None = None
+    yahoo_email: str | None = None
+    yahoo_app_password: str | None = None
+    email_agent_owner_user_id: uuid.UUID | None = None
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -47,6 +51,20 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_log_level(cls, value: str) -> str:
         return value.upper()
+
+    @field_validator("yahoo_email", "yahoo_app_password", mode="before")
+    @classmethod
+    def blank_optional_str(cls, value: str | None) -> str | None:
+        if value is None or not str(value).strip():
+            return None
+        return str(value).strip()
+
+    @field_validator("email_agent_owner_user_id", mode="before")
+    @classmethod
+    def blank_optional_uuid(cls, value: str | uuid.UUID | None) -> str | uuid.UUID | None:
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        return value
 
 
 settings = Settings()

@@ -4,14 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from ingest.chunking import (
-    CHUNK_MAX_TOKENS,
-    EMBEDDING_MAX_TOKENS,
-    chunk_document,
-    count_tokens,
-)
+from ingest.documents.chunking import chunk_document
+from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS, count_tokens
 
-FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
+FIXTURES_DIR = Path(__file__).resolve().parents[2] / "fixtures"
 MINIMAL_FILING_HTML = FIXTURES_DIR / "minimal_filing.htm"
 
 

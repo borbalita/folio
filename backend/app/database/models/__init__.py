@@ -1,16 +1,22 @@
-from .base import Base
-from .chat_message import ChatMessage
-from .chat_thread import ChatThread
-from .document_chunk import DocumentChunk
-from .message_citation import MessageCitation
-from .source_document import SourceDocument
-from .user import User
+from app.database.models.base import Base
+from app.database.models.chat.citation import MessageCitation
+from app.database.models.chat.message import ChatMessage
+from app.database.models.chat.thread import ChatThread
+from app.database.models.documents.chunk import DocumentChunk
+from app.database.models.documents.source_document import SourceDocument
+from app.database.models.email.chunk import EmailChunk
+from app.database.models.email.mailbox import Mailbox
+from app.database.models.email.message import EmailMessage
+from app.database.models.user import User
 
 __all__ = [
     "Base",
     "ChatMessage",
     "ChatThread",
     "DocumentChunk",
+    "EmailChunk",
+    "EmailMessage",
+    "Mailbox",
     "MessageCitation",
     "SourceDocument",
     "User",

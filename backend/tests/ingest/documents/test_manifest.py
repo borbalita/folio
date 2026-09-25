@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from app.database.documents import FilingRecord
-from ingest.manifest import (
+from ingest.documents.manifest import (
     COMPANY_NAMES,
     DOWNLOADS_DIR,
     MARKDOWNS_DIR,

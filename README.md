@@ -74,8 +74,8 @@ cd ..
 uv run data/download.py
 uv run data/convert_to_markdown.py
 cd backend
-uv run python -m ingest.load_source_documents
-uv run python -m ingest.chunk_and_embed --all
+uv run python -m ingest.documents.load_source_documents
+uv run python -m ingest.documents.chunk_and_embed --all
 
 # API
 uv run uvicorn app.main:app --reload

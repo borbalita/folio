@@ -1,4 +1,4 @@
-from ingest.sec_tables import extract_sec_tables
+from ingest.documents.sec_tables import extract_sec_tables
 
 
 def test_extract_sec_tables_simple() -> None:

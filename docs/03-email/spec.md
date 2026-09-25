@@ -118,7 +118,7 @@ docs/
   - This slice builds `YahooImapAdapter` only. Gmail (API) or a work IMAP or Exchange account would be new adapters.
 - On first run, ingest upserts a `mailboxes` row: provider `yahoo`, the address from `yahoo_email`, owner from `email_agent_owner_user_id`.
 - IMAP SSL to `imap.mail.yahoo.com:993` via stdlib `imaplib`. No new dependency.
-- Run with `uv run python -m ingest.email_yahoo` from `backend/`.
+- Run with `uv run python -m ingest.email` from `backend/`.
   - `--limit N`: default 5; `0` means no cap.
   - `--since YYYY-MM-DD`: optional. It filters first, then `--limit` caps, newest first.
 - The command reads INBOX only.
@@ -274,11 +274,13 @@ Indexes: `(mailbox_id, label, sent_at desc)` and `(from_address)`.
 |---|---|
 | `email_id` | FK cascade |
 | `chunk_index` | int |
-| `content` | text |
+| `chunk_text` | text |
+| `token_count` | int; checked against the embedding limit before the vector is requested |
 | `embedding` | vector(current dims) |
-| `tsv` | generated tsvector |
+| `search_vector` | generated tsvector |
+| `created_at` | timestamp; when this embedding was written |
 
-Indexes: GIN on `tsv`, and a vector index matching the one on `document_chunks`.
+Indexes: GIN on `search_vector`, and a vector index matching the one on `document_chunks`. Column names match `document_chunks`.
 
 ### `email_attachments`
 

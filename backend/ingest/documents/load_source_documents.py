@@ -9,7 +9,7 @@ import structlog
 
 from app.database import documents
 from app.logging import configure_logging
-from ingest.manifest import DEFAULT_MANIFEST_PATH, load_manifest
+from ingest.documents.manifest import DEFAULT_MANIFEST_PATH, load_manifest
 
 log = structlog.get_logger(__name__)
 

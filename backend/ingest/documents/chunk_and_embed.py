@@ -10,9 +10,10 @@ import structlog
 from app.database import documents
 from app.database.models import SourceDocument
 from app.logging import configure_logging
-from ingest.chunking import CHUNK_MAX_TOKENS, chunk_document, iter_all_html_paths
+from ingest.documents.chunking import chunk_document, iter_all_html_paths
+from ingest.documents.manifest import load_manifest
 from ingest.embeddings import EMBED_BATCH_SIZE, embed_texts
-from ingest.manifest import load_manifest
+from ingest.tokens import CHUNK_MAX_TOKENS
 
 log = structlog.get_logger(__name__)
 
@@ -132,7 +133,7 @@ def ingest_accessions(
             if document is None:
                 msg = (
                     f"No source_document for accession {accession}. "
-                    "Run `uv run python -m ingest.load_source_documents` first."
+                    "Run `uv run python -m ingest.documents.load_source_documents` first."
                 )
                 raise ValueError(msg)
 
