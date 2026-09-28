@@ -73,6 +73,7 @@ def test_fake_fetch_feeds_the_pipeline(monkeypatch) -> None:
         uidvalidity=42,
         highest_uid=9,
         embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        classifier=lambda _prompt: "other",
     )
     assert summary.fetched == 2
     assert summary.new == 1

@@ -24,6 +24,7 @@ class ParsedMessage:
     to_addresses: list[str]
     sent_at: datetime
     body: str
+    attachment_filenames: tuple[str, ...] = ()
 
 
 def normalize_whitespace(text: str) -> str:
@@ -67,6 +68,7 @@ def parse_rfc822(
         to_addresses=to_addresses,
         sent_at=sent_at,
         body=_body(message),
+        attachment_filenames=_attachment_filenames(message),
     )
 
 
@@ -109,6 +111,15 @@ def _decode(part: Message) -> str | None:
         return None
     charset = part.get_content_charset() or "utf-8"
     return payload.decode(charset, errors="replace")
+
+
+def _attachment_filenames(message: Message) -> tuple[str, ...]:
+    names: list[str] = []
+    for part in message.walk():
+        filename = part.get_filename()
+        if filename:
+            names.append(filename)
+    return tuple(names)
 
 
 def _sent_at(message: Message) -> datetime:

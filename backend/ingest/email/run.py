@@ -20,6 +20,8 @@ def missing_settings() -> list[str]:
         missing.append("YAHOO_APP_PASSWORD")
     if settings.email_agent_owner_user_id is None:
         missing.append("EMAIL_AGENT_OWNER_USER_ID")
+    if not settings.typesafe_api_key:
+        missing.append("TYPESAFE_API_KEY")
     return missing
 
 

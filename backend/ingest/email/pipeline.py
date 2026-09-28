@@ -15,16 +15,14 @@ from app.config import settings
 from app.database.engine import get_session_factory
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox, MailboxProvider
-from app.database.models.email.message import EmailLabel, EmailMessage
+from app.database.models.email.message import EmailMessage
+from ingest.email.labels import label_message
 from app.database.models.user import User
 from ingest.email.parse import ParsedMessage, content_hash
 from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS
 from ingest.embeddings import embed_texts
 
 log = structlog.get_logger(__name__)
-
-STUB_LABEL = EmailLabel.FYI
-
 
 @dataclass
 class IngestSummary:
@@ -96,6 +94,7 @@ def ingest_messages(
     messages: list[ParsedMessage],
     *,
     embed=embed_texts,
+    classifier=None,
 ) -> IngestSummary:
     summary = IngestSummary(fetched=len(messages))
     for parsed in messages:
@@ -107,20 +106,26 @@ def ingest_messages(
                 subject=parsed.subject,
             )
             continue
-        action = _store_one(session, mailbox_id, parsed, embed)
+        action, label = _store_one(session, mailbox_id, parsed, embed, classifier)
         session.commit()
         if action == "skip":
             summary.skipped += 1
         elif action == "new":
             summary.new += 1
-            summary.labels[STUB_LABEL] = summary.labels.get(STUB_LABEL, 0) + 1
+            summary.labels[label] = summary.labels.get(label, 0) + 1
         else:
             summary.reembedded += 1
-            summary.labels[STUB_LABEL] = summary.labels.get(STUB_LABEL, 0) + 1
+            summary.labels[label] = summary.labels.get(label, 0) + 1
     return summary
 
 
-def _store_one(session: Session, mailbox_id: uuid.UUID, parsed: ParsedMessage, embed) -> str:
+def _store_one(
+    session: Session,
+    mailbox_id: uuid.UUID,
+    parsed: ParsedMessage,
+    embed,
+    classifier,
+) -> tuple[str, str]:
     stored_row = session.scalar(
         select(EmailMessage).where(
             EmailMessage.mailbox_id == mailbox_id,
@@ -136,8 +141,9 @@ def _store_one(session: Session, mailbox_id: uuid.UUID, parsed: ParsedMessage, e
         )
     action = ingest_action(stored, parsed)
     if action == "skip":
-        return action
+        return action, ""
 
+    label, source = label_message(parsed, classifier=classifier)
     digest = content_hash(parsed.body, parsed.subject)
     pieces = chunk_email_text(f"{parsed.subject}\n{parsed.body}")
     for text, token_count in pieces:
@@ -157,7 +163,8 @@ def _store_one(session: Session, mailbox_id: uuid.UUID, parsed: ParsedMessage, e
             to_addresses=parsed.to_addresses,
             sent_at=parsed.sent_at,
             body=parsed.body,
-            label=STUB_LABEL,
+            label=label,
+            newsletter_source=source,
             content_hash=digest,
             embedding_model=settings.openai_embedding_model,
             embedding_dimensions=settings.openai_embedding_dimensions,
@@ -172,7 +179,8 @@ def _store_one(session: Session, mailbox_id: uuid.UUID, parsed: ParsedMessage, e
         stored_row.to_addresses = parsed.to_addresses
         stored_row.sent_at = parsed.sent_at
         stored_row.body = parsed.body
-        stored_row.label = STUB_LABEL
+        stored_row.label = label
+        stored_row.newsletter_source = source
         stored_row.content_hash = digest
         stored_row.embedding_model = settings.openai_embedding_model
         stored_row.embedding_dimensions = settings.openai_embedding_dimensions
@@ -192,7 +200,7 @@ def _store_one(session: Session, mailbox_id: uuid.UUID, parsed: ParsedMessage, e
                 embedding=vector,
             )
         )
-    return action
+    return action, label
 
 
 def stored_row_chunks(session: Session, email_id: uuid.UUID) -> list[EmailChunk]:
@@ -241,10 +249,13 @@ def ingest_fetched(
     uidvalidity: int,
     highest_uid: int | None,
     embed=embed_texts,
+    classifier=None,
 ) -> IngestSummary:
     mailbox = upsert_yahoo_mailbox(session)
     session.commit()
-    summary = ingest_messages(session, mailbox.id, messages, embed=embed)
+    summary = ingest_messages(
+        session, mailbox.id, messages, embed=embed, classifier=classifier
+    )
     record_sync(
         session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid
     )

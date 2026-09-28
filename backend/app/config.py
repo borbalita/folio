@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     yahoo_email: str | None = None
     yahoo_app_password: str | None = None
     email_agent_owner_user_id: uuid.UUID | None = None
+    typesafe_api_key: str | None = None
+    typesafe_label_model: str = "jev-latest"
+    ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -52,7 +55,7 @@ class Settings(BaseSettings):
     def normalize_log_level(cls, value: str) -> str:
         return value.upper()
 
-    @field_validator("yahoo_email", "yahoo_app_password", mode="before")
+    @field_validator("yahoo_email", "yahoo_app_password", "typesafe_api_key", mode="before")
     @classmethod
     def blank_optional_str(cls, value: str | None) -> str | None:
         if value is None or not str(value).strip():
@@ -65,6 +68,24 @@ class Settings(BaseSettings):
         if value is None or (isinstance(value, str) and not value.strip()):
             return None
         return value
+
+    @field_validator("ai_newsletter_domains", mode="before")
+    @classmethod
+    def parse_newsletter_domains(cls, value: object) -> dict[str, str]:
+        if value is None or value == "":
+            return {}
+        if isinstance(value, dict):
+            return {str(key).strip().lower(): str(item).strip() for key, item in value.items()}
+        mapping: dict[str, str] = {}
+        for part in str(value).split(","):
+            if "=" not in part:
+                continue
+            sender, source = part.split("=", 1)
+            sender = sender.strip().lower()
+            source = source.strip()
+            if sender and source:
+                mapping[sender] = source
+        return mapping
 
 
 settings = Settings()

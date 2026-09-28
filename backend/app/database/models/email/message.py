@@ -24,7 +24,7 @@ class EmailLabel(StrEnum):
     PROMOTIONAL = "promotional"
     NEWSLETTER = "newsletter"
     INVOICE = "invoice"
-    FYI = "fyi"
+    OTHER = "other"
     AI_NEWSLETTER = "ai_newsletter"
 
 
@@ -60,7 +60,7 @@ class EmailMessage(Base):
     sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
     label: Mapped[str] = mapped_column(
-        String(32), nullable=False, server_default=EmailLabel.FYI.value
+        String(32), nullable=False, server_default=EmailLabel.OTHER.value
     )
     newsletter_source: Mapped[str | None] = mapped_column(String(32), nullable=True)
     content_hash: Mapped[str] = mapped_column(Text, nullable=False)
