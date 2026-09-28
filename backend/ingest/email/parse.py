@@ -15,6 +15,13 @@ _WHITESPACE = re.compile(r"\s+")
 
 
 @dataclass(frozen=True, slots=True)
+class ParsedAttachment:
+    filename: str
+    content_type: str
+    content: bytes
+
+
+@dataclass(frozen=True, slots=True)
 class ParsedMessage:
     message_id: str | None
     provider_message_id: str
@@ -25,6 +32,7 @@ class ParsedMessage:
     sent_at: datetime
     body: str
     attachment_filenames: tuple[str, ...] = ()
+    attachments: tuple[ParsedAttachment, ...] = ()
 
 
 def normalize_whitespace(text: str) -> str:
@@ -69,6 +77,7 @@ def parse_rfc822(
         sent_at=sent_at,
         body=_body(message),
         attachment_filenames=_attachment_filenames(message),
+        attachments=_pdf_attachments(message),
     )
 
 
@@ -120,6 +129,34 @@ def _attachment_filenames(message: Message) -> tuple[str, ...]:
         if filename:
             names.append(filename)
     return tuple(names)
+
+
+def _pdf_attachments(message: Message) -> tuple[ParsedAttachment, ...]:
+    found: list[ParsedAttachment] = []
+    for part in message.walk():
+        if part.is_multipart():
+            continue
+        filename = part.get_filename()
+        content_type = part.get_content_type()
+        if not _is_pdf(filename, content_type):
+            continue
+        payload = part.get_payload(decode=True)
+        if not isinstance(payload, bytes):
+            continue
+        found.append(
+            ParsedAttachment(
+                filename=filename or "attachment.pdf",
+                content_type=content_type,
+                content=payload,
+            )
+        )
+    return tuple(found)
+
+
+def _is_pdf(filename: str | None, content_type: str) -> bool:
+    if content_type == "application/pdf":
+        return True
+    return bool(filename and filename.lower().endswith(".pdf"))
 
 
 def _sent_at(message: Message) -> datetime:

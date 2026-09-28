@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     email_agent_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
     typesafe_label_model: str = "jev-latest"
+    attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")

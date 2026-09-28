@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 from email.message import EmailMessage
 
+import pytest
+
 from ingest.email.parse import (
     content_hash,
     html_to_text,
@@ -47,6 +49,35 @@ def test_missing_message_id_is_none() -> None:
 def test_content_hash_uses_normalized_body_and_subject() -> None:
     assert content_hash("Hello   there", "  Hi  ") == content_hash("Hello there", "Hi")
     assert content_hash("a", "b") != content_hash("a", "c")
+
+
+@pytest.mark.parametrize(
+    ("payload", "maintype", "subtype", "filename", "kept"),
+    [
+        (b"%PDF-small", "application", "pdf", "invoice.pdf", True),
+        (b"not-a-pdf", "application", "octet-stream", "scan.PDF", True),
+        (b"png", "image", "png", "logo.png", False),
+    ],
+)
+def test_only_pdf_bytes_are_kept(
+    payload: bytes, maintype: str, subtype: str, filename: str, kept: bool
+) -> None:
+    message = EmailMessage()
+    message["Subject"] = "Invoice"
+    message["From"] = "billing@example.com"
+    message["To"] = "you@yahoo.com"
+    message["Date"] = "Fri, 02 Jan 2026 03:04:05 +0000"
+    message["Message-ID"] = "<id@example.com>"
+    message.set_content("See attached.")
+    message.add_attachment(payload, maintype=maintype, subtype=subtype, filename=filename)
+    parsed = parse_rfc822(message.as_bytes(), provider_message_id="1", folder="INBOX")
+    assert parsed.attachment_filenames == (filename,)
+    if kept:
+        assert [(item.filename, item.content) for item in parsed.attachments] == [
+            (filename, payload)
+        ]
+    else:
+        assert parsed.attachments == ()
 
 
 def test_html_to_text_and_whitespace() -> None:

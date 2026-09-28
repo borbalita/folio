@@ -4,6 +4,7 @@ from app.database.models.chat.message import ChatMessage
 from app.database.models.chat.thread import ChatThread
 from app.database.models.documents.chunk import DocumentChunk
 from app.database.models.documents.source_document import SourceDocument
+from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
@@ -14,6 +15,7 @@ __all__ = [
     "ChatMessage",
     "ChatThread",
     "DocumentChunk",
+    "EmailAttachment",
     "EmailChunk",
     "EmailMessage",
     "Mailbox",

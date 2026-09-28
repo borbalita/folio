@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.engine import get_session_factory
+from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailMessage
@@ -106,8 +107,12 @@ def ingest_messages(
                 subject=parsed.subject,
             )
             continue
-        action, label = _store_one(session, mailbox_id, parsed, embed, classifier)
+        action, label, saved, skipped = _store_one(
+            session, mailbox_id, parsed, embed, classifier
+        )
         session.commit()
+        summary.attachments_saved += saved
+        summary.attachments_skipped += skipped
         if action == "skip":
             summary.skipped += 1
         elif action == "new":
@@ -125,7 +130,7 @@ def _store_one(
     parsed: ParsedMessage,
     embed,
     classifier,
-) -> tuple[str, str]:
+) -> tuple[str, str, int, int]:
     stored_row = session.scalar(
         select(EmailMessage).where(
             EmailMessage.mailbox_id == mailbox_id,
@@ -141,7 +146,7 @@ def _store_one(
         )
     action = ingest_action(stored, parsed)
     if action == "skip":
-        return action, ""
+        return action, "", 0, 0
 
     label, source = label_message(parsed, classifier=classifier)
     digest = content_hash(parsed.body, parsed.subject)
@@ -187,6 +192,8 @@ def _store_one(
         stored_row.updated_at = datetime.now(UTC)
         for chunk in list(stored_row_chunks(session, stored_row.id)):
             session.delete(chunk)
+        for attachment in list(stored_row_attachments(session, stored_row.id)):
+            session.delete(attachment)
         session.flush()
     for index, ((text, token_count), vector) in enumerate(
         zip(pieces, vectors, strict=True)
@@ -200,7 +207,42 @@ def _store_one(
                 embedding=vector,
             )
         )
-    return action, label
+    saved, skipped = _write_attachments(session, stored_row.id, parsed)
+    return action, label, saved, skipped
+
+
+def _write_attachments(
+    session: Session, email_id: uuid.UUID, parsed: ParsedMessage
+) -> tuple[int, int]:
+    saved = 0
+    skipped = 0
+    for attachment in parsed.attachments:
+        too_large = len(attachment.content) > settings.attachment_max_bytes
+        session.add(
+            EmailAttachment(
+                email_id=email_id,
+                filename=attachment.filename,
+                content_type=attachment.content_type,
+                size_bytes=len(attachment.content),
+                content=None if too_large else attachment.content,
+                skipped_reason="too_large" if too_large else None,
+            )
+        )
+        if too_large:
+            skipped += 1
+        else:
+            saved += 1
+    return saved, skipped
+
+
+def stored_row_attachments(
+    session: Session, email_id: uuid.UUID
+) -> list[EmailAttachment]:
+    return list(
+        session.scalars(
+            select(EmailAttachment).where(EmailAttachment.email_id == email_id)
+        )
+    )
 
 
 def stored_row_chunks(session: Session, email_id: uuid.UUID) -> list[EmailChunk]:
