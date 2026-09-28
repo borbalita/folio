@@ -157,7 +157,7 @@ Steps 3–5 for one message run in one transaction. After the run, rebuild stori
 ## 7. Labels
 
 1. **Sender-domain rule first.** If the sender domain is in `ai_newsletter_domains`, the label is `ai_newsletter` and `newsletter_source` is set to `tldr` or `alpha_signal`. The message does not go through the classifier.
-2. **Everything else** gets one structured LLM call (same chat model) that returns exactly one label:
+2. **Everything else** gets one Jev decision (`TYPESAFE_LABEL_MODEL`, default `jev-latest`) that picks exactly one label. The email is the text being judged. The question and the meaning of each option live on the output type:
 
 | Label | Meaning |
 |---|---|
@@ -165,10 +165,10 @@ Steps 3–5 for one message run in one transaction. After the run, rebuild stori
 | `promotional` | Marketing, sales, or a newsletter whose point is to sell |
 | `newsletter` | Informational mailing that is not an AI digest and not a sales pitch |
 | `invoice` | A bill or payment request, including a PDF invoice attached |
-| `fyi` | Personal or transactional mail with no reply needed, not a bill |
+| `other` | Personal or transactional mail with no reply needed, not a bill |
 
 - The classifier input is from, subject, attachment filenames, and the body truncated to a fixed length.
-- An output outside the enum is retried once. If it is still invalid, the email is labeled `fyi` and logged.
+- An answer outside those five labels, or a failed call, is retried once. If it still fails, the email is labeled `other` and logged.
 - `ai_newsletter` names the kind of email. The source is stored separately, so several TLDR editions still count as one side of a pair.
 
 ## 8. AI newsletter items and stories
@@ -307,6 +307,7 @@ Indexes: GIN on `search_vector`, and a vector index matching the one on `documen
 | `embedding` | vector |
 | `embedding_model` | text |
 | `embedding_dimensions` | int |
+| `created_at` | timestamp; when this embedding was written |
 
 ### `news_stories`
 

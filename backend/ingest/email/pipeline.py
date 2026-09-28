@@ -16,8 +16,10 @@ from app.database.engine import get_session_factory
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox, MailboxProvider
-from app.database.models.email.message import EmailMessage
+from app.database.models.email.message import EmailLabel, EmailMessage
+from app.database.models.email.news_item import NewsItem
 from ingest.email.labels import label_message
+from ingest.email.news import edition_date, embed_text, extract_news_items
 from app.database.models.user import User
 from ingest.email.parse import ParsedMessage, content_hash
 from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS
@@ -96,6 +98,7 @@ def ingest_messages(
     *,
     embed=embed_texts,
     classifier=None,
+    extract=None,
 ) -> IngestSummary:
     summary = IngestSummary(fetched=len(messages))
     for parsed in messages:
@@ -107,12 +110,13 @@ def ingest_messages(
                 subject=parsed.subject,
             )
             continue
-        action, label, saved, skipped = _store_one(
-            session, mailbox_id, parsed, embed, classifier
+        action, label, saved, skipped, news_count = _store_one(
+            session, mailbox_id, parsed, embed, classifier, extract
         )
         session.commit()
         summary.attachments_saved += saved
         summary.attachments_skipped += skipped
+        summary.news_items += news_count
         if action == "skip":
             summary.skipped += 1
         elif action == "new":
@@ -130,7 +134,8 @@ def _store_one(
     parsed: ParsedMessage,
     embed,
     classifier,
-) -> tuple[str, str, int, int]:
+    extract,
+) -> tuple[str, str, int, int, int]:
     stored_row = session.scalar(
         select(EmailMessage).where(
             EmailMessage.mailbox_id == mailbox_id,
@@ -146,7 +151,7 @@ def _store_one(
         )
     action = ingest_action(stored, parsed)
     if action == "skip":
-        return action, "", 0, 0
+        return action, "", 0, 0, 0
 
     label, source = label_message(parsed, classifier=classifier)
     digest = content_hash(parsed.body, parsed.subject)
@@ -208,7 +213,12 @@ def _store_one(
             )
         )
     saved, skipped = _write_attachments(session, stored_row.id, parsed)
-    return action, label, saved, skipped
+    news_count = 0
+    if label == EmailLabel.AI_NEWSLETTER and source is not None:
+        news_count = _write_news_items(
+            session, stored_row.id, source, parsed, embed, extract
+        )
+    return action, label, saved, skipped, news_count
 
 
 def _write_attachments(
@@ -233,6 +243,45 @@ def _write_attachments(
         else:
             saved += 1
     return saved, skipped
+
+
+def _write_news_items(
+    session: Session,
+    email_id: uuid.UUID,
+    source: str,
+    parsed: ParsedMessage,
+    embed,
+    extract,
+) -> int:
+    for old in list(stored_row_news_items(session, email_id)):
+        session.delete(old)
+    session.flush()
+    items = extract_news_items(parsed, extract=extract)
+    if not items:
+        return 0
+    vectors = embed([embed_text(item) for item in items])
+    for position, (item, vector) in enumerate(zip(items, vectors, strict=True)):
+        session.add(
+            NewsItem(
+                email_id=email_id,
+                source=source,
+                edition_date=edition_date(parsed.sent_at),
+                position=position,
+                title=item.title,
+                blurb=item.blurb,
+                url=item.url,
+                embedding=vector,
+                embedding_model=settings.openai_embedding_model,
+                embedding_dimensions=settings.openai_embedding_dimensions,
+            )
+        )
+    return len(items)
+
+
+def stored_row_news_items(session: Session, email_id: uuid.UUID) -> list[NewsItem]:
+    return list(
+        session.scalars(select(NewsItem).where(NewsItem.email_id == email_id))
+    )
 
 
 def stored_row_attachments(
@@ -292,11 +341,17 @@ def ingest_fetched(
     highest_uid: int | None,
     embed=embed_texts,
     classifier=None,
+    extract=None,
 ) -> IngestSummary:
     mailbox = upsert_yahoo_mailbox(session)
     session.commit()
     summary = ingest_messages(
-        session, mailbox.id, messages, embed=embed, classifier=classifier
+        session,
+        mailbox.id,
+        messages,
+        embed=embed,
+        classifier=classifier,
+        extract=extract,
     )
     record_sync(
         session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid

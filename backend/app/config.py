@@ -1,6 +1,7 @@
 import uuid
 from pathlib import Path
 from typing import Annotated, Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     typesafe_api_key: str | None = None
     typesafe_label_model: str = "jev-latest"
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
+    email_timezone: str = "Europe/Berlin"
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
@@ -49,6 +51,12 @@ class Settings(BaseSettings):
     def parse_allowed_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
+    @field_validator("email_timezone")
+    @classmethod
+    def timezone_exists(cls, value: str) -> str:
+        ZoneInfo(value)
         return value
 
     @field_validator("log_level", mode="before")

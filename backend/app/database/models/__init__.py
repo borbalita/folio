@@ -8,6 +8,7 @@ from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
+from app.database.models.email.news_item import NewsItem
 from app.database.models.user import User
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "EmailMessage",
     "Mailbox",
     "MessageCitation",
+    "NewsItem",
     "SourceDocument",
     "User",
 ]
