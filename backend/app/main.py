@@ -1,3 +1,5 @@
+import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 import structlog
@@ -13,6 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.chat import router as chat_router
 from app.auth.dependencies import CurrentUser, get_current_user
+from app.auth.email_access import agents_for
 from app.config import settings
 from app.logging import configure_logging
 from app.observability import configure_tracing, shutdown_tracing
@@ -61,9 +64,16 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@dataclass(frozen=True, slots=True)
+class Me:
+    id: uuid.UUID
+    email: str
+    agents: list[str]
+
+
 @app.get("/me")
-async def me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> CurrentUser:
-    return user
+async def me(user: Annotated[CurrentUser, Depends(get_current_user)]) -> Me:
+    return Me(id=user.id, email=user.email, agents=await agents_for(user))
 
 
 if __name__ == "__main__":

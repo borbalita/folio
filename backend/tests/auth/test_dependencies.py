@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from supabase_auth.errors import AuthApiError
 
 from app.auth import dependencies as auth_dependencies
+from app.database import mailboxes
 
 
 def test_me_requires_authorization(client: TestClient) -> None:
@@ -46,6 +47,7 @@ def test_me_returns_current_user(
         "_auth_client",
         lambda: _mock_auth_client(get_user=get_user),
     )
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
 
     response = client.get("/me", headers={"Authorization": "Bearer good-token"})
 
@@ -53,6 +55,7 @@ def test_me_returns_current_user(
     assert response.json() == {
         "id": str(user_id),
         "email": "test@example.com",
+        "agents": ["documents"],
     }
 
 

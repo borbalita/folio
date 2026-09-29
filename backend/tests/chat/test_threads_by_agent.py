@@ -5,7 +5,7 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
-from app.database import chats
+from app.database import chats, mailboxes
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
@@ -102,6 +102,7 @@ def test_routes_default_to_documents_and_pass_email(
 
     monkeypatch.setattr(chats, "create_thread_for_user", create)
     monkeypatch.setattr(chats, "list_threads", list_threads)
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
 
     assert authed_client.post("/threads", json={}).status_code == 200
     assert authed_client.post("/threads", json={"agent": "email"}).status_code == 200
