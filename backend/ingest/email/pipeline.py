@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import structlog
 import tiktoken
@@ -18,10 +18,11 @@ from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.email.news_item import NewsItem
+from app.database.models.user import User
 from ingest.email.labels import label_message
 from ingest.email.news import edition_date, embed_text, extract_news_items
-from app.database.models.user import User
 from ingest.email.parse import ParsedMessage, content_hash
+from ingest.email.stories import rebuild_stories
 from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS
 from ingest.embeddings import embed_texts
 
@@ -101,6 +102,7 @@ def ingest_messages(
     extract=None,
 ) -> IngestSummary:
     summary = IngestSummary(fetched=len(messages))
+    editions: set[date] = set()
     for parsed in messages:
         if not parsed.message_id:
             summary.missing_message_id += 1
@@ -110,9 +112,11 @@ def ingest_messages(
                 subject=parsed.subject,
             )
             continue
-        action, label, saved, skipped, news_count = _store_one(
+        action, label, saved, skipped, news_count, edition = _store_one(
             session, mailbox_id, parsed, embed, classifier, extract
         )
+        if edition is not None:
+            editions.add(edition)
         session.commit()
         summary.attachments_saved += saved
         summary.attachments_skipped += skipped
@@ -125,6 +129,10 @@ def ingest_messages(
         else:
             summary.reembedded += 1
             summary.labels[label] = summary.labels.get(label, 0) + 1
+    for edition in sorted(editions):
+        summary.stories_rebuilt += rebuild_stories(session, edition)
+    if editions:
+        session.commit()
     return summary
 
 
@@ -135,7 +143,7 @@ def _store_one(
     embed,
     classifier,
     extract,
-) -> tuple[str, str, int, int, int]:
+) -> tuple[str, str, int, int, int, date | None]:
     stored_row = session.scalar(
         select(EmailMessage).where(
             EmailMessage.mailbox_id == mailbox_id,
@@ -151,7 +159,7 @@ def _store_one(
         )
     action = ingest_action(stored, parsed)
     if action == "skip":
-        return action, "", 0, 0, 0
+        return action, "", 0, 0, 0, None
 
     label, source = label_message(parsed, classifier=classifier)
     digest = content_hash(parsed.body, parsed.subject)
@@ -214,11 +222,13 @@ def _store_one(
         )
     saved, skipped = _write_attachments(session, stored_row.id, parsed)
     news_count = 0
+    edition = None
     if label == EmailLabel.AI_NEWSLETTER and source is not None:
         news_count = _write_news_items(
             session, stored_row.id, source, parsed, embed, extract
         )
-    return action, label, saved, skipped, news_count
+        edition = edition_date(parsed.sent_at)
+    return action, label, saved, skipped, news_count, edition
 
 
 def _write_attachments(

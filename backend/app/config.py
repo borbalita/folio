@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     typesafe_label_model: str = "jev-latest"
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     email_timezone: str = "Europe/Berlin"
+    news_match_window_hours: int = Field(default=48, gt=0)
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")

@@ -107,7 +107,6 @@ docs/
 - Also add:
   - `ai_newsletter_domains` (maps domain to `tldr` or `alpha_signal`)
   - `news_match_window_hours` (default 48)
-  - `news_match_threshold` (default 0.80)
   - `attachment_max_bytes` (default 10 MB)
 
 ### 6.2 Connection and CLI
@@ -186,13 +185,13 @@ Steps 3–5 for one message run in one transaction. After the run, rebuild stori
 ### 8.2 Matching
 
 - **Candidates:** items whose `edition_date` falls within `news_match_window_hours` of the new newsletter's edition.
-- **Edges:** only across sources (`tldr` ↔ `alpha_signal`), when cosine similarity is at least `news_match_threshold`. Two items from the same source are never compared.
+- **Edges:** only across sources (`tldr` ↔ `alpha_signal`). Jev decides whether the two items are the same story. A failed call is retried once, then the items are not paired. Two items from the same source are never compared.
 - **Stories:** every item ends in a story. Connected components of the cross-source edges are one story. An item with no edge is its own story.
   - `first_seen` and `last_seen` are the min and max edition dates.
   - `is_big` is true only when both `tldr` and `alpha_signal` are in the story. A one-source story has `is_big` false.
   - Two items from the same source stay separate stories. They are never merged just because both are TLDR or both are Alpha Signal.
 - **Rebuild:** delete and recreate the stories whose items fall in the affected window. This lets a morning TLDR attach to the previous evening's Alpha Signal. Citations point to `news_items`, never to stories, so the rebuild never breaks a citation.
-- **Tuning aid:** after matching, the CLI logs the top 10 cross-source similarity scores in the window, including those below the threshold.
+- **Tuning aid:** after matching, the CLI logs how many cross-source pairs were checked and which ones Jev called the same story.
 
 ### 8.3 Topic search
 
@@ -216,8 +215,7 @@ erDiagram
     emails ||--o{ news_items : "extracted from"
     email_citations }o--o| email_chunks : points_to
     email_citations }o--o| news_items : points_to
-    news_stories ||--o{ news_story_items : groups
-    news_story_items }o--|| news_items : links
+    news_stories |o--o{ news_items : groups
 ```
 
 ### `chat_threads` (changed)
@@ -308,6 +306,7 @@ Indexes: GIN on `search_vector`, and a vector index matching the one on `documen
 | `embedding_model` | text |
 | `embedding_dimensions` | int |
 | `created_at` | timestamp; when this embedding was written |
+| `story_id` | nullable FK to `news_stories`; cleared when that story is rebuilt |
 
 ### `news_stories`
 
@@ -316,15 +315,6 @@ Indexes: GIN on `search_vector`, and a vector index matching the one on `documen
 | `first_seen` | date |
 | `last_seen` | date |
 | `is_big` | bool |
-
-### `news_story_items`
-
-| Column | Notes |
-|---|---|
-| `story_id` | FK cascade |
-| `item_id` | FK cascade |
-
-Primary key: `(story_id, item_id)`.
 
 ### `email_citations`
 
@@ -492,7 +482,6 @@ The critical path is **2 → 5 → 6 → 7 → 8 → 9**. Tasks 1, 3, 4, and 10 
 
 ## 13. Open items
 
-- Tune `news_match_threshold` once scores from the first real pair are logged.
 - Confirm the exact TLDR and Alpha Signal sender domains for `ai_newsletter_domains`.
 - Keep `mailboxes.sync_cursor`, `is_active`, `last_synced_at`, `emails.provider_message_id`, and the `mailbox` filter on `search_emails`. Ingest writes `last_synced_at`, `sync_cursor` (UIDVALIDITY and highest UID), and the IMAP UID as `provider_message_id`. A later run still uses `--limit` and `--since`; the cursor is stored so a resume can use it later.
 - `is_big` stays. It is false on a one-source story and true only when both sources are in the story. `list_big_news` and `search_news(big_only)` use it.
