@@ -12,7 +12,7 @@ from app.auth.dependencies import CurrentUser
 from app.chat.orchestrator import run_turn
 from app.database import chats, mailboxes
 from app.email_assistant.outputs import EmailAnswer, EmailCitationRef
-from app.email_assistant.tools import execute_search_emails
+from app.email_assistant.tools.mail import execute_search_emails
 from app.grounding import UNKNOWN_CHUNK, EmailGrounder, GroundingError
 from app.retrieval.email.retriever import EmailPassage
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID

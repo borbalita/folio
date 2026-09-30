@@ -21,11 +21,11 @@ class EmailSearchFilters(BaseModel):
     mailbox: str | None = None
 
 
-def scope_clause(filters: EmailSearchFilters) -> FilterClause:
-    """The owner scope every mail query repeats, including the passage load."""
+def scope_clause(user_id: UUID, mailbox_ids: list[UUID]) -> FilterClause:
+    """The owner scope every mail and news query repeats, including the passage load."""
     return FilterClause(
         "m.user_id = :user_id AND m.id = ANY(:mailbox_ids) AND m.is_active IS TRUE",
-        {"user_id": filters.user_id, "mailbox_ids": filters.mailbox_ids},
+        {"user_id": user_id, "mailbox_ids": mailbox_ids},
     )
 
 
@@ -38,7 +38,7 @@ class EmailQueries(ChunkQueries[EmailSearchFilters]):
     )
 
     def filter_clause(self, filters: EmailSearchFilters) -> FilterClause:
-        scope = scope_clause(filters)
+        scope = scope_clause(filters.user_id, filters.mailbox_ids)
         clauses = [scope.sql]
         params: dict[str, object] = {
             **scope.params,

@@ -29,7 +29,7 @@ def load_passages(
     chunk_ids: list[UUID],
     filters: EmailSearchFilters,
 ) -> dict[UUID, EmailPassage]:
-    scope = scope_clause(filters)
+    scope = scope_clause(filters.user_id, filters.mailbox_ids)
     rows = session.execute(
         text(
             f"""

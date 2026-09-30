@@ -32,12 +32,14 @@ from app.chat.streaming import (
 )
 from app.chat.titles import DEFAULT_THREAD_TITLE, generate_thread_title
 from app.database import chats
-from app.email_assistant.agent import SEARCHING_MAIL, run_email_agent
+from app.email_assistant.agent import run_email_agent
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailTurnResult
+from app.email_assistant.tools.mail import SEARCHING_MAIL
 from app.grounding import DocumentGrounder, EmailGrounder, Grounder, GroundingError
 from app.retrieval.documents.retriever import DocumentRetriever
 from app.retrieval.email.retriever import EmailRetriever
+from app.retrieval.news.retriever import NewsPassage, NewsRetriever
 
 log = structlog.get_logger(__name__)
 
@@ -59,7 +61,10 @@ class _ChatAgent(ABC):
 
     @abstractmethod
     def new_deps(
-        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+        self,
+        user: CurrentUser,
+        thread_id: uuid.UUID,
+        status_queue: asyncio.Queue[str | None],
     ) -> Deps: ...
 
     @abstractmethod
@@ -69,10 +74,12 @@ class _ChatAgent(ABC):
     def passage_fields(self, passage: Any) -> dict[str, Any]: ...
 
     @abstractmethod
-    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]: ...
+    def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]: ...
 
     @abstractmethod
-    def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None: ...
+    def save_citations(
+        self, message_id: uuid.UUID, rows: list[dict[str, Any]]
+    ) -> None: ...
 
     def citation_payloads(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]]:
         payloads: list[dict[str, Any]] = []
@@ -88,10 +95,12 @@ class _ChatAgent(ABC):
             payloads.append(payload)
         return payloads
 
-    def citation_rows(self, result: TurnResult) -> list[dict[str, Any]]:
+    def citation_rows(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]]:
         return [
             {
-                **self.citation_target(citation.chunk_id),
+                **self.citation_target(
+                    citation.chunk_id, deps.seen_passages.get(citation.chunk_id)
+                ),
                 "citation_index": citation.citation_index,
                 "excerpt": citation.excerpt,
             }
@@ -105,7 +114,10 @@ class _DocumentChatAgent(_ChatAgent):
     grounder = DocumentGrounder()
 
     def new_deps(
-        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+        self,
+        user: CurrentUser,
+        thread_id: uuid.UUID,
+        status_queue: asyncio.Queue[str | None],
     ) -> DocumentAgentDeps:
         return DocumentAgentDeps(
             user_id=user.id,
@@ -128,7 +140,7 @@ class _DocumentChatAgent(_ChatAgent):
             "section": passage.section,
         }
 
-    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]:
+    def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]:
         return {"chunk_id": chunk_id}
 
     def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
@@ -141,12 +153,16 @@ class _EmailChatAgent(_ChatAgent):
     grounder = EmailGrounder()
 
     def new_deps(
-        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+        self,
+        user: CurrentUser,
+        thread_id: uuid.UUID,
+        status_queue: asyncio.Queue[str | None],
     ) -> EmailAgentDeps:
         return EmailAgentDeps(
             user_id=user.id,
             thread_id=thread_id,
             retriever=EmailRetriever(),
+            news=NewsRetriever(),
             status_queue=status_queue,
         )
 
@@ -154,6 +170,13 @@ class _EmailChatAgent(_ChatAgent):
         return await run_email_agent(user_text, deps)
 
     def passage_fields(self, passage: Any) -> dict[str, Any]:
+        if isinstance(passage, NewsPassage):
+            return {
+                "title": passage.title,
+                "source": passage.source,
+                "date": passage.edition_date.isoformat(),
+                "url": passage.url,
+            }
         return {
             "from": passage.from_address,
             "subject": passage.subject,
@@ -161,7 +184,9 @@ class _EmailChatAgent(_ChatAgent):
             "mailbox": passage.mailbox_name,
         }
 
-    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]:
+    def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]:
+        if isinstance(passage, NewsPassage):
+            return {"email_chunk_id": None, "news_item_id": chunk_id}
         return {"email_chunk_id": chunk_id, "news_item_id": None}
 
     def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
@@ -255,7 +280,9 @@ async def run_turn(
         try:
             agent.grounder.validate(result.answer, deps.seen_ids)
         except GroundingError as exc:
-            log.warning("grounding_failed", code=exc.code, error=str(exc), **log_context)
+            log.warning(
+                "grounding_failed", code=exc.code, error=str(exc), **log_context
+            )
             canned = agent.grounder.user_answer(exc)
             turn_span.update(
                 output=canned,
@@ -266,8 +293,15 @@ async def run_turn(
             async for frame in iter_grounded_stream(canned, [], include_envelope=False):
                 yield frame
             await _persist_turn(
-                agent, thread, thread_id, messages, user_text, canned,
-                citation_parts=[], citation_rows=None, usage=None,
+                agent,
+                thread,
+                thread_id,
+                messages,
+                user_text,
+                canned,
+                citation_parts=[],
+                citation_rows=None,
+                usage=None,
             )
             return
 
@@ -287,9 +321,14 @@ async def run_turn(
         ):
             yield frame
         await _persist_turn(
-            agent, thread, thread_id, messages, user_text, result.answer.answer,
+            agent,
+            thread,
+            thread_id,
+            messages,
+            user_text,
+            result.answer.answer,
             citation_parts=citation_parts,
-            citation_rows=agent.citation_rows(result),
+            citation_rows=agent.citation_rows(result, deps),
             usage=result.usage,
         )
 

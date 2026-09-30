@@ -2,7 +2,9 @@
 
 Hybrid search over two corpora: 10-K filings (`document_chunks`) and one user's mail (`email_chunks`). Both embed the query, run a semantic (`pgvector`) and a full-text (Postgres) search, fuse the ranked lists with Reciprocal Rank Fusion (RRF), then hydrate the winning chunks for the agent.
 
-The agents never write SQL. The document agent calls `search_filings`, `read_chunk`, and `read_surrounding_chunks`, which go through `DocumentRetriever`. The email agent calls `search_emails`, which goes through `EmailRetriever`.
+A third, smaller corpus is the AI newsletter items (`news_items`). It uses vector search only, plus a list of big cross-source stories.
+
+The agents never write SQL. The document agent calls `search_filings`, `read_chunk`, and `read_surrounding_chunks`, which go through `DocumentRetriever`. The email agent calls `search_emails`, which goes through `EmailRetriever`, and `search_news` and `list_big_news`, which go through `NewsRetriever`.
 
 ## Shape
 
@@ -65,6 +67,16 @@ flowchart TD
 
 Passages carry from, subject, sent date, and mailbox name. `format_email_passages` writes the tool text. There are no neighbors.
 
+## News
+
+`news_items` has an embedding but no `search_vector`, so `NewsRetriever` is not a `HybridRetriever`. It reuses `ChunkQueries.semantic` through `NewsQueries` and the same owner scope as mail.
+
+- **`search`.** Embed the query, rank items by cosine distance, keep `RETRIEVAL_TOP_K`, then reload them with the scope repeated. `NewsSearchFilters` narrows by `edition_date` (since, until) and `big_only`, which keeps items whose story has `is_big`.
+- **`big_stories`.** Up to `RETRIEVAL_TOP_K` stories with `is_big` whose `first_seen`–`last_seen` range overlaps since–until, most recent first, each with its items in scope. Without dates it returns the most recent big stories.
+- **Citations** point at item ids, never at stories, so a story rebuild never breaks one.
+
+`format_news_passages` and `format_big_stories` write the tool text.
+
 ## Default settings
 
 All knobs live in `app.config.settings` (env vars in `backend/.env`). Retrieval-specific defaults:
@@ -110,5 +122,9 @@ retrieval/
 │   ├── retriever.py   # EmailRetriever, EmailPassage, scoped load
 │   ├── queries.py     # EmailQueries, EmailSearchFilters, owner scope
 │   └── formatting.py  # text for search_emails
+├── news/
+│   ├── retriever.py   # NewsRetriever, NewsPassage, BigStory, scoped load
+│   ├── queries.py     # NewsQueries, NewsSearchFilters
+│   └── formatting.py  # text for search_news and list_big_news
 └── __init__.py
 ```
