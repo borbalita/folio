@@ -1,29 +1,28 @@
-import { describeApiError } from '@/lib/http'
+import { RotateCcw } from 'lucide-react'
 
-interface ChatStatusProps {
-  status: 'submitted' | 'streaming' | 'ready' | 'error'
-  error: Error | undefined
-  stage: string | null
-  hasAssistantText: boolean
+import { ChatIcon } from '@/components/chat/ChatIcon'
+import { Button } from '@/components/ui/button'
+
+export function PendingReply({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-2" role="status">
+      <ChatIcon className="size-7" />
+      <p className="shimmer-text text-sm">{label}…</p>
+    </div>
+  )
 }
 
-export function ChatStatus({ status, error, stage, hasAssistantText }: ChatStatusProps) {
-  if (status === 'error' || error) {
-    return (
-      <p className="px-4 pb-2 text-center text-xs text-destructive">
-        {describeApiError(error ?? new Error('The chat request failed.'))}
-      </p>
-    )
-  }
-  const waiting = status === 'submitted' || (status === 'streaming' && !hasAssistantText)
-  if (waiting) {
-    const label = stage ?? 'Looking through filings'
-    return (
-      <p className="flex items-center justify-center gap-2 px-4 pb-2 text-xs text-muted-foreground">
-        <span className="inline-block size-1.5 animate-pulse rounded-full bg-muted-foreground motion-reduce:animate-none" />
-        {label}
-      </p>
-    )
-  }
-  return null
+export function ReplyError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex items-start gap-2" role="alert">
+      <ChatIcon className="size-7" />
+      <div className="flex flex-col items-start gap-2 pt-1">
+        <p className="text-sm text-destructive">{message}</p>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          <RotateCcw />
+          Retry
+        </Button>
+      </div>
+    </div>
+  )
 }

@@ -1,6 +1,9 @@
+import { useEffect, useRef } from 'react'
+
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { AssistantMarkdown } from '@/components/chat/AssistantMarkdown'
 import { ChatIcon } from '@/components/chat/ChatIcon'
+import { PendingReply, ReplyError } from '@/components/chat/ChatStatus'
 import { CitationChips } from '@/components/chat/CitationChips'
 import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
 
@@ -12,10 +15,27 @@ export type SelectedCitation = {
 interface MessageListProps {
   messages: CopilotUIMessage[]
   selected: SelectedCitation | null
+  pendingLabel: string | null
+  error: string | null
   onSelect: (messageId: string, citationIndex: number) => void
+  onRetry: () => void
 }
 
-export function MessageList({ messages, selected, onSelect }: MessageListProps) {
+export function MessageList({
+  messages,
+  selected,
+  pendingLabel,
+  error,
+  onSelect,
+  onRetry,
+}: MessageListProps) {
+  const endRef = useRef<HTMLDivElement>(null)
+  const lastText = messages.length > 0 ? textOf(messages[messages.length - 1]) : ''
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end' })
+  }, [messages.length, lastText, pendingLabel, error])
+
   if (messages.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-8">
@@ -31,6 +51,9 @@ export function MessageList({ messages, selected, onSelect }: MessageListProps) 
           const isUser = message.role === 'user'
           const body = textOf(message)
           const citations = citationsOf(message)
+          if (!isUser && body.length === 0) {
+            return null
+          }
           return (
             <div
               key={message.id}
@@ -74,6 +97,9 @@ export function MessageList({ messages, selected, onSelect }: MessageListProps) 
             </div>
           )
         })}
+        {pendingLabel ? <PendingReply label={pendingLabel} /> : null}
+        {error ? <ReplyError message={error} onRetry={onRetry} /> : null}
+        <div ref={endRef} />
       </div>
     </ScrollArea>
   )

@@ -12,7 +12,7 @@ import {
 } from '@/lib/chat-messages'
 
 interface SourcePanelProps {
-  citation: CitationData | null
+  citation: CitationData
   onClose: () => void
 }
 
@@ -27,14 +27,6 @@ function heading(citation: CitationData, kind: CitationKind) {
 }
 
 export function SourcePanel({ citation, onClose }: SourcePanelProps) {
-  if (citation === null) {
-    return (
-      <div className="flex h-full items-center p-4">
-        <p className="text-sm text-muted-foreground">Select a citation to read the source.</p>
-      </div>
-    )
-  }
-
   const kind = citationKind(citation)
   const { title, subtitle } = heading(citation, kind)
   const excerpt = citation.excerpt?.trim()

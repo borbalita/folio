@@ -3,7 +3,6 @@ import { DefaultChatTransport } from 'ai'
 import { useEffect, useMemo, useState } from 'react'
 
 import { ChatInput } from '@/components/chat/ChatInput'
-import { ChatStatus } from '@/components/chat/ChatStatus'
 import { MessageList, type SelectedCitation } from '@/components/chat/MessageList'
 import { SourcePanel } from '@/components/chat/SourcePanel'
 import {
@@ -15,6 +14,8 @@ import {
 } from '@/components/ui/sheet'
 import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
 import { env } from '@/lib/env'
+import { describeApiError } from '@/lib/http'
+import { cn } from '@/lib/utils'
 import { getAccessToken } from '@/lib/supabase'
 
 interface ChatThreadViewProps {
@@ -89,7 +90,7 @@ export function ChatThreadView({
     [threadId],
   )
 
-  const { messages, sendMessage, status, error } = useChat<CopilotUIMessage>({
+  const { messages, sendMessage, regenerate, status, error } = useChat<CopilotUIMessage>({
     id: threadId,
     messages: initialMessages,
     transport,
@@ -113,7 +114,33 @@ export function ChatThreadView({
   const lastMessage = messages.at(-1)
   const hasAssistantText =
     lastMessage?.role === 'assistant' && textOf(lastMessage).length > 0
+  const failed = status === 'error' || error !== undefined
+  const waiting = status === 'submitted' || (status === 'streaming' && !hasAssistantText)
+  const pendingLabel = !failed && waiting ? (stage ?? 'Thinking') : null
+  const errorMessage = failed
+    ? describeApiError(error ?? new Error('The chat request failed.'))
+    : null
   const citation = citationForSelection(messages, selected)
+  const panelOpen = citation !== null
+  const [shownCitation, setShownCitation] = useState(citation)
+  if (citation !== null && citation !== shownCitation) {
+    setShownCitation(citation)
+  }
+
+  useEffect(() => {
+    if (!panelOpen) {
+      return
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSelected(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [panelOpen])
 
   function onSelect(messageId: string, citationIndex: number) {
     setSelected((current) =>
@@ -130,12 +157,15 @@ export function ChatThreadView({
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <MessageList messages={messages} selected={selected} onSelect={onSelect} />
-        <ChatStatus
-          status={status}
-          error={error}
-          stage={stage}
-          hasAssistantText={hasAssistantText}
+        <MessageList
+          messages={messages}
+          selected={selected}
+          pendingLabel={pendingLabel}
+          error={errorMessage}
+          onSelect={onSelect}
+          onRetry={() => {
+            void regenerate()
+          }}
         />
         <ChatInput
           disabled={busy}
@@ -145,8 +175,16 @@ export function ChatThreadView({
           }}
         />
       </div>
-      <aside className="hidden w-80 shrink-0 border-l md:flex md:flex-col">
-        <SourcePanel citation={citation} onClose={onClose} />
+      <aside
+        inert={!panelOpen}
+        className={cn(
+          'hidden shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none md:block',
+          panelOpen ? 'w-80 border-l' : 'w-0',
+        )}
+      >
+        <div className="flex h-full w-80 flex-col">
+          {shownCitation ? <SourcePanel citation={shownCitation} onClose={onClose} /> : null}
+        </div>
       </aside>
       <Sheet
         open={!isDesktop && selected !== null}
@@ -165,7 +203,7 @@ export function ChatThreadView({
             <SheetTitle>Cited source</SheetTitle>
             <SheetDescription>Source cited by the assistant.</SheetDescription>
           </SheetHeader>
-          <SourcePanel citation={citation} onClose={onClose} />
+          {shownCitation ? <SourcePanel citation={shownCitation} onClose={onClose} /> : null}
         </SheetContent>
       </Sheet>
     </div>

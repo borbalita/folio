@@ -150,6 +150,36 @@
     --assistant-foreground: var(--brand-warm);
 }
 
+.shimmer-text {
+    background: linear-gradient(
+        90deg,
+        var(--muted-foreground) 30%,
+        var(--foreground) 50%,
+        var(--muted-foreground) 70%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 100% 0;
+    }
+    to {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shimmer-text {
+        animation: none;
+        background: none;
+        color: var(--muted-foreground);
+    }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
