@@ -20,6 +20,7 @@ import { getAccessToken } from '@/lib/supabase'
 interface ChatThreadViewProps {
   threadId: string
   initialMessages: CopilotUIMessage[]
+  placeholder: string
   onTurnFinished: () => void
 }
 
@@ -63,6 +64,7 @@ function citationForSelection(
 export function ChatThreadView({
   threadId,
   initialMessages,
+  placeholder,
   onTurnFinished,
 }: ChatThreadViewProps) {
   const isDesktop = useIsDesktop()
@@ -137,6 +139,7 @@ export function ChatThreadView({
         />
         <ChatInput
           disabled={busy}
+          placeholder={placeholder}
           onSend={(text) => {
             void sendMessage({ text })
           }}
@@ -159,8 +162,8 @@ export function ChatThreadView({
           className="w-80 p-0 motion-reduce:transition-none motion-reduce:data-ending-style:translate-x-0 motion-reduce:data-starting-style:translate-x-0"
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Filing passage</SheetTitle>
-            <SheetDescription>Passage cited by the assistant.</SheetDescription>
+            <SheetTitle>Cited source</SheetTitle>
+            <SheetDescription>Source cited by the assistant.</SheetDescription>
           </SheetHeader>
           <SourcePanel citation={citation} onClose={onClose} />
         </SheetContent>

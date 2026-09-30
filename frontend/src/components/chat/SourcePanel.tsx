@@ -1,95 +1,66 @@
 import { X } from 'lucide-react'
 
+import { FilingDetails } from '@/components/chat/FilingDetails'
+import { MailDetails } from '@/components/chat/MailDetails'
+import { NewsDetails } from '@/components/chat/NewsDetails'
 import { Button } from '@/components/ui/button'
-import { type CitationData } from '@/lib/chat-messages'
+import {
+  citationKind,
+  newsSourceName,
+  type CitationData,
+  type CitationKind,
+} from '@/lib/chat-messages'
 
 interface SourcePanelProps {
   citation: CitationData | null
   onClose: () => void
 }
 
-function formatFilingDate(iso: string | undefined): string | null {
-  if (!iso) {
-    return null
+function heading(citation: CitationData, kind: CitationKind) {
+  if (kind === 'news') {
+    return { title: citation.title?.trim(), subtitle: newsSourceName(citation.source) }
   }
-  const parts = iso.split('-').map(Number)
-  const year = parts[0]
-  const month = parts[1]
-  const day = parts[2]
-  if (!year || !month || !day) {
-    return null
+  if (kind === 'mail') {
+    return { title: citation.subject?.trim(), subtitle: citation.from?.trim() }
   }
-  const date = new Date(year, month - 1, day)
-  if (Number.isNaN(date.getTime())) {
-    return null
-  }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date)
-}
-
-function filingLine(citation: CitationData): string | null {
-  const bits: string[] = []
-  if (citation.form?.trim()) {
-    bits.push(citation.form.trim())
-  }
-  if (citation.fiscalYear != null) {
-    bits.push(`FY${citation.fiscalYear}`)
-  }
-  return bits.length > 0 ? bits.join(' ') : null
-}
-
-function locationLine(citation: CitationData): string | null {
-  const bits: string[] = []
-  if (citation.page?.trim()) {
-    bits.push(`p. ${citation.page.trim()}`)
-  }
-  if (citation.section?.trim()) {
-    bits.push(citation.section.trim())
-  }
-  return bits.length > 0 ? bits.join('  ') : null
+  return { title: citation.companyName?.trim(), subtitle: citation.ticker?.trim() }
 }
 
 export function SourcePanel({ citation, onClose }: SourcePanelProps) {
   if (citation === null) {
     return (
       <div className="flex h-full items-center p-4">
-        <p className="text-sm text-muted-foreground">
-          Select a citation to read the filing passage.
-        </p>
+        <p className="text-sm text-muted-foreground">Select a citation to read the source.</p>
       </div>
     )
   }
 
-  const company = citation.companyName?.trim()
-  const ticker = citation.ticker?.trim()
-  const filing = filingLine(citation)
-  const filed = formatFilingDate(citation.filingDate)
-  const location = locationLine(citation)
+  const kind = citationKind(citation)
+  const { title, subtitle } = heading(citation, kind)
   const excerpt = citation.excerpt?.trim()
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
         <div className="min-w-0">
-          {company ? <p className="font-medium leading-snug">{company}</p> : null}
-          {ticker ? <p className="mt-0.5 text-sm text-citation">{ticker}</p> : null}
+          {title ? <p className="font-medium leading-snug">{title}</p> : null}
+          {subtitle ? <p className="mt-0.5 truncate text-sm text-citation">{subtitle}</p> : null}
         </div>
         <Button
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label="Close filing passage"
+          aria-label="Close source"
           onClick={onClose}
         >
           <X />
         </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-        {filing ? <p className="text-sm">{filing}</p> : null}
-        {filed ? <p className="mt-1 text-sm text-muted-foreground">Filed {filed}</p> : null}
-        {location ? <p className="mt-1 text-sm text-muted-foreground">{location}</p> : null}
-        {excerpt ? (
-          <p className="mt-4 text-sm leading-relaxed">{excerpt}</p>
-        ) : null}
+        {kind === 'news' ? <NewsDetails citation={citation} /> : null}
+        {kind === 'mail' ? <MailDetails citation={citation} /> : null}
+        {kind === 'filing' ? <FilingDetails citation={citation} /> : null}
+        {excerpt ? <p className="mt-4 text-sm leading-relaxed">{excerpt}</p> : null}
       </div>
     </div>
   )

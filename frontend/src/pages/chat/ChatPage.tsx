@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 
 import { ThreadSidebar } from '@/components/chat/ThreadSidebar'
+import { AGENTS, type AgentInfo } from '@/lib/agents'
 import { useAuth } from '@/lib/auth'
-import { api, type Thread } from '@/lib/api'
+import { api, type AgentName, type Thread } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
 
 export interface ChatOutletContext {
+  agent: AgentInfo
   refreshThreads: () => Promise<void>
 }
 
-export function ChatPage() {
+export function ChatPage({ agentName }: { agentName: AgentName }) {
+  const agent = AGENTS[agentName]
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [threads, setThreads] = useState<Thread[]>([])
@@ -20,18 +23,18 @@ export function ChatPage() {
 
   const refreshThreads = useCallback(async () => {
     try {
-      const next = await api.listThreads()
+      const next = await api.listThreads(agentName)
       setThreads(next)
       setError(null)
     } catch (caught: unknown) {
       setError(describeApiError(caught))
     }
-  }, [])
+  }, [agentName])
 
   useEffect(() => {
     let cancelled = false
     api
-      .listThreads()
+      .listThreads(agentName)
       .then((next) => {
         if (!cancelled) {
           setThreads(next)
@@ -48,15 +51,15 @@ export function ChatPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [agentName])
 
   async function onNewChat() {
     setCreating(true)
     try {
-      const thread = await api.createThread()
+      const thread = await api.createThread(agentName)
       setThreads((current) => [thread, ...current.filter((item) => item.id !== thread.id)])
       setError(null)
-      void navigate(`/chat/${thread.id}`)
+      void navigate(`${agent.path}/${thread.id}`)
     } catch (caught: unknown) {
       setError(describeApiError(caught))
     } finally {
@@ -67,6 +70,7 @@ export function ChatPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <ThreadSidebar
+        agent={agent}
         threads={threads}
         loading={loading}
         error={error}
@@ -80,9 +84,7 @@ export function ChatPage() {
         }}
       />
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <Outlet
-          context={{ refreshThreads } satisfies ChatOutletContext}
-        />
+        <Outlet context={{ agent, refreshThreads } satisfies ChatOutletContext} />
       </main>
     </div>
   )

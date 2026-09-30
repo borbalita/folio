@@ -26,7 +26,7 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
 
   if (status === 'authenticated') {
-    return <Navigate to="/chat" replace />
+    return <Navigate to="/" replace />
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

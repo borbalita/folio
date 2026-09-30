@@ -41,13 +41,37 @@ def _message_row_to_api(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _latest_empty_thread(user_id: uuid.UUID, agent: str) -> dict[str, Any] | None:
+    result = (
+        get_admin_client()
+        .table("chat_threads")
+        .select("id, title, agent, created_at, updated_at, chat_messages(count)")
+        .eq("user_id", str(user_id))
+        .eq("agent", agent)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    for row in result.data:
+        if row["chat_messages"][0]["count"] == 0:
+            return row
+    return None
+
+
 def create_thread_for_user(
     user_id: uuid.UUID,
     email: str,
     title: str | None = None,
     agent: str = "documents",
 ) -> dict[str, Any]:
+    """Return the user's latest empty thread for this agent, or insert a new one.
+
+    Reuse keeps "New chat" from piling up threads nobody typed into.
+    """
     ensure_user(user_id, email)
+    if title is None:
+        empty = _latest_empty_thread(user_id, agent)
+        if empty is not None:
+            return _thread_row_to_api(empty)
     result = (
         get_admin_client()
         .table("chat_threads")

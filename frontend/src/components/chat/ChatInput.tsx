@@ -5,10 +5,11 @@ import { Textarea } from '@/components/ui/textarea'
 
 interface ChatInputProps {
   disabled: boolean
+  placeholder: string
   onSend: (text: string) => void
 }
 
-export function ChatInput({ disabled, onSend }: ChatInputProps) {
+export function ChatInput({ disabled, placeholder, onSend }: ChatInputProps) {
   const [input, setInput] = useState('')
 
   function submit() {
@@ -40,7 +41,7 @@ export function ChatInput({ disabled, onSend }: ChatInputProps) {
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          placeholder="Ask about a filing…"
+          placeholder={placeholder}
           rows={2}
           className="min-h-10 resize-none"
         />

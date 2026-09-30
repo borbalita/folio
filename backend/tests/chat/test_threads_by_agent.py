@@ -21,6 +21,7 @@ class _Query:
         self.table = table
         self.filters: dict[str, str] = {}
         self.pending: dict | None = None
+        self.count_messages = False
 
     def upsert(self, row: dict, on_conflict: str | None = None) -> _Query:
         self.store.setdefault(self.table, []).append(dict(row))
@@ -30,7 +31,8 @@ class _Query:
         self.pending = dict(row)
         return self
 
-    def select(self, *_args: object, **_kwargs: object) -> _Query:
+    def select(self, columns: str = "*", **_kwargs: object) -> _Query:
+        self.count_messages = "chat_messages(count)" in columns
         return self
 
     def eq(self, key: str, value: str) -> _Query:
@@ -52,6 +54,21 @@ class _Query:
             for row in rows
             if all(row.get(key) == value for key, value in self.filters.items())
         ]
+        if self.count_messages:
+            messages = self.store.get("chat_messages", [])
+            matched = [
+                {
+                    **row,
+                    "chat_messages": [
+                        {
+                            "count": sum(
+                                1 for m in messages if m["thread_id"] == row["id"]
+                            )
+                        }
+                    ],
+                }
+                for row in matched
+            ]
         return _Result(matched)
 
 
@@ -67,7 +84,9 @@ def test_each_agent_lists_only_its_threads(monkeypatch: pytest.MonkeyPatch) -> N
     client = _Client()
     monkeypatch.setattr(chats, "get_admin_client", lambda: client)
 
-    documents = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="documents")
+    documents = chats.create_thread_for_user(
+        USER_ID, "owner@example.com", agent="documents"
+    )
     email = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
 
     document_ids = [row["id"] for row in chats.list_threads(USER_ID, "documents")]
@@ -79,6 +98,43 @@ def test_each_agent_lists_only_its_threads(monkeypatch: pytest.MonkeyPatch) -> N
     assert email["agent"] == "email"
 
 
+def test_new_chat_reuses_the_empty_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+
+    first = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+    again = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+
+    assert again["id"] == first["id"]
+    assert len(client.store["chat_threads"]) == 1
+
+
+def test_new_chat_creates_a_thread_once_the_last_has_messages(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+
+    used = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+    client.store["chat_messages"] = [{"thread_id": used["id"]}]
+    fresh = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+
+    assert fresh["id"] != used["id"]
+
+
+def test_titled_thread_is_always_new(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+
+    empty = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+    titled = chats.create_thread_for_user(
+        USER_ID, "owner@example.com", title="Invoices", agent="email"
+    )
+
+    assert titled["id"] != empty["id"]
+    assert titled["title"] == "Invoices"
+
+
 def test_routes_default_to_documents_and_pass_email(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
@@ -86,7 +142,12 @@ def test_routes_default_to_documents_and_pass_email(
     created: list[str] = []
     listed: list[str] = []
 
-    def create(user_id: uuid.UUID, email: str, title: str | None = None, agent: str = "documents") -> dict:
+    def create(
+        user_id: uuid.UUID,
+        email: str,
+        title: str | None = None,
+        agent: str = "documents",
+    ) -> dict:
         created.append(agent)
         return {
             "id": str(uuid.uuid4()),

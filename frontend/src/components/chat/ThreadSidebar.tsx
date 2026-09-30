@@ -1,12 +1,14 @@
-import { NavLink } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Link, NavLink } from 'react-router-dom'
+import { ChevronLeft, Plus } from 'lucide-react'
 
 import { ChatIcon } from '@/components/chat/ChatIcon'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import type { AgentInfo } from '@/lib/agents'
 import type { Thread } from '@/lib/api'
 
 interface ThreadSidebarProps {
+  agent: AgentInfo
   threads: Thread[]
   loading: boolean
   error: string | null
@@ -17,6 +19,7 @@ interface ThreadSidebarProps {
 }
 
 export function ThreadSidebar({
+  agent,
   threads,
   loading,
   error,
@@ -28,13 +31,18 @@ export function ThreadSidebar({
   return (
     <aside className="flex w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
       <div className="flex flex-col gap-2 border-b p-3">
-        <div className="flex items-center gap-2">
+        <Link
+          to="/"
+          aria-label={`${agent.title}. Back to all assistants`}
+          className="group flex items-center gap-2 rounded-md p-1 outline-none hover:bg-sidebar-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
           <ChatIcon className="size-8" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">Document Copilot</p>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold">{agent.title}</p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
           </div>
-        </div>
+          <ChevronLeft className="size-4 text-muted-foreground group-hover:text-foreground" />
+        </Link>
         <Button onClick={onNewChat} disabled={creating} className="w-full">
           <Plus />
           New chat
@@ -53,7 +61,7 @@ export function ThreadSidebar({
           {threads.map((thread) => (
             <NavLink
               key={thread.id}
-              to={`/chat/${thread.id}`}
+              to={`${agent.path}/${thread.id}`}
               className={({ isActive }) =>
                 [
                   'truncate rounded-md px-2 py-1.5 text-sm',

@@ -33,7 +33,7 @@ export function CitationChips({ citations, selectedIndex, onSelect }: CitationCh
             )}
           >
             <span className="tabular-nums opacity-70">{citation.citationIndex}</span>
-            {citationLabel(citation)}
+            <span className="max-w-48 truncate">{citationLabel(citation)}</span>
           </button>
         )
       })}

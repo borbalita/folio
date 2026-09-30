@@ -51,40 +51,48 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --brand-dark: #050505;
+    --brand-cyan: #1b9aaa;
+    --brand-neutral: #dddbcb;
+    --brand-warm: #f5f1e3;
+    --brand-surface: #ffffff;
+
+    --background: var(--brand-warm);
+    --foreground: var(--brand-dark);
+    --card: var(--brand-surface);
+    --card-foreground: var(--brand-dark);
+    --popover: var(--brand-surface);
+    --popover-foreground: var(--brand-dark);
+    --primary: var(--brand-dark);
+    --primary-foreground: var(--brand-surface);
+    --secondary: var(--brand-neutral);
+    --secondary-foreground: var(--brand-dark);
+    --muted: var(--brand-neutral);
+    /* Neutral is too light for text; this keeps secondary copy above 4.5:1 on warm. */
+    --muted-foreground: #5c5a50;
+    --accent: var(--brand-neutral);
+    --accent-foreground: var(--brand-dark);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+    --border: var(--brand-neutral);
+    --input: var(--brand-neutral);
+    --ring: var(--brand-cyan);
+    --chart-1: var(--brand-cyan);
+    --chart-2: var(--brand-dark);
+    --chart-3: #5c5a50;
+    --chart-4: var(--brand-neutral);
+    --chart-5: #127380;
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
-    --citation: oklch(0.38 0.08 250);
-    --citation-foreground: oklch(0.985 0 0);
+    --sidebar: var(--brand-surface);
+    --sidebar-foreground: var(--brand-dark);
+    --sidebar-primary: var(--brand-dark);
+    --sidebar-primary-foreground: var(--brand-surface);
+    --sidebar-accent: var(--brand-warm);
+    --sidebar-accent-foreground: var(--brand-dark);
+    --sidebar-border: var(--brand-neutral);
+    --sidebar-ring: var(--brand-cyan);
+    --citation: var(--brand-cyan);
+    /* White on the cyan is ~3.3:1; the dark reads at ~6:1. */
+    --citation-foreground: var(--brand-dark);
 }
 
 .dark {

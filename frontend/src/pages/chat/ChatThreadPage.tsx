@@ -11,7 +11,7 @@ import type { ChatOutletContext } from './ChatPage'
 
 export function ChatThreadPage() {
   const { threadId } = useParams<{ threadId: string }>()
-  const { refreshThreads } = useOutletContext<ChatOutletContext>()
+  const { agent, refreshThreads } = useOutletContext<ChatOutletContext>()
   const [loaded, setLoaded] = useState<{
     threadId: string
     messages: CopilotUIMessage[]
@@ -52,7 +52,7 @@ export function ChatThreadPage() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-sm text-destructive">{error.message}</p>
-        <Button render={<Link to="/chat" />}>Back to chats</Button>
+        <Button render={<Link to={agent.path} />}>Back to chats</Button>
       </div>
     )
   }
@@ -70,6 +70,7 @@ export function ChatThreadPage() {
       key={threadId}
       threadId={threadId}
       initialMessages={loaded.messages}
+      placeholder={agent.placeholder}
       onTurnFinished={() => {
         void refreshThreads()
       }}

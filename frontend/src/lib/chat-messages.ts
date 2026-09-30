@@ -6,6 +6,7 @@ export type CitationData = {
   chunkId: string
   citationIndex: number
   excerpt: string | null
+  // Filing passage
   ticker?: string
   companyName?: string
   form?: string
@@ -13,6 +14,39 @@ export type CitationData = {
   filingDate?: string
   page?: string | null
   section?: string | null
+  // Mail passage; `date` is shared with news items
+  from?: string
+  subject?: string
+  mailbox?: string
+  date?: string
+  // AI newsletter item
+  title?: string
+  source?: string
+  url?: string
+}
+
+export type CitationKind = 'filing' | 'mail' | 'news'
+
+export function citationKind(data: CitationData): CitationKind {
+  if (data.url !== undefined || data.title !== undefined) {
+    return 'news'
+  }
+  if (data.from !== undefined || data.subject !== undefined) {
+    return 'mail'
+  }
+  return 'filing'
+}
+
+const NEWS_SOURCES: Record<string, string> = {
+  tldr: 'TLDR',
+  alpha_signal: 'Alpha Signal',
+}
+
+export function newsSourceName(source: string | undefined): string | null {
+  if (!source) {
+    return null
+  }
+  return NEWS_SOURCES[source] ?? source
 }
 
 export type StatusData = {
@@ -103,6 +137,13 @@ export function citationsOf(message: CopilotUIMessage): CitationData[] {
 }
 
 export function citationLabel(data: CitationData): string {
+  const kind = citationKind(data)
+  if (kind === 'news') {
+    return newsSourceName(data.source) ?? `Source ${data.citationIndex}`
+  }
+  if (kind === 'mail') {
+    return data.from?.trim() || `Source ${data.citationIndex}`
+  }
   const ticker = data.ticker?.trim()
   const form = data.form?.trim()
   if (ticker && form) {
