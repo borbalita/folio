@@ -1,5 +1,6 @@
 from app.database.models.base import Base
 from app.database.models.chat.citation import MessageCitation
+from app.database.models.chat.email_citation import EmailCitation
 from app.database.models.chat.message import ChatMessage
 from app.database.models.chat.thread import ChatThread
 from app.database.models.documents.chunk import DocumentChunk
@@ -19,6 +20,7 @@ __all__ = [
     "DocumentChunk",
     "EmailAttachment",
     "EmailChunk",
+    "EmailCitation",
     "EmailMessage",
     "Mailbox",
     "MessageCitation",

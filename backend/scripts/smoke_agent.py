@@ -15,8 +15,8 @@ import uuid
 
 from app.assistant.agent import run_agent
 from app.assistant.deps import DocumentAgentDeps
-from app.assistant.grounding import GroundingError, validate_grounded_answer
-from app.retrieval.retriever import DocumentRetriever
+from app.grounding import DocumentGrounder, GroundingError
+from app.retrieval.documents.retriever import DocumentRetriever
 
 # Client-brief example questions, plus one the corpus cannot answer.
 QUESTIONS: list[str] = [
@@ -43,7 +43,7 @@ async def _run_one(question: str) -> dict[str, object]:
     print(f"=== {question} ===", flush=True)
     turn = await run_agent(question, deps)
     try:
-        validate_grounded_answer(turn.answer, deps.seen_ids)
+        DocumentGrounder().validate(turn.answer, deps.seen_ids)
         grounding = "ok"
     except GroundingError as exc:
         grounding = f"failed: {exc}"

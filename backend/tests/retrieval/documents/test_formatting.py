@@ -5,17 +5,17 @@ from uuid import UUID
 
 import pytest
 
-from app.retrieval.formatting import (
+from app.retrieval.documents.formatting import (
     MAX_PASSAGE_EXCERPT_CHARS,
     format_passages_for_agent,
 )
-from app.retrieval.retriever import RetrievedPassage
+from app.retrieval.documents.retriever import DocumentPassage
 
 CHUNK_A = UUID("00000000-0000-0000-0000-00000000000a")
 DOC_A = UUID("00000000-0000-0000-0000-00000000000d")
 
 
-def _passage(**overrides: object) -> RetrievedPassage:
+def _passage(**overrides: object) -> DocumentPassage:
     values: dict[str, object] = {
         "chunk_id": CHUNK_A,
         "document_id": DOC_A,
@@ -33,7 +33,7 @@ def _passage(**overrides: object) -> RetrievedPassage:
         "neighbors": [],
     }
     values.update(overrides)
-    return RetrievedPassage.model_validate(values)
+    return DocumentPassage.model_validate(values)
 
 
 def test_empty_passages() -> None:
@@ -53,7 +53,7 @@ def test_excerpt_is_truncated() -> None:
 def test_total_output_stays_within_character_cap(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr("app.retrieval.formatting.MAX_AGENT_OUTPUT_CHARS", 80)
+    monkeypatch.setattr("app.retrieval.documents.formatting.MAX_AGENT_OUTPUT_CHARS", 80)
     output = format_passages_for_agent([_passage(text="Services revenue increased.")])
     assert len(output) == 80
     assert output.endswith("...")

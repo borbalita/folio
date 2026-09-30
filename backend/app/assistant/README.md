@@ -22,7 +22,7 @@ flowchart TD
     retriever --> register[register_passages]
     register --> llm
     llm --> result[AgentTurnResult]
-    result --> validate[validate_grounded_answer]
+    result --> validate[DocumentGrounder.validate]
     validate -->|ok| stream[stream and persist]
     validate -->|GroundingError| canned[canned answer, persist, no citations]
     runAgent -->|LLM or API error| streamErr[SSE error, no persist]
@@ -32,7 +32,7 @@ flowchart TD
 2. **Agent loop.** PydanticAI agent (`output_type=GroundedAnswer`, instructions from `instructions.md`) may call tools until it returns structured output. Instructions: answer only from tool passages, cite every claim, set `insufficient_evidence` when the corpus cannot support an answer, no investment advice.
 3. **Tools.** Implementations in `tools.py` go through `DocumentRetriever` (see [retrieval README](../retrieval/README.md)). Tool responses are formatted excerpts. Each hit and its neighbors are registered into `seen_ids` and `seen_passages` so later citations can be checked and streamed with filing metadata. `search_filings` also emits **Looking through filings** or **Looking through {TICKER} filings**.
 4. **Result.** `run_agent` returns `AgentTurnResult`: the `GroundedAnswer` plus a usage dict (`requests`, `input_tokens`, `output_tokens`, `tool_calls`).
-5. **Grounding.** `validate_grounded_answer` (no LLM) checks the answer against `seen_ids`. Failure raises `GroundingError` with a `code`. The orchestrator streams a canned user-facing answer for that code and persists it with no citations. It does not stream the ungrounded model text or validator wording. LLM/API failures yield an SSE `error` with user-facing copy and do not persist.
+5. **Grounding.** `DocumentGrounder.validate` in `app/grounding.py` (no LLM) checks the answer against `seen_ids`. Failure raises `GroundingError` with a `code`. The orchestrator streams a canned user-facing answer for that code and persists it with no citations. It does not stream the ungrounded model text or validator wording. LLM/API failures yield an SSE `error` with user-facing copy and do not persist.
 6. **Stream and persist.** On success, the orchestrator streams answer text then `data-citation` parts (ticker, form, year, page, section from `seen_passages`) and writes messages plus `message_citations`.
 
 ## Tools
@@ -47,7 +47,7 @@ flowchart TD
 
 ## Grounding
 
-`validate_grounded_answer(answer, seen_ids)`:
+`Grounder.validate(answer, seen_ids)` in `app/grounding.py`, shared by `DocumentGrounder` and `EmailGrounder`:
 
 - If `insufficient_evidence` is true, `citations` must be empty.
 - Otherwise there must be at least one citation.
@@ -56,7 +56,7 @@ flowchart TD
 
 Fabricated chunk ids fail this check. The LLM is not asked to police itself.
 
-`GroundingError.code` is one of `missing_citations`, `unknown_chunk`, `duplicate_index`, or `insufficient_with_citations`. `grounding_user_answer` maps that code to the canned chat reply.
+`GroundingError.code` is one of `missing_citations`, `unknown_chunk`, `duplicate_index`, or `insufficient_with_citations`. Each grounder's `user_answer` maps that code to its own canned chat reply.
 
 ## Output
 
@@ -85,7 +85,6 @@ assistant/
 ├── tools.py          # execute_* + register_passages
 ├── deps.py           # DocumentAgentDeps
 ├── outputs.py        # Citation, GroundedAnswer, AgentTurnResult
-├── grounding.py     # validate_grounded_answer, grounding_user_answer
 ├── instructions.md  # product contract for the model
 └── __init__.py
 ```

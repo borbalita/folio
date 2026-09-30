@@ -39,7 +39,7 @@ backend/
 │   ├── auth/            # Supabase JWT verification + current user dependency
 │   ├── chat/            # turn orchestration, AI SDK message conversion, streaming
 │   ├── assistant/       # PydanticAI agent, deps, outputs, instructions, citation grounding
-│   ├── retrieval/       # pgvector/full-text queries, RRF fusion, source passage lookup
+│   ├── retrieval/       # shared hybrid search base (pgvector, full-text, RRF); documents/ and email/ subclasses
 │   ├── database/        # models/, Supabase client wrapper, typed query helpers
 │   └── prompts/         # prompt/instruction templates if not colocated with assistant
 ├── ingest/              # one-off ingestion scripts (Markdown extraction, chunking, embedding, Supabase writes)

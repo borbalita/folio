@@ -9,19 +9,19 @@ Hits OpenAI embeddings and Postgres. Not part of pytest.
 
 from __future__ import annotations
 
-from app.retrieval.formatting import format_passages_for_agent
-from app.retrieval.queries import SearchFilters
-from app.retrieval.retriever import DocumentRetriever, RetrievedPassage
+from app.retrieval.documents.formatting import format_passages_for_agent
+from app.retrieval.documents.queries import DocumentSearchFilters
+from app.retrieval.documents.retriever import DocumentPassage, DocumentRetriever
 
 # Edit these to try other queries / filters.
-QUERIES: list[tuple[str, SearchFilters | None]] = [
-    ("NVIDIA data center demand", None),
-    ("Apple Services revenue 2023", None),
-    ("Apple Services revenue 2023", SearchFilters(ticker="AAPL")),
+QUERIES: list[tuple[str, DocumentSearchFilters]] = [
+    ("NVIDIA data center demand", DocumentSearchFilters()),
+    ("Apple Services revenue 2023", DocumentSearchFilters()),
+    ("Apple Services revenue 2023", DocumentSearchFilters(ticker="AAPL")),
 ]
 
 
-def _summarize(passage: RetrievedPassage) -> str:
+def _summarize(passage: DocumentPassage) -> str:
     page = passage.page or "-"
     section = passage.section or "-"
     return (
@@ -35,8 +35,9 @@ def main() -> None:
     retriever = DocumentRetriever()
     for query, filters in QUERIES:
         label = f"{query!r}"
-        if filters is not None:
-            label += f" filters={filters.model_dump(exclude_none=True)}"
+        chosen = filters.model_dump(exclude_none=True)
+        if chosen:
+            label += f" filters={chosen}"
         print(f"=== {label} ===")
         passages = retriever.search(query, filters=filters)
         tickers = [p.ticker for p in passages]

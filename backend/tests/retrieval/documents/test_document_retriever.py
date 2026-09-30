@@ -7,8 +7,9 @@ from uuid import UUID
 
 import pytest
 
-from app.retrieval.queries import RankedChunkHit
-from app.retrieval.retriever import DocumentRetriever
+from app.retrieval.documents.queries import DocumentSearchFilters
+from app.retrieval.documents.retriever import DocumentRetriever
+from app.retrieval.queries import RankedHit
 
 A = UUID("00000000-0000-0000-0000-00000000000a")
 B = UUID("00000000-0000-0000-0000-00000000000b")
@@ -39,8 +40,8 @@ def _document() -> SimpleNamespace:
 
 def _patch_search(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "app.retrieval.retriever.extract_fts_keywords",
-        lambda query: query,
+        "app.retrieval.base.extract_fts_keywords",
+        lambda query, *, system_prompt: query,
     )
 
 
@@ -56,24 +57,24 @@ def test_retriever_fuses_and_attaches_neighbors(
     neighbor = _chunk(C, 2, "Neighbor C")
 
     monkeypatch.setattr(
-        "app.retrieval.retriever.embed_query",
+        "app.retrieval.base.embed_query",
         lambda _query: [0.1, 0.2],
     )
     monkeypatch.setattr(
-        "app.retrieval.retriever.semantic_search",
+        "app.retrieval.documents.queries.DocumentQueries.semantic",
         lambda *_args, **_kwargs: [
-            RankedChunkHit(chunk_id=A, rank=1, score=0.9),
-            RankedChunkHit(chunk_id=B, rank=2, score=0.8),
+            RankedHit(chunk_id=A, rank=1, score=0.9),
+            RankedHit(chunk_id=B, rank=2, score=0.8),
         ],
     )
     monkeypatch.setattr(
-        "app.retrieval.retriever.full_text_search",
+        "app.retrieval.documents.queries.DocumentQueries.full_text",
         lambda *_args, **_kwargs: [
-            RankedChunkHit(chunk_id=A, rank=1, score=0.5),
+            RankedHit(chunk_id=A, rank=1, score=0.5),
         ],
     )
     monkeypatch.setattr(
-        "app.retrieval.retriever.documents.get_chunks_by_ids",
+        "app.retrieval.documents.retriever.documents.get_chunks_by_ids",
         lambda _session, _ids: chunks,
     )
 
@@ -83,11 +84,13 @@ def test_retriever_fuses_and_attaches_neighbors(
         return []
 
     monkeypatch.setattr(
-        "app.retrieval.retriever.documents.get_surrounding_chunks",
+        "app.retrieval.documents.retriever.documents.get_surrounding_chunks",
         fake_neighbors,
     )
 
-    passages = DocumentRetriever().search("Apple Services revenue", session=object())
+    passages = DocumentRetriever().search(
+        "Apple Services revenue", filters=DocumentSearchFilters(), session=object()
+    )
 
     assert [p.chunk_id for p in passages] == [A, B]
     assert passages[0].fusion_score > passages[1].fusion_score
@@ -101,23 +104,28 @@ def test_retriever_fuses_and_attaches_neighbors(
 
 def test_retriever_returns_empty_when_no_hits(monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_search(monkeypatch)
-    monkeypatch.setattr("app.retrieval.retriever.embed_query", lambda _query: [0.1])
+    monkeypatch.setattr("app.retrieval.base.embed_query", lambda _query: [0.1])
     monkeypatch.setattr(
-        "app.retrieval.retriever.semantic_search",
+        "app.retrieval.documents.queries.DocumentQueries.semantic",
         lambda *_args, **_kwargs: [],
     )
     monkeypatch.setattr(
-        "app.retrieval.retriever.full_text_search",
+        "app.retrieval.documents.queries.DocumentQueries.full_text",
         lambda *_args, **_kwargs: [],
     )
 
-    assert DocumentRetriever().search("nothing", session=object()) == []
+    assert (
+        DocumentRetriever().search(
+            "nothing", filters=DocumentSearchFilters(), session=object()
+        )
+        == []
+    )
 
 
 def test_passage_by_id_hydrates(monkeypatch: pytest.MonkeyPatch) -> None:
     document = _document()
     monkeypatch.setattr(
-        "app.retrieval.retriever.documents.get_chunks_by_ids",
+        "app.retrieval.documents.retriever.documents.get_chunks_by_ids",
         lambda _session, _ids: {A: (_chunk(A, 0, "Hit A"), document)},
     )
 
@@ -133,7 +141,7 @@ def test_surrounding_passages(monkeypatch: pytest.MonkeyPatch) -> None:
     document = _document()
     neighbor = _chunk(C, 2, "Neighbor C")
     monkeypatch.setattr(
-        "app.retrieval.retriever.documents.get_surrounding_chunks",
+        "app.retrieval.documents.retriever.documents.get_surrounding_chunks",
         lambda _session, _chunk_id, _radius: [(neighbor, document)],
     )
 
@@ -148,21 +156,29 @@ def test_retriever_passes_extracted_keywords_to_fts(
 ) -> None:
     question = "Across Apple's 10-Ks, how did the revenue mix change?"
     monkeypatch.setattr(
-        "app.retrieval.retriever.embed_query",
+        "app.retrieval.base.embed_query",
         lambda query: [0.1] if query == question else None,
     )
+    prompts: list[str] = []
+
+    def extract(_query: str, *, system_prompt: str) -> str:
+        prompts.append(system_prompt)
+        return "apple revenue mix"
+
+    monkeypatch.setattr("app.retrieval.base.extract_fts_keywords", extract)
     monkeypatch.setattr(
-        "app.retrieval.retriever.extract_fts_keywords",
-        lambda _query: "apple revenue mix",
-    )
-    monkeypatch.setattr(
-        "app.retrieval.retriever.semantic_search",
+        "app.retrieval.documents.queries.DocumentQueries.semantic",
         lambda *_args, **_kwargs: [],
     )
     fts = MagicMock(return_value=[])
-    monkeypatch.setattr("app.retrieval.retriever.full_text_search", fts)
+    monkeypatch.setattr(
+        "app.retrieval.documents.queries.DocumentQueries.full_text", fts
+    )
 
-    DocumentRetriever().search(question, session=object())
+    DocumentRetriever().search(
+        question, filters=DocumentSearchFilters(), session=object()
+    )
 
     fts.assert_called_once()
     assert fts.call_args.args[1] == "apple revenue mix"
+    assert prompts == [DocumentRetriever.keyword_prompt]

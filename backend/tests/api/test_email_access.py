@@ -5,7 +5,9 @@ import uuid
 import pytest
 from fastapi.testclient import TestClient
 
+from app.chat import orchestrator
 from app.database import chats, mailboxes
+from app.email_assistant.outputs import EmailAnswer, EmailTurnResult
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
 
 
@@ -85,6 +87,22 @@ def test_owner_can_list_create_and_post_to_email(
     )
     monkeypatch.setattr(chats, "get_thread_for_user", _email_thread)
     monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        chats,
+        "append_messages",
+        lambda thread_id, messages: [
+            {"id": str(uuid.uuid4())},
+            {"id": str(uuid.uuid4())},
+        ],
+    )
+
+    async def answer(*_args: object, **_kwargs: object) -> EmailTurnResult:
+        return EmailTurnResult(
+            answer=EmailAnswer(answer="ok", insufficient_evidence=True),
+            usage={},
+        )
+
+    monkeypatch.setattr(orchestrator, "run_email_agent", answer)
 
     listed = authed_client.get("/threads", params={"agent": "email"})
     created = authed_client.post("/threads", json={"agent": "email"})

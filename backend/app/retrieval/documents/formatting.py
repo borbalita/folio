@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from app.retrieval.retriever import RetrievedPassage
+from app.retrieval.documents.retriever import DocumentPassage
 
 MAX_PASSAGE_EXCERPT_CHARS = 800
 MAX_AGENT_OUTPUT_CHARS = 12_000
 
 
-def _format_one_passage(passage: RetrievedPassage, *, include_neighbors: bool) -> str:
+def _format_one_passage(passage: DocumentPassage, *, include_neighbors: bool) -> str:
     page = f" p.{passage.page}" if passage.page else ""
     section = f" ({passage.section})" if passage.section else ""
     excerpt = passage.text.strip()
@@ -31,7 +31,7 @@ def _format_one_passage(passage: RetrievedPassage, *, include_neighbors: bool) -
     return "\n".join(lines)
 
 
-def format_passages_for_agent(passages: list[RetrievedPassage]) -> str:
+def format_passages_for_agent(passages: list[DocumentPassage]) -> str:
     if not passages:
         return "No matching passages found in the filing corpus."
 

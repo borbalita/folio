@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, ClassVar
 
 import structlog
 from langfuse import get_client, propagate_attributes
@@ -13,14 +14,8 @@ from openai import APIError
 from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
 
 from app.assistant.agent import LOOKING_THROUGH_FILINGS, run_agent
-from app.email_assistant import STUB_REPLY
 from app.assistant.deps import DocumentAgentDeps
-from app.assistant.grounding import (
-    GroundingError,
-    grounding_user_answer,
-    validate_grounded_answer,
-)
-from app.assistant.outputs import AgentTurnResult, GroundedAnswer
+from app.assistant.outputs import AgentTurnResult
 from app.auth.dependencies import CurrentUser
 from app.chat.messages import (
     assistant_message_for_storage,
@@ -33,12 +28,16 @@ from app.chat.streaming import (
     format_start_step,
     format_status_part,
     format_stream_start,
-    iter_canned_text_stream,
     iter_grounded_stream,
 )
 from app.chat.titles import DEFAULT_THREAD_TITLE, generate_thread_title
 from app.database import chats
-from app.retrieval.retriever import DocumentRetriever
+from app.email_assistant.agent import SEARCHING_MAIL, run_email_agent
+from app.email_assistant.deps import EmailAgentDeps
+from app.email_assistant.outputs import EmailTurnResult
+from app.grounding import DocumentGrounder, EmailGrounder, Grounder, GroundingError
+from app.retrieval.documents.retriever import DocumentRetriever
+from app.retrieval.email.retriever import EmailRetriever
 
 log = structlog.get_logger(__name__)
 
@@ -47,52 +46,141 @@ AGENT_FAILURES = (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIErro
 ASSISTANT_UNAVAILABLE = "The assistant couldn't complete this answer. Try again."
 UNEXPECTED_TURN_ERROR = "Something went wrong. Try again."
 
-
-def _citation_stream_payloads(
-    answer: GroundedAnswer, deps: DocumentAgentDeps
-) -> list[dict[str, Any]]:
-    payloads: list[dict[str, Any]] = []
-    for citation in answer.citations:
-        payload: dict[str, Any] = {
-            "chunkId": str(citation.chunk_id),
-            "citationIndex": citation.citation_index,
-            "excerpt": citation.excerpt,
-        }
-        passage = deps.seen_passages.get(citation.chunk_id)
-        if passage is not None:
-            payload.update(
-                {
-                    "ticker": passage.ticker,
-                    "companyName": passage.company_name,
-                    "form": passage.form,
-                    "fiscalYear": passage.fiscal_year,
-                    "filingDate": passage.filing_date.isoformat(),
-                    "page": passage.page,
-                    "section": passage.section,
-                },
-            )
-        payloads.append(payload)
-    return payloads
+Deps = DocumentAgentDeps | EmailAgentDeps
+TurnResult = AgentTurnResult | EmailTurnResult
 
 
-def _citation_rows(answer: GroundedAnswer) -> list[dict[str, Any]]:
-    return [
-        {
-            "chunk_id": citation.chunk_id,
-            "citation_index": citation.citation_index,
-            "excerpt": citation.excerpt,
-        }
-        for citation in answer.citations
-    ]
+class _ChatAgent(ABC):
+    """What differs between the document and email turns. The turn loop is shared."""
+
+    name: ClassVar[str]
+    status_label: ClassVar[str]
+    grounder: ClassVar[Grounder]
+
+    @abstractmethod
+    def new_deps(
+        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+    ) -> Deps: ...
+
+    @abstractmethod
+    async def run(self, user_text: str, deps: Deps) -> TurnResult: ...
+
+    @abstractmethod
+    def passage_fields(self, passage: Any) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]: ...
+
+    @abstractmethod
+    def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None: ...
+
+    def citation_payloads(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]]:
+        payloads: list[dict[str, Any]] = []
+        for citation in result.answer.citations:
+            payload: dict[str, Any] = {
+                "chunkId": str(citation.chunk_id),
+                "citationIndex": citation.citation_index,
+                "excerpt": citation.excerpt,
+            }
+            passage = deps.seen_passages.get(citation.chunk_id)
+            if passage is not None:
+                payload.update(self.passage_fields(passage))
+            payloads.append(payload)
+        return payloads
+
+    def citation_rows(self, result: TurnResult) -> list[dict[str, Any]]:
+        return [
+            {
+                **self.citation_target(citation.chunk_id),
+                "citation_index": citation.citation_index,
+                "excerpt": citation.excerpt,
+            }
+            for citation in result.answer.citations
+        ]
 
 
-async def _run_agent_then_close_queue(
-    user_text: str,
-    deps: DocumentAgentDeps,
-    status_queue: asyncio.Queue[str | None],
-) -> AgentTurnResult:
-    try:
+class _DocumentChatAgent(_ChatAgent):
+    name = "documents"
+    status_label = LOOKING_THROUGH_FILINGS
+    grounder = DocumentGrounder()
+
+    def new_deps(
+        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+    ) -> DocumentAgentDeps:
+        return DocumentAgentDeps(
+            user_id=user.id,
+            thread_id=thread_id,
+            retriever=DocumentRetriever(),
+            status_queue=status_queue,
+        )
+
+    async def run(self, user_text: str, deps: Deps) -> TurnResult:
         return await run_agent(user_text, deps)
+
+    def passage_fields(self, passage: Any) -> dict[str, Any]:
+        return {
+            "ticker": passage.ticker,
+            "companyName": passage.company_name,
+            "form": passage.form,
+            "fiscalYear": passage.fiscal_year,
+            "filingDate": passage.filing_date.isoformat(),
+            "page": passage.page,
+            "section": passage.section,
+        }
+
+    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]:
+        return {"chunk_id": chunk_id}
+
+    def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
+        chats.insert_citations(message_id, rows)
+
+
+class _EmailChatAgent(_ChatAgent):
+    name = "email"
+    status_label = SEARCHING_MAIL
+    grounder = EmailGrounder()
+
+    def new_deps(
+        self, user: CurrentUser, thread_id: uuid.UUID, status_queue: asyncio.Queue[str | None]
+    ) -> EmailAgentDeps:
+        return EmailAgentDeps(
+            user_id=user.id,
+            thread_id=thread_id,
+            retriever=EmailRetriever(),
+            status_queue=status_queue,
+        )
+
+    async def run(self, user_text: str, deps: Deps) -> TurnResult:
+        return await run_email_agent(user_text, deps)
+
+    def passage_fields(self, passage: Any) -> dict[str, Any]:
+        return {
+            "from": passage.from_address,
+            "subject": passage.subject,
+            "date": passage.sent_at.date().isoformat(),
+            "mailbox": passage.mailbox_name,
+        }
+
+    def citation_target(self, chunk_id: uuid.UUID) -> dict[str, Any]:
+        return {"email_chunk_id": chunk_id, "news_item_id": None}
+
+    def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
+        chats.insert_email_citations(message_id, rows)
+
+
+_AGENTS: dict[str, _ChatAgent] = {
+    agent.name: agent for agent in (_DocumentChatAgent(), _EmailChatAgent())
+}
+
+
+async def _run_then_close_queue(
+    agent: _ChatAgent,
+    user_text: str,
+    deps: Deps,
+    status_queue: asyncio.Queue[str | None],
+) -> TurnResult:
+    try:
+        return await agent.run(user_text, deps)
     finally:
         await status_queue.put(None)
 
@@ -108,17 +196,14 @@ async def run_turn(
     if thread is None:
         thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
     await asyncio.to_thread(chats.ensure_user, user.id, user.email)
-
-    if thread.get("agent", "documents") == "email":
-        async for frame in iter_canned_text_stream(STUB_REPLY):
-            yield frame
-        return
+    agent = _AGENTS[thread.get("agent", "documents")]
 
     yield format_stream_start()
     yield format_start_step()
-    yield format_status_part(LOOKING_THROUGH_FILINGS)
+    yield format_status_part(agent.status_label)
 
     user_text = extract_latest_user_text(messages)
+    log_context = {"agent": agent.name, "thread_id": str(thread_id)}
     langfuse = get_client()
     with (
         langfuse.start_as_current_observation(
@@ -130,18 +215,13 @@ async def run_turn(
             user_id=str(user.id),
             session_id=str(thread_id),
             trace_name="generate-chat-response",
-            tags=["chat"],
+            tags=["chat", agent.name],
         ),
     ):
         status_queue: asyncio.Queue[str | None] = asyncio.Queue()
-        deps = DocumentAgentDeps(
-            user_id=user.id,
-            thread_id=thread_id,
-            retriever=DocumentRetriever(),
-            status_queue=status_queue,
-        )
+        deps = agent.new_deps(user, thread_id, status_queue)
         agent_task = asyncio.create_task(
-            _run_agent_then_close_queue(user_text, deps, status_queue)
+            _run_then_close_queue(agent, user_text, deps, status_queue)
         )
 
         try:
@@ -150,9 +230,9 @@ async def run_turn(
                 if label is None:
                     break
                 yield format_status_part(label)
-            turn = await agent_task
+            result = await agent_task
         except AGENT_FAILURES:
-            log.exception("agent_run_failed", thread_id=str(thread_id))
+            log.exception("agent_run_failed", **log_context)
             turn_span.update(
                 output=ASSISTANT_UNAVAILABLE,
                 level="ERROR",
@@ -162,7 +242,7 @@ async def run_turn(
             yield format_done()
             return
         except Exception:
-            log.exception("turn_failed", thread_id=str(thread_id))
+            log.exception("turn_failed", **log_context)
             turn_span.update(
                 output=UNEXPECTED_TURN_ERROR,
                 level="ERROR",
@@ -173,15 +253,10 @@ async def run_turn(
             return
 
         try:
-            validate_grounded_answer(turn.answer, deps.seen_ids)
+            agent.grounder.validate(result.answer, deps.seen_ids)
         except GroundingError as exc:
-            log.warning(
-                "grounding_failed",
-                code=exc.code,
-                error=str(exc),
-                thread_id=str(thread_id),
-            )
-            canned = grounding_user_answer(exc)
+            log.warning("grounding_failed", code=exc.code, error=str(exc), **log_context)
+            canned = agent.grounder.user_answer(exc)
             turn_span.update(
                 output=canned,
                 level="WARNING",
@@ -191,45 +266,36 @@ async def run_turn(
             async for frame in iter_grounded_stream(canned, [], include_envelope=False):
                 yield frame
             await _persist_turn(
-                thread,
-                thread_id,
-                messages,
-                user_text,
-                canned,
-                citation_parts=[],
-                citation_rows=None,
-                usage=None,
+                agent, thread, thread_id, messages, user_text, canned,
+                citation_parts=[], citation_rows=None, usage=None,
             )
             return
 
-        citation_parts = _citation_stream_payloads(turn.answer, deps)
+        citation_parts = agent.citation_payloads(result, deps)
         turn_span.update(
-            output=turn.answer.answer,
+            output=result.answer.answer,
             metadata={
-                "citation_count": len(turn.answer.citations),
-                "insufficient_evidence": turn.answer.insufficient_evidence,
+                "citation_count": len(result.answer.citations),
+                "insufficient_evidence": result.answer.insufficient_evidence,
                 "retrieved_chunk_count": len(deps.seen_ids),
             },
         )
         async for frame in iter_grounded_stream(
-            turn.answer.answer,
+            result.answer.answer,
             citation_parts,
             include_envelope=False,
         ):
             yield frame
         await _persist_turn(
-            thread,
-            thread_id,
-            messages,
-            user_text,
-            turn.answer.answer,
+            agent, thread, thread_id, messages, user_text, result.answer.answer,
             citation_parts=citation_parts,
-            citation_rows=_citation_rows(turn.answer),
-            usage=turn.usage,
+            citation_rows=agent.citation_rows(result),
+            usage=result.usage,
         )
 
 
 async def _persist_turn(
+    agent: _ChatAgent,
     thread: dict[str, Any],
     thread_id: uuid.UUID,
     messages: list[dict],
@@ -264,7 +330,7 @@ async def _persist_turn(
     )
     if citation_rows is not None:
         assistant_id = uuid.UUID(stored[1]["id"])
-        await asyncio.to_thread(chats.insert_citations, assistant_id, citation_rows)
+        await asyncio.to_thread(agent.save_citations, assistant_id, citation_rows)
     await _title_if_new(thread, thread_id, user_text, answer_text)
 
 

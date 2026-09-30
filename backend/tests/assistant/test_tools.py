@@ -10,7 +10,7 @@ from app.assistant.tools import (
     execute_read_surrounding_chunks,
     execute_search_filings,
 )
-from app.retrieval.retriever import DocumentRetriever, RetrievedPassage
+from app.retrieval.documents.retriever import DocumentPassage, DocumentRetriever
 
 A = UUID("00000000-0000-0000-0000-00000000000a")
 B = UUID("00000000-0000-0000-0000-00000000000b")
@@ -19,7 +19,7 @@ USER = UUID("00000000-0000-0000-0000-000000000001")
 DOC = UUID("00000000-0000-0000-0000-00000000000d")
 
 
-def _passage(**overrides: object) -> RetrievedPassage:
+def _passage(**overrides: object) -> DocumentPassage:
     values: dict[str, object] = {
         "chunk_id": A,
         "document_id": DOC,
@@ -37,7 +37,7 @@ def _passage(**overrides: object) -> RetrievedPassage:
         "neighbors": [],
     }
     values.update(overrides)
-    return RetrievedPassage.model_validate(values)
+    return DocumentPassage.model_validate(values)
 
 
 def _deps(retriever: DocumentRetriever | MagicMock | None = None) -> DocumentAgentDeps:

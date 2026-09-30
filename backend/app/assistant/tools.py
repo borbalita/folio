@@ -5,13 +5,13 @@ from __future__ import annotations
 from uuid import UUID
 
 from app.assistant.deps import DocumentAgentDeps
-from app.retrieval.formatting import format_passages_for_agent
-from app.retrieval.queries import SearchFilters
-from app.retrieval.retriever import RetrievedPassage
+from app.retrieval.documents.formatting import format_passages_for_agent
+from app.retrieval.documents.queries import DocumentSearchFilters
+from app.retrieval.documents.retriever import DocumentPassage
 
 
 def register_passages(
-    deps: DocumentAgentDeps, passages: list[RetrievedPassage]
+    deps: DocumentAgentDeps, passages: list[DocumentPassage]
 ) -> None:
     for passage in passages:
         deps.seen_ids.add(passage.chunk_id)
@@ -29,7 +29,7 @@ def execute_search_filings(
     fiscal_years: list[int] | None = None,
     form: str | None = None,
 ) -> str:
-    filters = SearchFilters(ticker=ticker, fiscal_years=fiscal_years, form=form)
+    filters = DocumentSearchFilters(ticker=ticker, fiscal_years=fiscal_years, form=form)
     passages = deps.retriever.search(query, filters=filters)
     register_passages(deps, passages)
     return format_passages_for_agent(passages)

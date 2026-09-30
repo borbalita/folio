@@ -1,3 +1,5 @@
-"""Email agent. This slice only routes turns here; search comes later."""
+"""Email agent: search the user's mail and cite the chunks that search returned."""
 
-STUB_REPLY = "The email assistant isn't available yet."
+from app.email_assistant.agent import run_email_agent
+
+__all__ = ["run_email_agent"]

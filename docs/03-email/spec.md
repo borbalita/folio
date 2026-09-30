@@ -346,7 +346,7 @@ Bytes live in Postgres as bytea and are stored out of line (TOAST). A year of pe
   - Cite every claim.
 - **Grounding:**
   - Citations reference only ids returned by tools in the current turn.
-  - Unknown ids are dropped, mirroring the copilot's grounding.
+  - The copilot's rule applies: an answer with no citations, a repeated citation index, an unknown id, or citations on an insufficient-evidence reply is refused with a canned reply and stores no citation rows.
 
 ## 11. Tests
 

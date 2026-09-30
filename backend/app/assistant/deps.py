@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass, field
 from uuid import UUID
 
-from app.retrieval.retriever import DocumentRetriever, RetrievedPassage
+from app.retrieval.documents.retriever import DocumentPassage, DocumentRetriever
 
 
 @dataclass
@@ -15,5 +15,5 @@ class DocumentAgentDeps:
     thread_id: UUID
     retriever: DocumentRetriever
     seen_ids: set[UUID] = field(default_factory=set)
-    seen_passages: dict[UUID, RetrievedPassage] = field(default_factory=dict)
+    seen_passages: dict[UUID, DocumentPassage] = field(default_factory=dict)
     status_queue: asyncio.Queue[str | None] | None = None

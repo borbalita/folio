@@ -10,19 +10,19 @@ import pytest
 from pydantic_ai.exceptions import ModelHTTPError
 
 from app.assistant.agent import LOOKING_THROUGH_FILINGS
-from app.assistant.grounding import UNKNOWN_CHUNK, GroundingError, grounding_user_answer
 from app.assistant.outputs import AgentTurnResult, Citation, GroundedAnswer
 from app.auth.dependencies import CurrentUser
 from app.chat.orchestrator import ASSISTANT_UNAVAILABLE, UNEXPECTED_TURN_ERROR, run_turn
 from app.chat.titles import DEFAULT_THREAD_TITLE
 from app.database import chats
-from app.retrieval.retriever import RetrievedPassage
+from app.grounding import UNKNOWN_CHUNK, DocumentGrounder, GroundingError
+from app.retrieval.documents.retriever import DocumentPassage
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
 
 A = uuid.UUID("00000000-0000-0000-0000-00000000000a")
 USER = CurrentUser(id=TEST_USER_ID, email="test@example.com")
 
-PASSAGE = RetrievedPassage(
+PASSAGE = DocumentPassage(
     chunk_id=A,
     document_id=uuid.UUID("00000000-0000-0000-0000-00000000000d"),
     chunk_index=0,
@@ -207,7 +207,7 @@ def test_run_turn_grounding_error_streams_canned_answer(
 
     frames = _collect([{"role": "user", "content": "What is revenue?"}])
     joined = "".join(frames)
-    canned = grounding_user_answer(GroundingError(UNKNOWN_CHUNK, "internal"))
+    canned = DocumentGrounder().user_answer(GroundingError(UNKNOWN_CHUNK, "internal"))
 
     assert _streamed_text(frames) == canned
     assert "Invented number." not in joined
