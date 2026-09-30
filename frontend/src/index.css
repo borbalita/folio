@@ -41,6 +41,10 @@
     --color-background: var(--background);
     --color-citation: var(--citation);
     --color-citation-foreground: var(--citation-foreground);
+    --color-user-message: var(--user-message);
+    --color-user-message-foreground: var(--user-message-foreground);
+    --color-assistant: var(--assistant);
+    --color-assistant-foreground: var(--assistant-foreground);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -82,53 +86,68 @@
     --chart-4: var(--brand-neutral);
     --chart-5: #127380;
     --radius: 0.625rem;
-    --sidebar: var(--brand-surface);
+    --sidebar: var(--brand-neutral);
     --sidebar-foreground: var(--brand-dark);
     --sidebar-primary: var(--brand-dark);
     --sidebar-primary-foreground: var(--brand-surface);
-    --sidebar-accent: var(--brand-warm);
+    --sidebar-accent: var(--brand-surface);
     --sidebar-accent-foreground: var(--brand-dark);
-    --sidebar-border: var(--brand-neutral);
+    /* The neutral itself would vanish on the neutral sidebar. */
+    --sidebar-border: #c4c1ad;
     --sidebar-ring: var(--brand-cyan);
     --citation: var(--brand-cyan);
-    /* White on the cyan is ~3.3:1; the dark reads at ~6:1. */
     --citation-foreground: var(--brand-dark);
+    --user-message: var(--brand-cyan);
+    --user-message-foreground: var(--brand-surface);
+    --assistant: var(--brand-neutral);
+    --assistant-foreground: var(--brand-dark);
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    /* Surfaces step up from the brand dark; lines are the neutral at low alpha. */
+    --dark-surface: #141413;
+    --dark-raised: #23221e;
+    --dark-line: rgb(221 219 203 / 14%);
+    --dark-beige: #b8b49e;
+
+    --background: var(--brand-dark);
+    --foreground: var(--brand-warm);
+    --card: var(--dark-surface);
+    --card-foreground: var(--brand-warm);
+    --popover: var(--dark-surface);
+    --popover-foreground: var(--brand-warm);
+    --primary: var(--dark-beige);
+    --primary-foreground: var(--brand-dark);
+    --secondary: var(--dark-raised);
+    --secondary-foreground: var(--brand-warm);
+    --muted: var(--dark-raised);
+    --muted-foreground: #a8a597;
+    --accent: var(--dark-raised);
+    --accent-foreground: var(--brand-warm);
     --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-    --citation: oklch(0.38 0.08 250);
-    --citation-foreground: oklch(0.985 0 0);
+    --border: var(--dark-line);
+    --input: rgb(221 219 203 / 18%);
+    --ring: var(--brand-cyan);
+    --chart-1: var(--brand-cyan);
+    --chart-2: var(--brand-warm);
+    --chart-3: #a8a597;
+    --chart-4: var(--brand-neutral);
+    --chart-5: #5fc4d1;
+    --sidebar: var(--dark-surface);
+    --sidebar-foreground: var(--brand-warm);
+    --sidebar-primary: var(--dark-beige);
+    --sidebar-primary-foreground: var(--brand-dark);
+    --sidebar-accent: var(--dark-raised);
+    --sidebar-accent-foreground: var(--brand-warm);
+    --sidebar-border: var(--dark-line);
+    --sidebar-ring: var(--brand-cyan);
+    --citation: var(--brand-cyan);
+    --citation-foreground: var(--brand-dark);
+    --user-message: #2f5b6c;
+    --user-message-foreground: var(--brand-surface);
+    /* Brand dark would vanish on the dark page, so replies sit on the raised surface. */
+    --assistant: var(--dark-raised);
+    --assistant-foreground: var(--brand-warm);
 }
 
 @layer base {

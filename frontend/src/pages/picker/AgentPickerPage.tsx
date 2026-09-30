@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { ChatIcon } from '@/components/chat/ChatIcon'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AGENTS, type AgentInfo } from '@/lib/agents'
 import { api } from '@/lib/api'
@@ -27,7 +28,8 @@ export function AgentPickerPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 p-8">
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="flex flex-col items-center gap-2 text-center">
         <ChatIcon className="size-10" />
         <h1 className="text-xl font-semibold">Choose an assistant</h1>

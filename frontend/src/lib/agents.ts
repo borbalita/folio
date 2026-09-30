@@ -22,7 +22,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
   },
   email: {
     name: 'email',
-    title: 'Email',
+    title: 'Email Assistant',
     description: 'Search your mail and AI newsletters, with citations to each message.',
     path: '/email',
     emptyTitle: 'Ask about your mail',

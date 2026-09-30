@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { ChevronLeft, Plus } from 'lucide-react'
 
 import { ChatIcon } from '@/components/chat/ChatIcon'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { AgentInfo } from '@/lib/agents'
@@ -29,8 +30,8 @@ export function ThreadSidebar({
   onSignOut,
 }: ThreadSidebarProps) {
   return (
-    <aside className="flex w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground">
-      <div className="flex flex-col gap-2 border-b p-3">
+    <aside className="flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+      <div className="flex flex-col gap-2 border-b border-sidebar-border p-3">
         <Link
           to="/"
           aria-label={`${agent.title}. Back to all assistants`}
@@ -77,10 +78,11 @@ export function ThreadSidebar({
         </nav>
       </ScrollArea>
 
-      <div className="border-t p-3">
-        <Button variant="outline" className="w-full" onClick={onSignOut}>
+      <div className="flex gap-2 border-t border-sidebar-border p-3">
+        <Button variant="outline" className="flex-1" onClick={onSignOut}>
           Sign out
         </Button>
+        <ThemeToggle />
       </div>
     </aside>
   )

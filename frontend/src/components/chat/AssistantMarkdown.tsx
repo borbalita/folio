@@ -25,7 +25,7 @@ const ALLOWED_ELEMENTS = [
 const MARK_RE = /\[(\d+)\]/g
 
 function MarkdownCode({ children }: { children?: ReactNode }) {
-  return <code className="rounded bg-background px-1 text-[0.85em]">{children}</code>
+  return <code className="rounded bg-assistant-foreground/15 px-1 text-[0.85em]">{children}</code>
 }
 
 interface CitationHandlers {
@@ -164,10 +164,10 @@ function markdownComponents(handlers: CitationHandlers): Components {
         <table className="w-full border-collapse text-xs">{text(children)}</table>
       </div>
     ),
-    thead: ({ children }) => <thead className="bg-background">{text(children)}</thead>,
+    thead: ({ children }) => <thead className="bg-assistant-foreground/10">{text(children)}</thead>,
     tbody: ({ children }) => <tbody>{text(children)}</tbody>,
     tr: ({ children }) => (
-      <tr className="border-b border-border">{text(children)}</tr>
+      <tr className="border-b border-assistant-foreground/20">{text(children)}</tr>
     ),
     th: ({ children }) => (
       <th className="px-2 py-1 text-left font-medium">{text(children)}</th>

@@ -40,8 +40,8 @@ export function MessageList({ messages, selected, onSelect }: MessageListProps) 
               <div
                 className={
                   isUser
-                    ? 'max-w-[80%] rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground'
-                    : 'max-w-[80%] overflow-x-auto rounded-lg bg-muted px-3 py-2 text-sm'
+                    ? 'max-w-[80%] rounded-lg bg-user-message px-3 py-2 text-sm text-user-message-foreground'
+                    : 'max-w-[80%] overflow-x-auto rounded-lg bg-assistant px-3 py-2 text-sm text-assistant-foreground'
                 }
               >
                 {isUser ? (

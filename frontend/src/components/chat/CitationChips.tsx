@@ -29,7 +29,7 @@ export function CitationChips({ citations, selectedIndex, onSelect }: CitationCh
               'outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
               selected
                 ? 'border-citation bg-citation text-citation-foreground'
-                : 'border-border bg-background text-muted-foreground hover:text-foreground',
+                : 'border-assistant-foreground/25 text-assistant-foreground/75 hover:text-assistant-foreground',
             )}
           >
             <span className="tabular-nums opacity-70">{citation.citationIndex}</span>
