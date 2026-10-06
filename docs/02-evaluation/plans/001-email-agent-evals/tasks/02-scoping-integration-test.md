@@ -23,6 +23,6 @@
 
 **Dependencies**: 001/01.
 
-**Review notes**: Search's keyword helper calls OpenAI; inject or stub it so the test is network-free, without weakening what is asserted about the SQL scope.
+**Review notes**: Search calls OpenAI twice: `embed_query` for the vector half and the keyword helper for full-text search. Stub both (a fixed vector matching the fake chunk embeddings, fixed keywords) so the test is network-free, without weakening what is asserted about the SQL scope.
 
 **Complexity**: Small.

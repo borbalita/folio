@@ -1,12 +1,12 @@
 # 001 — Email agent evaluations
 
 - Created: 2026-10-02
-- Status: Discovery
-- Current stage: 5 — Decompose; task files written, awaiting agreement.
+- Status: In progress
+- Current stage: Implementation; starting with 001/01 and 001/08.
 
 ## Approval state
 
-Approved on 2026-10-02: focus on the email agent, narrowed to labelling and email RAG; goals, failures, and constraints below; all decisions; the design. Tasks are not approved. Discovery writes documentation only.
+Approved on 2026-10-02: focus on the email agent, narrowed to labelling and email RAG; goals, failures, and constraints below; all decisions; the design. Approved on 2026-10-06: the validated task plan, `gpt-6.1-sol` as generation model, and the implementation checkpoints below. Discovery writes documentation only.
 
 ## Problem
 
@@ -221,6 +221,27 @@ Jev labelling is about 100 times cheaper than regular chat models, so labelling 
 ```
 
 01, 03, and 08 can start in parallel.
+
+### Validation (Stage 6)
+
+- **Completeness**: every failure in scope maps to a score; every success criterion maps to a task. Fixed gaps: the scoping test also stubs the query embedding (001/02); eval entrypoints initialize and flush tracing (001/07); calibration adds corrupted answers if real failures are scarce (001/12); the generation model is set (001/03).
+- **Size**: 001/09 is the largest task; it stays one task because replay, step record, and scores are only testable together.
+- **Mergeability**: every task leaves production unchanged except 001/08, which is backwards compatible. Commands are documented by each task as it lands, not only in 001/15.
+- **Risk**: highest uncertainty in 001/03 (generation quality) and 001/07 and 001/09 (unverified Langfuse and PydanticAI APIs, checked at the start of each).
+- **Scope**: no task goes beyond the agreed scope.
+
+### Implementation checkpoints
+
+Work proceeds task by task, one commit each, without Cursor co-author trailers. Stops for the user:
+
+1. Before 001/03: OpenAI, TypeSafe, and Langfuse keys available to the eval commands.
+2. After 001/05: skim the generated emails and the stored-label report.
+3. After 001/07: confirm the first Langfuse experiment looks right.
+4. Before 001/11: Anthropic key.
+5. Before 001/12: hand-grading session.
+6. Before 001/14: go-ahead for the paid benchmark (about $12).
+
+Small paid test runs in 001/03 to 001/11 (a few dollars in total) proceed without separate approval once the plan is approved.
 
 ## Risks
 

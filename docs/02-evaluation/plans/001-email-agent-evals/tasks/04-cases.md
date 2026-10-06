@@ -9,7 +9,7 @@
 - `label_cases.jsonl`: email key, expected label, split (~60/40, balanced by label).
 - Expected results are derived in code from the scenario; only question wording uses an LLM, instructed not to copy email phrasing.
 - Pydantic models for both case files, used by every mode.
-- Write scenario, emails, and cases to `backend/evals/data/v1/` and commit.
+- Write scenario, emails, and cases to `backend/evals/data/v1/` and commit. v1 may still be regenerated until its first Langfuse sync (001/07); after that it is frozen and changes create v2.
 
 **Out of scope**: running any mode.
 

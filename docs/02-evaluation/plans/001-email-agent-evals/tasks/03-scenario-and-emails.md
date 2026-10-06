@@ -10,6 +10,7 @@
 - LLM rendering of each email to `.eml` (headers, plain or HTML body), parsed back with the production `parse_rfc822`.
 - Fact check in code: each rendered email contains its key facts; failures are re-rendered with a bounded number of attempts.
 - Output to a working directory, not yet `data/v1/`.
+- Generation model: `gpt-6.1-sol` (a setting of the eval command; under $1 per data version).
 
 **Out of scope**: cases and questions (001/04); ingestion.
 

@@ -9,6 +9,8 @@
 - Experiment wrapper around `Langfuse.run_experiment`: one mode and one model or variant per run; run metadata (Git commit, mode, model or variant, data version, today, prompt and rubric hash); concurrency option, default 1.
 - Move the retrieval mode onto the wrapper; local report still written; Langfuse failure keeps the local report and marks publication incomplete.
 - Tag eval traces so they are distinguishable from app traffic.
+- Eval entrypoints call the existing `configure_tracing()` at start and `shutdown_tracing()` in a `finally`, so agent and retrieval spans nest under experiment items and are flushed.
+- From here on, the Langfuse-backed commands fail fast if Langfuse keys are missing.
 
 **Out of scope**: annotation queues (001/12).
 

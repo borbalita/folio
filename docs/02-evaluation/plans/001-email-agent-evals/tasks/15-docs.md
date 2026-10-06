@@ -5,7 +5,7 @@
 **Why**: Usage knowledge and the evaluation method should outlive this plan.
 
 **Scope**
-- Commands: Docker, `.env.eval`, `generate`, `prepare`, `sync`, `run` per mode, calibration, the integration test.
+- Commands are added to `backend/evals/README.md` by each task as it lands (Docker and `.env.eval` in 001/01, `generate` in 001/03, and so on). This task checks them end to end.
 - Short "How this evaluation works": steps measured separately, code checks versus judge, calibration, fair comparison and noise, held-out cases, scenario-first data.
 - Link from `docs/02-evaluation/` and `docs/README.md`; mark the plan's deviations, if any.
 
