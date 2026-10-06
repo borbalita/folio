@@ -1,8 +1,8 @@
 # 002 — Harder retrieval data and Jev evidence reranking
 
 - Created: 2026-10-06
-- Status: In progress
-- Current stage: 002/01–03 done for retrieval; answer and end-to-end comparisons continue in plan 001 (001/09 onward).
+- Status: Done (2026-10-06)
+- Current stage: Complete. Answer and end-to-end comparisons with reranking off and on are part of plan 001 (001/09 onward).
 
 ## Approval state
 
