@@ -32,6 +32,7 @@ async def search_emails(
         execute_search_emails,
         ctx.deps,
         query,
+        question=ctx.prompt if isinstance(ctx.prompt, str) else None,
         since=since,
         until=until,
         label=label,
@@ -44,6 +45,7 @@ def execute_search_emails(
     deps: EmailAgentDeps,
     query: str,
     *,
+    question: str | None = None,
     since: date | None = None,
     until: date | None = None,
     label: EmailLabel | None = None,
@@ -59,7 +61,7 @@ def execute_search_emails(
         sender=sender,
         mailbox=mailbox,
     )
-    passages = deps.retriever.search(query, filters=filters)
+    passages = deps.retriever.search(query, filters=filters, question=question)
     for passage in passages:
         deps.remember(passage.chunk_id, passage)
     return format_email_passages(passages)

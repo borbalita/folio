@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     email_agent_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
     typesafe_label_model: str = "jev-latest"
+    email_rerank: bool = True
+    email_rerank_candidates: int = Field(default=20, gt=0)
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     email_timezone: str = "Europe/Berlin"
     news_match_window_hours: int = Field(default=48, gt=0)
@@ -54,6 +56,14 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
+    @model_validator(mode="after")
+    def rerank_needs_typesafe(self) -> "Settings":
+        if self.email_rerank and not self.typesafe_api_key:
+            raise ValueError(
+                "EMAIL_RERANK needs TYPESAFE_API_KEY; set it or EMAIL_RERANK=false"
+            )
+        return self
+
     @field_validator("email_timezone")
     @classmethod
     def timezone_exists(cls, value: str) -> str:
@@ -65,7 +75,9 @@ class Settings(BaseSettings):
     def normalize_log_level(cls, value: str) -> str:
         return value.upper()
 
-    @field_validator("yahoo_email", "yahoo_app_password", "typesafe_api_key", mode="before")
+    @field_validator(
+        "yahoo_email", "yahoo_app_password", "typesafe_api_key", mode="before"
+    )
     @classmethod
     def blank_optional_str(cls, value: str | None) -> str | None:
         if value is None or not str(value).strip():
@@ -74,7 +86,9 @@ class Settings(BaseSettings):
 
     @field_validator("email_agent_owner_user_id", mode="before")
     @classmethod
-    def blank_optional_uuid(cls, value: str | uuid.UUID | None) -> str | uuid.UUID | None:
+    def blank_optional_uuid(
+        cls, value: str | uuid.UUID | None
+    ) -> str | uuid.UUID | None:
         if value is None or (isinstance(value, str) and not value.strip()):
             return None
         return value
@@ -85,7 +99,10 @@ class Settings(BaseSettings):
         if value is None or value == "":
             return {}
         if isinstance(value, dict):
-            return {str(key).strip().lower(): str(item).strip() for key, item in value.items()}
+            return {
+                str(key).strip().lower(): str(item).strip()
+                for key, item in value.items()
+            }
         mapping: dict[str, str] = {}
         for part in str(value).split(","):
             if "=" not in part:

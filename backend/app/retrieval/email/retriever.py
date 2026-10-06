@@ -9,7 +9,9 @@ from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.retrieval.base import HybridRetriever
+from app.retrieval.email import rerank
 from app.retrieval.email.queries import EmailQueries, EmailSearchFilters, scope_clause
 
 
@@ -75,16 +77,39 @@ class EmailRetriever(HybridRetriever[EmailSearchFilters, EmailPassage]):
         "No stopwords, no sentences, no punctuation."
     )
 
+    def __init__(
+        self, *, rerank: bool | None = None, judge: rerank.Judge | None = None
+    ) -> None:
+        """`rerank` defaults to settings.email_rerank; evals pass it to compare both."""
+        self.rerank = settings.email_rerank if rerank is None else rerank
+        self.judge = judge
+
     def search(
         self,
         query: str,
         *,
         filters: EmailSearchFilters,
         session: Session | None = None,
+        question: str | None = None,
     ) -> list[EmailPassage]:
+        """`question` is the user's message; tool queries are often just keywords."""
         if not filters.mailbox_ids:
             return []
-        return super().search(query, filters=filters, session=session)
+        passages = super().search(query, filters=filters, session=session)
+        if not self.rerank:
+            return passages
+        return rerank.rerank(
+            passages,
+            query=query,
+            question=question,
+            judge=self.judge or rerank.judge_with_jev,
+            top_k=settings.retrieval_top_k,
+        )
+
+    def _fused_count(self) -> int:
+        if self.rerank:
+            return settings.email_rerank_candidates
+        return settings.retrieval_top_k
 
     def _hydrate(
         self,
