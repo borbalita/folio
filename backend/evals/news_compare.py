@@ -111,8 +111,21 @@ def is_article_link(url: str) -> bool:
 
 
 def url_in_text(url: str, body: str) -> bool:
-    """A usable article link: an article link that appears verbatim in the newsletter text."""
-    return is_article_link(url) and url.strip() in body
+    """A usable article link the newsletter text supports.
+
+    Verbatim, or without the scheme ("github.com/google/ax/..."), or for GitHub the
+    `owner/repo` the text names ("on GitHub at emir/claude-s40"): models rebuild those links.
+    """
+    if not is_article_link(url):
+        return False
+    url = url.strip()
+    if url in body:
+        return True
+    parts = urlsplit(url)
+    if (parts.netloc + parts.path).rstrip("/") in body:
+        return True
+    repo = parts.path.strip("/")
+    return parts.hostname in ("github.com", "www.github.com") and repo.count("/") == 1 and repo in body
 
 
 def grounded_choice(versions: dict[str, ExtractedItem], body: str) -> str | None:

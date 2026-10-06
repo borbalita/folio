@@ -174,3 +174,12 @@ def test_only_the_newsletters_own_front_page_is_unusable() -> None:
     assert is_article_link("https://www.thecloudcast.net/?utm_source=tldrit")
     assert is_article_link("https://scottaaronson.blog/?p=10062&utm_source=tldrnewsletter")
     assert not is_article_link("READ MORE")
+
+
+def test_links_rebuilt_from_the_text_are_grounded() -> None:
+    body = "Install with go install github.com/google/ax/cmd/ax@latest. Code on GitHub at emir/claude-s40."
+
+    assert url_in_text("https://github.com/google/ax/cmd/ax", body)
+    assert url_in_text("https://github.com/emir/claude-s40", body)
+    assert not url_in_text("https://github.com/emir/other-repo", body)
+    assert not url_in_text("https://example.com/emir/claude-s40", body)

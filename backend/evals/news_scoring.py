@@ -109,7 +109,8 @@ def passes(totals: dict[str, float | int | None]) -> tuple[bool, list[str]]:
     for metric, minimum in PASS_BAR.items():
         value = totals[metric]
         if value is None or value < minimum:
-            reasons.append(f"{metric} {value if value is None else round(value, 3)} < {minimum}")
+            shown = "None" if value is None else f"{value:.4f}"
+            reasons.append(f"{metric} {shown} < {minimum}")
     for metric in ("sponsor_leaks", "invented_urls"):
         if totals[metric]:
             reasons.append(f"{metric} {totals[metric]} > 0")
