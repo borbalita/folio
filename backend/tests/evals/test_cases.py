@@ -170,6 +170,19 @@ def test_label_cases_split_about_60_40_within_each_label(
         assert (counts[(label, "tuning")], counts[(label, "held_out")]) == (7, 5)
 
 
+def test_label_splits_of_existing_emails_survive_three_digit_keys(
+    valid_scenario: Scenario,
+) -> None:
+    emails = [make_email(f"e{n:02d}", "needs_reply") for n in range(1, 13)]
+    v1 = valid_scenario.model_copy(update={"emails": emails})
+    v2 = v1.model_copy(update={"emails": emails + [make_email("e100", "needs_reply")]})
+    before = {case.email_key: case.split for case in label_cases(v1)}
+
+    after = {case.email_key: case.split for case in label_cases(v2)}
+
+    assert {key: after[key] for key in before} == before
+
+
 def test_rag_splits_put_every_kind_in_both_splits(valid_scenario: Scenario) -> None:
     intents = rag_intents(valid_scenario)
     splits = rag_splits(intents)

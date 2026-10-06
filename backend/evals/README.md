@@ -40,9 +40,13 @@ uv run python -m evals.generate
 # Keep the scenario; re-render emails and rewrite cases
 uv run python -m evals.generate --reuse-scenario
 # Keep scenario and emails; only rewrite cases
-uv run python -m evals.generate --cases-only# Add N hard-to-label emails per label (borderline-label traps only), render just those,
+uv run python -m evals.generate --cases-only
+# Add N hard-to-label emails per label (borderline-label traps only), render just those,
 # and rewrite label cases; RAG cases are unaffected
 uv run python -m evals.generate --out evals/data/v1 --add-hard 1
+# Copy a committed version, add story lines, look-alike filler, and planned questions
+# (multi_email, superseded, vague, unanswerable); existing cases keep their wording
+uv run python -m evals.generate --extend-from v1 --out evals/data/v2
 ```
 
 Output goes to the gitignored `evals/data/draft/` (`--out` to change):
@@ -56,7 +60,9 @@ Prompts are in `evals/prompts/`; `labels.md` holds the generator's own label def
 
 ### Data versions
 
-The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
+The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 is synced and frozen.
+
+`evals/data/v2/` extends v1 (plan 002): the same 65 emails and 31 cases, plus 50 emails (`e66`–`e115`) in linked story lines and look-alike filler, and 18 planned cases (`c32`–`c49`). Its stories prompt is `prompts/stories.md`. New emails never repeat a v1 fact under the same fact name, so v1 cases keep a single answer; `--cases-only` keeps existing wording and v1 label splits.
 
 ## Langfuse
 

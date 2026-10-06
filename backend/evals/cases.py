@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import calendar
+import re
 from collections import defaultdict
 from datetime import date
 from typing import Literal
@@ -17,7 +18,15 @@ from evals.scenario import Fact, Scenario, ScenarioEmail, TrapKind
 from ingest.email.labels import CLASSIFIER_LABELS
 
 Split = Literal["tuning", "held_out"]
-CaseKind = Literal["fact", "near_duplicate", "date_boundary", "unanswerable"]
+CaseKind = Literal[
+    "fact",
+    "near_duplicate",
+    "date_boundary",
+    "unanswerable",
+    "multi_email",
+    "superseded",
+    "vague",
+]
 FACTS_PER_CASE = 2
 FACT_CASES_PER_LABEL = 2
 
@@ -41,6 +50,8 @@ class RagIntent(BaseModel):
     expected_facts: list[Fact]
     distractor_keys: list[str]
     filters: ProbeFilters
+    forbidden_terms: list[str] = []
+    """Words the question must not use, e.g. sender names in a vague question."""
 
 
 class RagCase(BaseModel):
@@ -72,7 +83,8 @@ def held_out(index: int) -> bool:
 
 def label_cases(scenario: Scenario) -> list[LabelCase]:
     by_label: dict[str, list[ScenarioEmail]] = defaultdict(list)
-    for email in sorted(scenario.emails, key=lambda e: e.key):
+    # Natural key order, so adding e100+ in a later data version keeps earlier splits.
+    for email in sorted(scenario.emails, key=lambda e: (len(e.key), e.key)):
         by_label[email.label].append(email)
     return [
         LabelCase(
@@ -94,6 +106,7 @@ def rag_intents(scenario: Scenario) -> list[RagIntent]:
         + _date_boundary_intents(scenario, skip=targeted)
         + _fact_intents(scenario)
         + _unanswerable_intents(scenario)
+        + _planned_intents(scenario, emails)
     )
     return [
         intent.model_copy(update={"case_id": f"c{n:02d}"})
@@ -142,6 +155,11 @@ def question_problems(
         f"contains the answer {fact.value!r}"
         for fact in intent.expected_facts
         if fact.value.casefold() in lowered
+    ]
+    problems += [
+        f"names {term!r}; refer to them by role instead"
+        for term in intent.forbidden_terms
+        if re.search(rf"\b{re.escape(term.casefold())}\b", lowered)
     ]
     subjects = {
         e.subject for e in scenario.emails if e.key in intent.expected_email_keys
@@ -265,6 +283,53 @@ def _unanswerable_intents(scenario: Scenario) -> list[RagIntent]:
         )
         for topic in scenario.unanswerable
     ]
+
+
+PLANNED_ASK_SUFFIX = {
+    "multi_email": "The answer is spread over several emails; ask for all of it in one question.",
+    "superseded": "Ask for the current, latest value.",
+    "vague": (
+        "Do not name the sender, their organisation, or an exact date or month; "
+        "refer to them by role and relative time from today."
+    ),
+    "unanswerable": "No email answers this.",
+}
+
+
+def _planned_intents(
+    scenario: Scenario, emails: dict[str, ScenarioEmail]
+) -> list[RagIntent]:
+    intents = []
+    for question in scenario.questions:
+        facts = [
+            next(f for f in emails[ref.email_key].facts if f.name == ref.fact_name)
+            for ref in question.answer_facts
+        ]
+        keys = list(dict.fromkeys(ref.email_key for ref in question.answer_facts))
+        forbidden: list[str] = []
+        if question.kind == "vague":
+            for key in keys:
+                sender = next(
+                    s for s in scenario.senders if s.key == emails[key].sender_key
+                )
+                forbidden += [sender.name, sender.name.split()[0]]
+                if sender.organization:
+                    forbidden.append(sender.organization)
+        intents.append(
+            RagIntent(
+                case_id="",
+                kind=question.kind,
+                ask=f"{question.ask} {PLANNED_ASK_SUFFIX[question.kind]}",
+                context="\n\n".join(_masked_context(emails[key]) for key in keys)
+                or "No email answers this.",
+                expected_email_keys=keys,
+                expected_facts=facts,
+                distractor_keys=question.distractor_keys,
+                filters=ProbeFilters(),
+                forbidden_terms=list(dict.fromkeys(forbidden)),
+            )
+        )
+    return intents
 
 
 def _intent(

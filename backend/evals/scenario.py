@@ -81,6 +81,28 @@ class UnanswerableTopic(BaseModel):
     )
 
 
+class FactRef(BaseModel):
+    email_key: str
+    fact_name: str = Field(description="The `name` of one of that email's facts.")
+
+
+class PlannedQuestion(BaseModel):
+    """A question whose answer is fixed by scenario facts, possibly across emails."""
+
+    key: str = Field(description="Stable id 'q01', 'q02', ...")
+    kind: Literal["multi_email", "superseded", "vague", "unanswerable"]
+    ask: str = Field(
+        description=(
+            "What the person wants to know, as an instruction for whoever words the "
+            "question, including how it must refer to people and time."
+        )
+    )
+    answer_facts: list[FactRef] = Field(description="Empty for unanswerable questions.")
+    distractor_keys: list[str] = Field(
+        description="Emails that look like they answer but don't (outdated values, look-alikes)."
+    )
+
+
 class ScenarioDraft(BaseModel):
     """What the scenario model writes. The fixed reference date is added in code."""
 
@@ -96,10 +118,19 @@ class ScenarioExtension(BaseModel):
     emails: list[ScenarioEmail]
 
 
+class StoryExtension(BaseModel):
+    """Linked emails, filler mail, and planned questions that make retrieval harder."""
+
+    senders: list[Sender]
+    emails: list[ScenarioEmail]
+    questions: list[PlannedQuestion]
+
+
 class Scenario(ScenarioDraft):
     today: date
     owner_name: str
     owner_address: str
+    questions: list[PlannedQuestion] = []
 
 
 def scenario_problems(scenario: Scenario) -> list[str]:
@@ -136,8 +167,9 @@ def scenario_problems(scenario: Scenario) -> list[str]:
                     problems.append(f"{where}: trap refers to unknown {key}")
 
     counts = Counter(email.label for email in scenario.emails)
+    average = len(scenario.emails) / len(CLASSIFIER_LABELS)
     for label in CLASSIFIER_LABELS:
-        if abs(counts[label.value] - EMAILS_PER_LABEL) > 2:
+        if abs(counts[label.value] - average) > max(2, average / 4):
             problems.append(f"label {label.value}: {counts[label.value]} emails")
 
     traps = Counter(trap.kind for email in scenario.emails for trap in email.traps)
@@ -181,11 +213,104 @@ def extension_problems(
     return problems + scenario_problems(extend(scenario, extension))
 
 
-def extend(scenario: Scenario, extension: ScenarioExtension) -> Scenario:
+def story_problems(
+    scenario: Scenario, extension: StoryExtension, minimums: dict[str, int]
+) -> list[str]:
+    """Planned questions must resolve to scenario facts; v1 facts must stay unambiguous."""
+    problems: list[str] = []
+    combined = extend(scenario, extension)
+    emails = {email.key: email for email in combined.emails}
+    # Only the same kind of fact with the same value could answer a v1 question;
+    # a shared date under another fact name is harmless.
+    old_facts = {(f.name, f.value) for email in scenario.emails for f in email.facts}
+    new_keys = {email.key for email in extension.emails}
+    for email in extension.emails:
+        if email.traps:
+            problems.append(f"email {email.key}: new emails carry no traps")
+        if email.in_reply_to is not None and email.in_reply_to not in new_keys:
+            problems.append(f"email {email.key}: may only reply to a new email")
+        for fact in email.facts:
+            if (fact.name, fact.value) in old_facts:
+                problems.append(
+                    f"email {email.key}: repeats v1 fact {fact.name} = {fact.value!r}"
+                )
+    counts = Counter(question.kind for question in extension.questions)
+    for kind, minimum in minimums.items():
+        if counts[kind] < minimum:
+            problems.append(f"questions {kind}: {counts[kind]} < {minimum}")
+    problems += _duplicates("question", [q.key for q in combined.questions])
+    for question in extension.questions:
+        where = f"question {question.key}"
+        for key in question.distractor_keys:
+            if key not in emails:
+                problems.append(f"{where}: unknown distractor {key}")
+        resolved = [_resolve(emails, ref) for ref in question.answer_facts]
+        for ref, fact in zip(question.answer_facts, resolved, strict=True):
+            if fact is None:
+                problems.append(
+                    f"{where}: no fact {ref.fact_name!r} in {ref.email_key}"
+                )
+        answer_keys = {ref.email_key for ref in question.answer_facts}
+        if question.kind == "unanswerable" and question.answer_facts:
+            problems.append(f"{where}: unanswerable questions have no answer facts")
+        if question.kind != "unanswerable" and not question.answer_facts:
+            problems.append(f"{where}: needs answer facts")
+        if question.kind == "multi_email" and len(answer_keys) < 2:
+            problems.append(f"{where}: multi_email needs facts from two or more emails")
+        if question.kind == "superseded":
+            problems += _superseded_problems(where, question, emails, new_keys)
+        if answer_keys & set(question.distractor_keys):
+            problems.append(f"{where}: an answer email is also a distractor")
+    return problems + scenario_problems(combined)
+
+
+def _resolve(emails: dict[str, ScenarioEmail], ref: FactRef) -> Fact | None:
+    email = emails.get(ref.email_key)
+    if email is None:
+        return None
+    return next((fact for fact in email.facts if fact.name == ref.fact_name), None)
+
+
+def _superseded_problems(
+    where: str,
+    question: PlannedQuestion,
+    emails: dict[str, ScenarioEmail],
+    new_keys: set[str],
+) -> list[str]:
+    """A new email changes a value from an earlier new email; v1 answers never change.
+
+    Other distractors (look-alikes) may be v1 emails.
+    """
+    for ref in question.answer_facts:
+        current = _resolve(emails, ref)
+        if current is None or ref.email_key not in new_keys:
+            continue
+        for key in question.distractor_keys:
+            older = emails.get(key) if key in new_keys else None
+            if older is None or older.sent_at >= emails[ref.email_key].sent_at:
+                continue
+            if any(
+                f.name == ref.fact_name and f.value != current.value
+                for f in older.facts
+            ):
+                return []
+    return [
+        (
+            f"{where}: superseded needs a new answer email and an earlier new distractor "
+            "with the same fact name and an outdated value"
+        )
+    ]
+
+
+def extend(
+    scenario: Scenario, extension: ScenarioExtension | StoryExtension
+) -> Scenario:
+    questions = extension.questions if isinstance(extension, StoryExtension) else []
     return scenario.model_copy(
         update={
             "senders": scenario.senders + extension.senders,
             "emails": scenario.emails + extension.emails,
+            "questions": scenario.questions + questions,
         }
     )
 
