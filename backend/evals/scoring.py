@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
+
+from app.email_assistant.outputs import EmailAnswer
+from app.grounding import EmailGrounder, GroundingError
 
 
 class RetrievalScores(BaseModel):
@@ -77,3 +81,63 @@ def mean(values: Iterable[float | None]) -> float | None:
     """Average of the applicable values; None when nothing applies."""
     present = [value for value in values if value is not None]
     return sum(present) / len(present) if present else None
+
+
+RefusalOutcome = Literal["correct", "wrong_refusal", "missing_refusal"]
+
+
+class AnswerScores(BaseModel):
+    """Code checks on the model's own answer (not the grounder's canned reply). None: not applicable."""
+
+    refusal_correct: float
+    refusal_outcome: RefusalOutcome
+    evidence_cited: float | None
+    """Answerable cases: cites at least one chunk of an expected email (a refusal scores 0)."""
+    distractor_cited: float | None
+    """Diagnostic, when distractors were in the evidence and the model answered: cites one."""
+    grounding_pass: float | None
+    """EmailGrounder's citation checks; None for an unanswerable case with no evidence."""
+    grounding_error: str | None
+
+
+def refusal_outcome(refused: bool, answerable: bool) -> RefusalOutcome:
+    if refused != answerable:
+        return "correct"
+    return "wrong_refusal" if refused else "missing_refusal"
+
+
+def answer_scores(
+    answer: EmailAnswer,
+    *,
+    answerable: bool,
+    expected_chunk_ids: set[UUID],
+    distractor_chunk_ids: set[UUID],
+    seen_ids: set[UUID],
+) -> AnswerScores:
+    refused = answer.insufficient_evidence
+    outcome = refusal_outcome(refused, answerable)
+    cited = {citation.chunk_id for citation in answer.citations}
+    had_evidence = bool(expected_chunk_ids or distractor_chunk_ids)
+    grounding_error = _grounding_error(answer, seen_ids) if had_evidence else None
+    return AnswerScores(
+        refusal_correct=1.0 if outcome == "correct" else 0.0,
+        refusal_outcome=outcome,
+        evidence_cited=(
+            float(bool(cited & expected_chunk_ids)) if answerable else None
+        ),
+        distractor_cited=(
+            float(bool(cited & distractor_chunk_ids))
+            if distractor_chunk_ids and not refused
+            else None
+        ),
+        grounding_pass=((0.0 if grounding_error else 1.0) if had_evidence else None),
+        grounding_error=grounding_error,
+    )
+
+
+def _grounding_error(answer: EmailAnswer, seen_ids: set[UUID]) -> str | None:
+    try:
+        EmailGrounder().validate(answer, seen_ids)
+    except GroundingError as exc:
+        return exc.code
+    return None
