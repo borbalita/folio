@@ -126,13 +126,18 @@ def remote_payloads(client: DatasetApi, dataset_name: str) -> dict[str, Payload]
 
 
 def sync_dataset(
-    client: DatasetApi, dataset_name: str, version: str, local: dict[str, Payload]
+    client: DatasetApi,
+    dataset_name: str,
+    version: str,
+    local: dict[str, Payload],
+    description: str | None = None,
 ) -> SyncPlan:
     remote = remote_payloads(client, dataset_name)
     if remote is None:
         client.create_dataset(
             name=dataset_name,
-            description=f"Email agent eval cases, data {version} (backend/evals/data/{version})",
+            description=description
+            or f"Email agent eval cases, data {version} (backend/evals/data/{version})",
             metadata={"version": version},
         )
         remote = {}

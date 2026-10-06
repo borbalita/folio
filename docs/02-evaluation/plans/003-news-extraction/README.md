@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation, 003/05.
+- Current stage: Implementation, 003/06.
 
 ## Approval state
 
@@ -98,7 +98,7 @@ Downstream story matching (do the 13 big stories survive) is left for after the 
 - [x] 003/02 — `evals.news_export` to the gitignored working folder `evals/data/news-v1/`.
 - [x] 003/03 — Reference run and candidate runs on the local files, keeping outputs and token usage.
 - [x] 003/04 — ~~Review file: full check of 6 newsletters, plus every disputed item across all 64; the owner's decisions become the expected output.~~ Changed: the GPT-5.5 reference run is the answer key (`evals.news_review reference`). The review page is built and kept for later hand labelling.
-- [ ] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
+- [x] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
 - [ ] 003/06 — `evals.run --mode extraction --model M [--effort E]` with the metrics above, a Langfuse experiment per model, and a local report; items are read from Langfuse.
 - [ ] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes.
 

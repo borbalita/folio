@@ -118,6 +118,10 @@ uv run python -m evals.news_review reference
 # Or hand-label: review page on 127.0.0.1:8765, then build the answer key from the decisions
 uv run python -m evals.news_review serve
 uv run python -m evals.news_review build
+
+# Freeze: upload to the Langfuse dataset news-extraction-v1, back up to the private
+# eval-datasets bucket, then delete the local newsletters (--keep-local to keep them)
+uv run python -m evals.news_sync
 ```
 
 A URL counts only when it is an http(s) article link that appears verbatim in the newsletter text; front-page footer links and button labels don't. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
