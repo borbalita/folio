@@ -1,6 +1,9 @@
-"""Generate the synthetic mailbox: an LLM plans a scenario, then renders each email.
+"""Generate the synthetic mailbox and its cases.
 
-Run: uv run python -m evals.generate [--out DIR] [--reuse-scenario]
+An LLM plans a scenario and renders each email; cases are derived from the scenario in code,
+with only question wording from an LLM.
+
+Run: uv run python -m evals.generate [--out DIR] [--reuse-scenario | --cases-only]
 """
 
 from __future__ import annotations
@@ -8,17 +11,19 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
-from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from openai import OpenAI
 from pydantic import BaseModel
 
 from app.config import settings
+from evals.cases import label_cases, rag_case, rag_intents, rag_splits
 from evals.emails import build_eml, missing_facts
+from evals.llm import GENERATION_MODEL, ask
+from evals.questions import phrase_questions
 from evals.scenario import (
     EMAILS_PER_LABEL,
     HISTORY_DAYS,
@@ -37,33 +42,12 @@ from ingest.email.parse import parse_rfc822
 EVALS_ROOT = Path(__file__).resolve().parent
 PROMPTS = EVALS_ROOT / "prompts"
 DEFAULT_OUT = EVALS_ROOT / "data" / "draft"
-DEFAULT_MODEL = "gpt-6.1-sol"
 SCENARIO_ATTEMPTS = 2
 RENDER_ATTEMPTS = 3
 
 
 class RenderedBody(BaseModel):
     body: str
-
-
-@lru_cache(maxsize=1)
-def _client() -> OpenAI:
-    return OpenAI(api_key=settings.openai_api_key, timeout=600)
-
-
-def _ask[T: BaseModel](model: str, system: str, user: str, schema: type[T]) -> T:
-    completion = _client().chat.completions.parse(
-        model=model,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        response_format=schema,
-    )
-    parsed = completion.choices[0].message.parsed
-    if parsed is None:
-        raise RuntimeError(f"{model} returned no parsable {schema.__name__}")
-    return parsed
 
 
 def generate_scenario(model: str, today: date) -> Scenario:
@@ -84,7 +68,7 @@ def generate_scenario(model: str, today: date) -> Scenario:
     )
     request = "Write the scenario."
     for attempt in range(1, SCENARIO_ATTEMPTS + 1):
-        draft = _ask(model, system, request, ScenarioDraft)
+        draft = ask(model, system, request, ScenarioDraft)
         scenario = Scenario(
             **draft.model_dump(),
             today=today,
@@ -122,7 +106,7 @@ def render_email(
     }
     request = json.dumps(plan, ensure_ascii=False, indent=2)
     for attempt in range(1, RENDER_ATTEMPTS + 1):
-        body = _ask(model, system, request, RenderedBody).body
+        body = ask(model, system, request, RenderedBody).body
         raw = build_eml(scenario, email, body)
         parsed = parse_rfc822(raw, provider_message_id=email.key, folder="INBOX")
         missing = missing_facts(parsed.body, email.facts)
@@ -158,25 +142,51 @@ def render_all(
         return dict(pool.map(one, scenario.emails))
 
 
+def write_cases(model: str, scenario: Scenario, out: Path) -> None:
+    intents = rag_intents(scenario)
+    questions = phrase_questions(model, scenario, intents)
+    splits = rag_splits(intents)
+    rag = [
+        rag_case(intent, questions[intent.case_id], scenario, splits[intent.case_id])
+        for intent in intents
+    ]
+    _write_jsonl(out / "rag_cases.jsonl", rag)
+    _write_jsonl(out / "label_cases.jsonl", label_cases(scenario))
+    unanswerable = sum(1 for case in rag if not case.answerable)
+    print(
+        f"cases: {len(rag)} rag ({unanswerable} unanswerable), {len(scenario.emails)} label"
+    )
+
+
+def _write_jsonl(path: Path, rows: Sequence[BaseModel]) -> None:
+    path.write_text("".join(row.model_dump_json() + "\n" for row in rows))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--model", default=GENERATION_MODEL)
     parser.add_argument(
         "--today",
         type=date.fromisoformat,
         default=datetime.now(ZoneInfo(settings.email_timezone)).date(),
     )
     parser.add_argument("--concurrency", type=int, default=8)
-    parser.add_argument(
+    step = parser.add_mutually_exclusive_group()
+    step.add_argument(
         "--reuse-scenario",
         action="store_true",
-        help="Keep the existing scenario.json and only re-render emails.",
+        help="Keep the existing scenario.json; re-render emails and rewrite cases.",
+    )
+    step.add_argument(
+        "--cases-only",
+        action="store_true",
+        help="Keep the existing scenario and emails; only rewrite the case files.",
     )
     args = parser.parse_args()
 
     scenario_path = args.out / "scenario.json"
-    if args.reuse_scenario:
+    if args.reuse_scenario or args.cases_only:
         scenario = Scenario.model_validate_json(scenario_path.read_text())
     else:
         scenario = generate_scenario(args.model, args.today)
@@ -184,17 +194,24 @@ def main() -> int:
         scenario_path.write_text(scenario.model_dump_json(indent=2) + "\n")
     print(f"scenario: {len(scenario.emails)} emails, {len(scenario.senders)} senders")
 
-    results = render_all(args.model, scenario, args.out, args.concurrency)
-    failed = {key: result for key, result in results.items() if isinstance(result, str)}
-    retried = sum(
-        1 for result in results.values() if isinstance(result, int) and result > 1
-    )
-    print(
-        f"rendered: {len(results) - len(failed)}, re-rendered: {retried}, failed: {len(failed)}"
-    )
-    for error in failed.values():
-        print(f"  {error}", file=sys.stderr)
-    return 1 if failed else 0
+    if not args.cases_only:
+        results = render_all(args.model, scenario, args.out, args.concurrency)
+        failed = {
+            key: result for key, result in results.items() if isinstance(result, str)
+        }
+        retried = sum(
+            1 for result in results.values() if isinstance(result, int) and result > 1
+        )
+        print(
+            f"rendered: {len(results) - len(failed)}, re-rendered: {retried}, failed: {len(failed)}"
+        )
+        for error in failed.values():
+            print(f"  {error}", file=sys.stderr)
+        if failed:
+            return 1
+
+    write_cases(args.model, scenario, args.out)
+    return 0
 
 
 if __name__ == "__main__":

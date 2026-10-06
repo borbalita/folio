@@ -1,0 +1,29 @@
+From: SpreeLink Billing <billing@spreelink.example>
+To: Anna Weber <anna@example.com>
+Date: Sat, 29 Aug 2026 05:50:00 +0200
+Subject: Your home internet invoice =?utf-8?b?4oCU?= August
+Message-ID: <e42@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Your home internet invoice</title></head>
+<body style=3D"margin:0;padding:24px;font-family:Arial,sans-serif;color:#222;=
+background-color:#fff;">
+<h1 style=3D"font-size:22px;margin:0 0 20px;">Your August invoice is ready</h=
+1>
+<p>Hello Anna Weber,</p>
+<p>Your SpreeLink home internet invoice for August is ready. Here is a summar=
+y of your payment details:</p>
+<p>Invoice number: SL-0826-905<br>Amount due: =E2=82=AC39.95<br>Payment due b=
+y: 12 September 2026</p>
+<p>Please arrange payment by the due date and include your invoice number as =
+the payment reference so we can match it to your account.</p>
+<p>If you have any questions about your invoice, please reply to this email. =
+Our billing team will be happy to help.</p>
+<p>Thank you for choosing SpreeLink.</p>
+<p>Kind regards,<br>SpreeLink Billing</p>
+</body>
+</html>

@@ -31,14 +31,27 @@ Seeded fixtures (`evals/fixtures.py`): user A with an active and an inactive mai
 ## Generating data
 
 ```bash
-# Plan a scenario with gpt-6.1-sol, then render ~60 .eml files (about 4 minutes, under $1)
+# Plan a scenario with gpt-6.1-sol, render ~60 .eml files, derive cases (about 5 minutes, under $1)
 uv run python -m evals.generate
 
-# Keep the scenario, re-render only the emails
+# Keep the scenario; re-render emails and rewrite cases
 uv run python -m evals.generate --reuse-scenario
+# Keep scenario and emails; only rewrite cases
+uv run python -m evals.generate --cases-only
 ```
 
-Writes to the gitignored `evals/data/draft/`: `scenario.json` (senders, emails with intended label and facts, traps, unanswerable topics) and `emails/*.eml`. Headers come from the scenario; the LLM writes only bodies, and every body is parsed with the production parser and checked to contain its facts (up to three render attempts). Prompts are in `evals/prompts/` and use their own label definitions, not the production classifier's.
+Output goes to the gitignored `evals/data/draft/` (`--out` to change):
+
+- `scenario.json`: senders, emails with intended label and facts, traps (near-duplicate, date boundary, borderline label), unanswerable topics.
+- `emails/*.eml`: headers come from the scenario; the LLM writes only bodies, and every body is parsed with the production parser and must contain its facts verbatim (up to three render attempts).
+- `rag_cases.jsonl`: question, fixed `today`, retrieval probe (query and filters), expected emails and facts, answerable flag, distractors, split. Everything except the question wording is derived in code from the scenario; the LLM phrasing questions never sees fact values, and questions that contain an answer or copy a subject are rejected.
+- `label_cases.jsonl`: email key, expected label, split (about 60/40 per label).
+
+Prompts are in `evals/prompts/` and use their own label definitions, not the production classifier's.
+
+### Data versions
+
+The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`). v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
 
 ## Scoping integration test
 

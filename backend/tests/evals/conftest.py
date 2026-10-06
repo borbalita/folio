@@ -48,7 +48,7 @@ def valid_scenario() -> Scenario:
     for kind, minimum in MIN_TRAPS.items():
         for _ in range(minimum):
             emails[trap_index].traps.append(
-                Trap(kind=kind, related_keys=[emails[0].key], note="hard")
+                Trap(kind=kind, related_keys=[emails[trap_index + 1].key], note="hard")
             )
             trap_index += 1
     return Scenario(

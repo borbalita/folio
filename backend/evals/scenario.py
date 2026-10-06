@@ -125,7 +125,7 @@ def scenario_problems(scenario: Scenario) -> list[str]:
             problems.append(f"{where}: replies to unknown {email.in_reply_to}")
         for trap in email.traps:
             for key in trap.related_keys:
-                if key not in email_keys:
+                if key not in email_keys or key == email.key:
                     problems.append(f"{where}: trap refers to unknown {key}")
 
     counts = Counter(email.label for email in scenario.emails)
