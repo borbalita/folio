@@ -89,6 +89,13 @@ class ScenarioDraft(BaseModel):
     unanswerable: list[UnanswerableTopic]
 
 
+class ScenarioExtension(BaseModel):
+    """New senders and hard-to-label emails added to an existing scenario."""
+
+    senders: list[Sender]
+    emails: list[ScenarioEmail]
+
+
 class Scenario(ScenarioDraft):
     today: date
     owner_name: str
@@ -145,6 +152,42 @@ def scenario_problems(scenario: Scenario) -> list[str]:
             if key not in email_keys:
                 problems.append(f"topic {topic.key}: unknown near miss {key}")
     return problems
+
+
+def extension_problems(
+    scenario: Scenario, extension: ScenarioExtension, per_label: int
+) -> list[str]:
+    """An extension adds only borderline-label emails, so RAG cases stay unchanged."""
+    problems: list[str] = []
+    counts = Counter(email.label for email in extension.emails)
+    for label in CLASSIFIER_LABELS:
+        if counts[label.value] != per_label:
+            problems.append(
+                f"new label {label.value}: {counts[label.value]} != {per_label}"
+            )
+    for email in extension.emails:
+        kinds = [trap.kind for trap in email.traps]
+        if kinds != [TrapKind.BORDERLINE_LABEL]:
+            problems.append(
+                f"email {email.key}: needs exactly one borderline_label trap"
+            )
+        if email.in_reply_to is not None:
+            problems.append(f"email {email.key}: must not be a reply")
+    old_values = {fact.value for email in scenario.emails for fact in email.facts}
+    for email in extension.emails:
+        for fact in email.facts:
+            if fact.value in old_values:
+                problems.append(f"email {email.key}: repeats fact value {fact.value!r}")
+    return problems + scenario_problems(extend(scenario, extension))
+
+
+def extend(scenario: Scenario, extension: ScenarioExtension) -> Scenario:
+    return scenario.model_copy(
+        update={
+            "senders": scenario.senders + extension.senders,
+            "emails": scenario.emails + extension.emails,
+        }
+    )
 
 
 def _duplicates(kind: str, keys: list[str]) -> list[str]:

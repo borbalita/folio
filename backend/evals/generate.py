@@ -3,7 +3,7 @@
 An LLM plans a scenario and renders each email; cases are derived from the scenario in code,
 with only question wording from an LLM.
 
-Run: uv run python -m evals.generate [--out DIR] [--reuse-scenario | --cases-only]
+Run: uv run python -m evals.generate [--out DIR] [--reuse-scenario | --cases-only | --add-hard N]
 """
 
 from __future__ import annotations
@@ -34,7 +34,10 @@ from evals.scenario import (
     Scenario,
     ScenarioDraft,
     ScenarioEmail,
+    ScenarioExtension,
     TrapKind,
+    extend,
+    extension_problems,
     scenario_problems,
 )
 from ingest.email.parse import parse_rfc822
@@ -58,6 +61,7 @@ def generate_scenario(model: str, today: date) -> Scenario:
             owner_name=OWNER_NAME,
             owner_address=OWNER_ADDRESS,
             today=today.isoformat(),
+            labels=_labels(),
             history_days=HISTORY_DAYS,
             per_label=EMAILS_PER_LABEL,
             min_near_duplicate=MIN_TRAPS[TrapKind.NEAR_DUPLICATE],
@@ -86,6 +90,45 @@ def generate_scenario(model: str, today: date) -> Scenario:
             + "\n".join(f"- {problem}" for problem in problems)
         )
     raise RuntimeError("no valid scenario; see the problems above")
+
+
+def extend_scenario(model: str, scenario: Scenario, per_label: int) -> Scenario:
+    """Add per_label hard-to-label emails per label. Existing emails are kept as they are."""
+    next_key = f"e{len(scenario.emails) + 1:02d}"
+    system = (
+        (PROMPTS / "hard_emails.md")
+        .read_text()
+        .format(
+            owner_name=scenario.owner_name,
+            owner_address=scenario.owner_address,
+            today=scenario.today.isoformat(),
+            per_label=per_label,
+            labels=_labels(),
+            next_key=next_key,
+            history_days=HISTORY_DAYS,
+        )
+    )
+    existing = scenario.model_dump_json(
+        include={"senders", "unanswerable", "emails"}, indent=1
+    )
+    request = f"The existing mailbox:\n{existing}"
+    for attempt in range(1, SCENARIO_ATTEMPTS + 1):
+        extension = ask(model, system, request, ScenarioExtension)
+        problems = extension_problems(scenario, extension, per_label)
+        if not problems:
+            return extend(scenario, extension)
+        print(f"extension attempt {attempt}: {len(problems)} problems", file=sys.stderr)
+        for problem in problems:
+            print(f"  {problem}", file=sys.stderr)
+        request = (
+            f"The existing mailbox:\n{existing}\n\nA previous attempt had these "
+            "problems; avoid them:\n" + "\n".join(f"- {p}" for p in problems)
+        )
+    raise RuntimeError("no valid extension; see the problems above")
+
+
+def _labels() -> str:
+    return (PROMPTS / "labels.md").read_text().strip()
 
 
 def render_email(
@@ -124,9 +167,13 @@ def render_email(
 
 
 def render_all(
-    model: str, scenario: Scenario, out: Path, concurrency: int
+    model: str,
+    scenario: Scenario,
+    out: Path,
+    concurrency: int,
+    emails: list[ScenarioEmail] | None = None,
 ) -> dict[str, int | str]:
-    """Render every email in parallel. Returns attempts per key, or the error text."""
+    """Render emails (default: all) in parallel. Returns attempts per key, or the error text."""
     emails_dir = out / "emails"
     emails_dir.mkdir(parents=True, exist_ok=True)
 
@@ -139,7 +186,7 @@ def render_all(
         return email.key, attempts
 
     with ThreadPoolExecutor(max_workers=concurrency) as pool:
-        return dict(pool.map(one, scenario.emails))
+        return dict(pool.map(one, scenario.emails if emails is None else emails))
 
 
 def write_cases(model: str, scenario: Scenario, out: Path) -> None:
@@ -183,19 +230,37 @@ def main() -> int:
         action="store_true",
         help="Keep the existing scenario and emails; only rewrite the case files.",
     )
+    step.add_argument(
+        "--add-hard",
+        type=int,
+        metavar="N",
+        help=(
+            "Keep everything; add N hard-to-label emails per label, render only those, "
+            "and rewrite label cases. RAG cases are unaffected."
+        ),
+    )
     args = parser.parse_args()
 
     scenario_path = args.out / "scenario.json"
-    if args.reuse_scenario or args.cases_only:
+    if args.reuse_scenario or args.cases_only or args.add_hard:
         scenario = Scenario.model_validate_json(scenario_path.read_text())
     else:
         scenario = generate_scenario(args.model, args.today)
         args.out.mkdir(parents=True, exist_ok=True)
         scenario_path.write_text(scenario.model_dump_json(indent=2) + "\n")
+
+    to_render = [] if args.cases_only else None
+    if args.add_hard:
+        known = {email.key for email in scenario.emails}
+        scenario = extend_scenario(args.model, scenario, args.add_hard)
+        to_render = [email for email in scenario.emails if email.key not in known]
+        scenario_path.write_text(scenario.model_dump_json(indent=2) + "\n")
     print(f"scenario: {len(scenario.emails)} emails, {len(scenario.senders)} senders")
 
-    if not args.cases_only:
-        results = render_all(args.model, scenario, args.out, args.concurrency)
+    if to_render != []:
+        results = render_all(
+            args.model, scenario, args.out, args.concurrency, to_render
+        )
         failed = {
             key: result for key, result in results.items() if isinstance(result, str)
         }
@@ -210,7 +275,11 @@ def main() -> int:
         if failed:
             return 1
 
-    write_cases(args.model, scenario, args.out)
+    if args.add_hard:
+        _write_jsonl(args.out / "label_cases.jsonl", label_cases(scenario))
+        print(f"cases: {len(scenario.emails)} label (RAG cases unchanged)")
+    else:
+        write_cases(args.model, scenario, args.out)
     return 0
 
 

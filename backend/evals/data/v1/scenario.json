@@ -1694,6 +1694,169 @@
       "body_format": "html",
       "in_reply_to": null,
       "traps": []
+    },
+    {
+      "key": "e61",
+      "label": "needs_reply",
+      "sender_key": "s_club",
+      "sent_at": "2026-10-05T18:45:00+02:00",
+      "subject": "Canal Runners: October club notes",
+      "brief": "October's club notes cover reflective clothing, the route-marking team's report and the results of our volunteer survey. The equipment cupboard has moved to Reed House, and the updated inventory is linked below the committee minutes. Our next issue will include a guide to winter warm-ups. Anna, before I print the volunteer rota, could you reply by 9 October 2026 to say whether you can staff the equipment table?",
+      "facts": [
+        {
+          "name": "equipment cupboard location",
+          "value": "Reed House"
+        },
+        {
+          "name": "reply deadline",
+          "value": "9 October 2026"
+        },
+        {
+          "name": "requested volunteer assignment",
+          "value": "equipment table"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The recurring club-news layout tempts newsletter, but the final personalised question leaves the rota organiser waiting for Anna's answer, making needs_reply correct."
+        }
+      ]
+    },
+    {
+      "key": "e62",
+      "label": "invoice",
+      "sender_key": "s_leo",
+      "sent_at": "2026-09-24T20:40:00+02:00",
+      "subject": "Picnic photos and a little housekeeping",
+      "brief": "I've put the picnic photos in the shared album Blanket Weather; the ones with the runaway napkins are brilliant. I covered your share of the food, so you owe me €18.75. Please transfer it by 1 October 2026 with the reference PICNIC-LEO.",
+      "facts": [
+        {
+          "name": "shared album title",
+          "value": "Blanket Weather"
+        },
+        {
+          "name": "amount owed",
+          "value": "€18.75"
+        },
+        {
+          "name": "payment deadline",
+          "value": "1 October 2026"
+        },
+        {
+          "name": "payment reference",
+          "value": "PICNIC-LEO"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The friend's photo-sharing subject and opening tempt other, but the explicit debt and transfer request make invoice correct."
+        }
+      ]
+    },
+    {
+      "key": "e63",
+      "label": "promotional",
+      "sender_key": "s_tool",
+      "sent_at": "2026-10-02T09:45:00+02:00",
+      "subject": "FrameDesk account update: storage allowance",
+      "brief": "Your workspace storage report is ready in the account centre, with a breakdown of archived projects and shared assets. For additional capacity, activate the optional Archive Plus add-on at €6.45 per month using the Upgrade button beneath the report. Activate by 16 October 2026 with code ARCHIVE40 to save 40% on the first three months.",
+      "facts": [
+        {
+          "name": "optional add-on",
+          "value": "Archive Plus"
+        },
+        {
+          "name": "advertised monthly price",
+          "value": "€6.45"
+        },
+        {
+          "name": "offer deadline",
+          "value": "16 October 2026"
+        },
+        {
+          "name": "offer code",
+          "value": "ARCHIVE40"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The billing sender and account-report framing tempt other, but the substantive call to activate a discounted optional add-on makes promotional correct."
+        }
+      ]
+    },
+    {
+      "key": "e64",
+      "label": "newsletter",
+      "sender_key": "s_shop",
+      "sent_at": "2026-09-29T08:40:00+02:00",
+      "subject": "New on the shelf: three papers for ink lovers",
+      "brief": "In issue 14 of our monthly Paper Notes, the product-card panels compare ink behaviour on Cloudleaf cotton, Rill vellum and Slategrain recycled stock. Cloudleaf cotton showed the least feathering, while Rill vellum took longest to dry in our repeatable blotting test. Slategrain recycled stock produced the strongest show-through with broad nibs. The closing workshop column explains how paper sizing changes absorption and includes a worksheet for repeating the test at home.",
+      "facts": [
+        {
+          "name": "recurring publication",
+          "value": "Paper Notes"
+        },
+        {
+          "name": "least-feathering paper",
+          "value": "Cloudleaf cotton"
+        },
+        {
+          "name": "slowest-drying paper",
+          "value": "Rill vellum"
+        },
+        {
+          "name": "strongest-show-through paper",
+          "value": "Slategrain recycled stock"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The retailer, new-product subject and product-card layout tempt promotional, but the recurring issue delivers comparative test findings and educational guidance rather than a sales pitch, making newsletter correct."
+        }
+      ]
+    },
+    {
+      "key": "e65",
+      "label": "other",
+      "sender_key": "s_mira",
+      "sent_at": "2026-10-05T15:15:00+02:00",
+      "subject": "Approval requested: exhibition poster proof",
+      "brief": "The printer's forwarded cover sheet still says, 'Anna, please approve proof FH-POST-92 before production.' Since that sheet was generated, the client delegated sign-off to me and I approved the proof this afternoon. The printer has accepted my signature and locked the production file for the press run on 15 October 2026.",
+      "facts": [
+        {
+          "name": "poster proof identifier",
+          "value": "FH-POST-92"
+        },
+        {
+          "name": "press run date",
+          "value": "15 October 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The approval-request subject and quoted instruction tempt needs_reply, but the subsequent delegated sign-off and accepted production file resolve the request, making other correct."
+        }
+      ]
     }
   ],
   "unanswerable": [

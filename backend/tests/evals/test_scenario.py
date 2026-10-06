@@ -2,8 +2,19 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from evals.scenario import Scenario, Trap, TrapKind, scenario_problems
-from tests.evals.conftest import BERLIN_SUMMER
+from evals.scenario import (
+    Fact,
+    Scenario,
+    ScenarioEmail,
+    ScenarioExtension,
+    Trap,
+    TrapKind,
+    extend,
+    extension_problems,
+    scenario_problems,
+)
+from ingest.email.labels import CLASSIFIER_LABELS
+from tests.evals.conftest import BERLIN_SUMMER, make_email
 
 
 def test_valid_scenario_has_no_problems(valid_scenario: Scenario) -> None:
@@ -61,3 +72,52 @@ def test_too_few_unanswerable_topics_are_reported(valid_scenario: Scenario) -> N
     valid_scenario.unanswerable = valid_scenario.unanswerable[:2]
 
     assert "only 2 unanswerable topics" in scenario_problems(valid_scenario)
+
+
+def _hard(key: str, label: str, value: str) -> ScenarioEmail:
+    return make_email(
+        key,
+        label,
+        facts=[Fact(name="code", value=value)],
+        traps=[
+            Trap(
+                kind=TrapKind.BORDERLINE_LABEL,
+                related_keys=[],
+                note="looks like an invoice",
+            )
+        ],
+    )
+
+
+def _extension() -> ScenarioExtension:
+    return ScenarioExtension(
+        senders=[],
+        emails=[
+            _hard(f"h{n}", label.value, f"HARD-{n}")
+            for n, label in enumerate(CLASSIFIER_LABELS)
+        ],
+    )
+
+
+def test_valid_extension_has_no_problems(valid_scenario: Scenario) -> None:
+    extension = _extension()
+
+    assert extension_problems(valid_scenario, extension, per_label=1) == []
+    assert (
+        len(extend(valid_scenario, extension).emails) == len(valid_scenario.emails) + 5
+    )
+
+
+def test_extension_must_only_add_borderline_emails(valid_scenario: Scenario) -> None:
+    extension = _extension()
+    extension.emails[0].traps = [
+        Trap(kind=TrapKind.DATE_BOUNDARY, related_keys=[], note="")
+    ]
+    extension.emails[1].facts = [Fact(name="amount", value="€42.00")]
+    extension.emails.pop()
+
+    problems = extension_problems(valid_scenario, extension, per_label=1)
+
+    assert "email h0: needs exactly one borderline_label trap" in problems
+    assert "email h1: repeats fact value '€42.00'" in problems
+    assert "new label other: 0 != 1" in problems

@@ -1,0 +1,28 @@
+From: FrameDesk Accounts <billing@framedesk.example>
+To: Anna Weber <anna@example.com>
+Date: Fri, 02 Oct 2026 09:45:00 +0200
+Subject: FrameDesk account update: storage allowance
+Message-ID: <e63@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>FrameDesk storage update</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #242424; line-height: 1=
+.6; padding: 24px;">
+<p>Hello Anna,</p>
+<p>Your workspace storage report is ready in the FrameDesk account centre. Op=
+en it to see a breakdown of your archived projects and shared assets, and rev=
+iew how your storage allowance is being used.</p>
+<p>If you need additional capacity, you can activate the optional Archive Plu=
+s add-on at =E2=82=AC6.45 per month. Use the Upgrade button beneath your stor=
+age report to get started.</p>
+<p>Activate by 16 October 2026 and enter code <strong>ARCHIVE40</strong> to s=
+ave 40% on the first three months.</p>
+<p>Happy with your current capacity? You can simply review the report without=
+ adding anything.</p>
+<p>Best regards,<br>FrameDesk Accounts</p>
+</body>
+</html>

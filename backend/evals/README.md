@@ -40,7 +40,9 @@ uv run python -m evals.generate
 # Keep the scenario; re-render emails and rewrite cases
 uv run python -m evals.generate --reuse-scenario
 # Keep scenario and emails; only rewrite cases
-uv run python -m evals.generate --cases-only
+uv run python -m evals.generate --cases-only# Add N hard-to-label emails per label (borderline-label traps only), render just those,
+# and rewrite label cases; RAG cases are unaffected
+uv run python -m evals.generate --out evals/data/v1 --add-hard 1
 ```
 
 Output goes to the gitignored `evals/data/draft/` (`--out` to change):
@@ -50,11 +52,11 @@ Output goes to the gitignored `evals/data/draft/` (`--out` to change):
 - `rag_cases.jsonl`: question, fixed `today`, retrieval probe (query and filters), expected emails and facts, answerable flag, distractors, split. Everything except the question wording is derived in code from the scenario; the LLM phrasing questions never sees fact values, and questions that contain an answer or copy a subject are rejected.
 - `label_cases.jsonl`: email key, expected label, split (about 60/40 per label).
 
-Prompts are in `evals/prompts/` and use their own label definitions, not the production classifier's.
+Prompts are in `evals/prompts/`; `labels.md` holds the generator's own label definitions, separate from the production classifier's.
 
 ### Data versions
 
-The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`). v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
+The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
 
 ## Scoping integration test
 

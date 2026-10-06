@@ -10,6 +10,7 @@
 {"email_key":"e46","expected_label":"needs_reply","split":"tuning"}
 {"email_key":"e51","expected_label":"needs_reply","split":"tuning"}
 {"email_key":"e56","expected_label":"needs_reply","split":"held_out"}
+{"email_key":"e61","expected_label":"needs_reply","split":"tuning"}
 {"email_key":"e03","expected_label":"promotional","split":"tuning"}
 {"email_key":"e08","expected_label":"promotional","split":"held_out"}
 {"email_key":"e13","expected_label":"promotional","split":"tuning"}
@@ -22,6 +23,7 @@
 {"email_key":"e48","expected_label":"promotional","split":"tuning"}
 {"email_key":"e53","expected_label":"promotional","split":"tuning"}
 {"email_key":"e58","expected_label":"promotional","split":"held_out"}
+{"email_key":"e63","expected_label":"promotional","split":"tuning"}
 {"email_key":"e04","expected_label":"newsletter","split":"tuning"}
 {"email_key":"e09","expected_label":"newsletter","split":"held_out"}
 {"email_key":"e14","expected_label":"newsletter","split":"tuning"}
@@ -34,6 +36,7 @@
 {"email_key":"e49","expected_label":"newsletter","split":"tuning"}
 {"email_key":"e54","expected_label":"newsletter","split":"tuning"}
 {"email_key":"e59","expected_label":"newsletter","split":"held_out"}
+{"email_key":"e64","expected_label":"newsletter","split":"tuning"}
 {"email_key":"e02","expected_label":"invoice","split":"tuning"}
 {"email_key":"e07","expected_label":"invoice","split":"held_out"}
 {"email_key":"e12","expected_label":"invoice","split":"tuning"}
@@ -46,6 +49,7 @@
 {"email_key":"e47","expected_label":"invoice","split":"tuning"}
 {"email_key":"e52","expected_label":"invoice","split":"tuning"}
 {"email_key":"e57","expected_label":"invoice","split":"held_out"}
+{"email_key":"e62","expected_label":"invoice","split":"tuning"}
 {"email_key":"e05","expected_label":"other","split":"tuning"}
 {"email_key":"e10","expected_label":"other","split":"held_out"}
 {"email_key":"e15","expected_label":"other","split":"tuning"}
@@ -58,3 +62,4 @@
 {"email_key":"e50","expected_label":"other","split":"tuning"}
 {"email_key":"e55","expected_label":"other","split":"tuning"}
 {"email_key":"e60","expected_label":"other","split":"held_out"}
+{"email_key":"e65","expected_label":"other","split":"tuning"}
