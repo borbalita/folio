@@ -2,7 +2,7 @@
 
 - Created: 2026-10-02
 - Status: In progress
-- Current stage: Implementation; starting with 001/01 and 001/08.
+- Current stage: Implementation; 001/01–08 done. Paused for [plan 002](../002-jev-reranking/README.md) (v2 data and reranking); 001/09 onward runs on v2.
 
 ## Approval state
 
@@ -202,7 +202,7 @@ Jev labelling is about 100 times cheaper than regular chat models, so labelling 
 - [x] [001/05 — Ingest data into Docker](tasks/05-ingest-into-docker.md)
 - [x] [001/06 — Retrieval test](tasks/06-retrieval-test.md)
 - [x] [001/07 — Langfuse datasets and experiments](tasks/07-langfuse-experiments.md)
-- [ ] [001/08 — Optional reference date in the email prompt](tasks/08-prompt-reference-date.md)
+- [x] [001/08 — Optional reference date in the email prompt](tasks/08-prompt-reference-date.md)
 - [ ] [001/09 — Answer test with fixed evidence](tasks/09-answer-test.md)
 - [ ] [001/10 — End-to-end run](tasks/10-end-to-end-run.md)
 - [ ] [001/11 — LLM judge](tasks/11-judge.md)
