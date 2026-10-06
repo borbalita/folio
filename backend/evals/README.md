@@ -92,10 +92,13 @@ Concurrency defaults to 1 (stops early on bugs, readable traces); raise it to 4â
 Retrieval metrics are per email, not per chunk; each email takes the rank of its first chunk, with k = `retrieval_top_k` (10):
 
 - **recall@10**: expected emails found in the top 10 / expected emails.
+- **recall@3**: the same within the top 3; with only ~100 emails, recall@10 is nearly always 1.0.
 - **precision@10**: expected emails / emails returned. Search almost always fills all 10 slots, so with one expected email this sits near 0.1; read MRR for ranking quality.
 - **MRR**: 1 / rank of the first expected email, 0 if none.
+- **distractor rate**: the case's planned distractors (outdated values, near-duplicate twins, look-alikes, near misses) returned in the top 10 / planned distractors. Lower is better: the agent can't quote an outdated value it never sees.
+- **empty**: unanswerable cases only; 1.0 when search returns nothing.
 
-Unanswerable cases have no expected email; they are reported as not applicable (no score in Langfuse) and counted separately. The report also lists which distractors (near-duplicate twins, near misses) were retrieved.
+Unanswerable cases have no recall, precision, or MRR; Langfuse gets no score for a metric that doesn't apply. The report also lists which distractors were retrieved.
 
 ## Scoping integration test
 

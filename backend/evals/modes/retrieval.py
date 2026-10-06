@@ -61,16 +61,19 @@ def run_case(case: RagCase, owners: dict[UUID, str]) -> RetrievalResult:
         retrieved_email_keys=ranked,
         distractors_retrieved=[key for key in ranked if key in case.distractor_keys],
         scores=retrieval_scores(
-            ranked, case.expected_email_keys, k=settings.retrieval_top_k
+            ranked,
+            case.expected_email_keys,
+            case.distractor_keys,
+            k=settings.retrieval_top_k,
         ),
     )
 
 
-METRICS = ("recall", "precision", "mrr")
+METRICS = ("recall", "recall_at_3", "precision", "mrr", "distractor_rate", "empty")
 
 
 def summarize(results: list[RetrievalResult]) -> dict[str, object]:
-    """Averages overall and per case kind; unanswerable cases are only counted."""
+    """Averages overall and per case kind; each metric over the cases it applies to."""
 
     def averages(group: list[RetrievalResult]) -> dict[str, float | None]:
         return {m: mean(getattr(r.scores, m) for r in group) for m in METRICS}
@@ -78,11 +81,10 @@ def summarize(results: list[RetrievalResult]) -> dict[str, object]:
     by_kind: dict[str, list[RetrievalResult]] = defaultdict(list)
     for result in results:
         by_kind[result.kind].append(result)
-    answerable = [r for r in results if r.answerable]
     return {
         "cases": len(results),
-        "unanswerable_cases": len(results) - len(answerable),
-        "overall": averages(answerable),
+        "unanswerable_cases": sum(1 for r in results if not r.answerable),
+        "overall": averages(results),
         "by_kind": {kind: averages(group) for kind, group in sorted(by_kind.items())},
         "distractor_retrieved_cases": sum(
             1 for r in results if r.distractors_retrieved
@@ -91,7 +93,7 @@ def summarize(results: list[RetrievalResult]) -> dict[str, object]:
 
 
 def retrieval_evaluations(result: RetrievalResult) -> list[Evaluation]:
-    """One score per applicable metric; unanswerable cases get none rather than a fake 1.0."""
+    """One score per applicable metric; nothing for a metric that doesn't apply, never a fake 1.0."""
     comment = f"retrieved {result.retrieved_email_keys}, expected {result.expected_email_keys}"
     return [
         Evaluation(name=metric, value=value, comment=comment)
@@ -138,16 +140,18 @@ def run(client: Langfuse, version: str, concurrency: int) -> dict[str, object]:
 
 
 def _scores_line(result: RetrievalResult) -> str:
-    if not result.answerable:
-        return f"n/a (unanswerable, {len(result.retrieved_email_keys)} emails returned)"
     s = result.scores
-    return f"recall {s.recall:.2f}  precision {s.precision:.2f}  mrr {s.mrr:.2f}"
+    distractors = f"distractors {_format(s.distractor_rate)}"
+    if not result.answerable:
+        return f"unanswerable, {len(result.retrieved_email_keys)} emails returned  {distractors}"
+    return (
+        f"recall {s.recall:.2f}  recall@3 {s.recall_at_3:.2f}  precision {s.precision:.2f}  "
+        f"mrr {s.mrr:.2f}  {distractors}"
+    )
 
 
 def print_summary(summary: dict[str, object]) -> None:
-    print(
-        f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable (recall n/a)"
-    )
+    print(f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable")
     for name, averages in [
         ("overall", summary["overall"]),
         *summary["by_kind"].items(),
