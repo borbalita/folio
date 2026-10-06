@@ -21,7 +21,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from evals.dataset import OUT_ROOT
-from evals.news_compare import ItemGroup, grounded_choice, group_items
+from evals.news_compare import ItemGroup, grounded_choice, group_items, url_in_text
 from evals.news_data import DEFAULT_NEWS_VERSION, Newsletter, load_newsletters
 from evals.news_runs import RunFile, runs_dir
 from ingest.email.news import ExtractedItem
@@ -61,6 +61,8 @@ class ReviewGroup(BaseModel):
     """Preselected version: the one whose URL the text supports, else the reference's."""
     title_key: str
     """Same key across newsletters for recurring blocks, so one decision can cover them all."""
+    usable_url: dict[str, bool]
+    """Run -> whether its URL is a usable article link; unusable ones become no link."""
 
 
 class ReviewNewsletter(BaseModel):
@@ -158,6 +160,10 @@ def build_review(
                         versions=group.versions,
                         suggested_run=suggested_run(group, newsletter.body),
                         title_key=title_key(next(iter(group.versions.values())).title),
+                        usable_url={
+                            run: url_in_text(item.url, newsletter.body)
+                            for run, item in group.versions.items()
+                        },
                     )
                 )
         if groups or newsletter.key in full:
@@ -173,6 +179,12 @@ def build_review(
                 )
             )
     return review
+
+
+def as_expected(item: ExtractedItem, body: str, sponsor: bool) -> ExtractedItem:
+    """The answer key keeps a URL only when it is a usable article link in the text."""
+    url = item.url.strip() if url_in_text(item.url, body) else ""
+    return item.model_copy(update={"url": url, "sponsor": sponsor})
 
 
 def expected_items(
@@ -191,12 +203,13 @@ def expected_items(
                 undecided.append(group_id)
                 continue
             # Every run agrees (news, or a sponsor), and the text settles any URL difference.
-            items.append(group.versions[suggested])
+            agreed = group.versions[suggested]
+            items.append(as_expected(agreed, newsletter.body, agreed.sponsor))
             continue
         if decision.verdict == "skip":
             continue
         chosen = group.versions.get(decision.run or suggested) or group.versions[suggested]
-        items.append(chosen.model_copy(update={"sponsor": decision.verdict == "sponsor"}))
+        items.append(as_expected(chosen, newsletter.body, decision.verdict == "sponsor"))
     for missing in decisions.missing.get(newsletter.key, []):
         items.append(ExtractedItem(title=missing.title, blurb="", url=missing.url, sponsor=missing.sponsor))
     return items, undecided

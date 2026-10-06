@@ -4,6 +4,7 @@ from evals.news_compare import (
     group_items,
     match_items,
     normalize_url,
+    url_in_text,
 )
 from ingest.email.news import ExtractedItem
 
@@ -137,3 +138,20 @@ def test_two_urls_in_the_text_need_a_person() -> None:
     assert ItemGroup(versions=versions).disagreement(["ref", "cheap"], body) == [
         "different URLs"
     ]
+
+
+def test_a_front_page_link_in_the_footer_does_not_ground_a_url() -> None:
+    body = "Story text without a link. Unsubscribe | https://app.alphasignal.ai"
+    versions = {
+        "ref": _item("Story", ""),
+        "cheap": _item("Story", "https://app.alphasignal.ai"),
+    }
+
+    assert grounded_choice(versions, body) == "ref"
+
+
+def test_a_button_label_is_not_a_link() -> None:
+    body = "Big launch today. READ MORE"
+
+    assert not url_in_text("READ MORE", body)
+    assert url_in_text("https://a.example/story", "see https://a.example/story")

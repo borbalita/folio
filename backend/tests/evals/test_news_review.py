@@ -13,7 +13,11 @@ def _newsletter(key: str, source: str = "tldr") -> Newsletter:
         source=source,
         sent_date=date(2026, 9, 1),
         subject=f"Edition {key}",
-        body="text",
+        body=" ".join(
+            f"https://{name}.example/story"
+            for name in ("a", "ad", "b", "x", "m")
+        )
+        + " https://b.example/right https://b.example/wrong",
         email_id="00000000-0000-0000-0000-000000000001",
     )
 
@@ -36,18 +40,18 @@ RUNS = {
     REFERENCE_RUN: _run(
         "gpt-5.5",
         [
-            _item("Agreed", "https://a.example"),
-            _item("Ad", "https://ad.example", sponsor=True),
+            _item("Agreed", "https://a.example/story"),
+            _item("Ad", "https://ad.example/story", sponsor=True),
             _item("Bad URL", "https://b.example/right"),
         ],
     ),
     "cheap@none": _run(
         "cheap",
         [
-            _item("Agreed", "https://a.example"),
-            _item("Ad", "https://ad.example", sponsor=False),
+            _item("Agreed", "https://a.example/story"),
+            _item("Ad", "https://ad.example/story", sponsor=False),
             _item("Bad URL", "https://b.example/wrong"),
-            _item("Extra", "https://x.example"),
+            _item("Extra", "https://x.example/story"),
         ],
     ),
 }
@@ -94,17 +98,17 @@ def test_decisions_become_expected_items_in_reading_order() -> None:
             "n01:2": Decision(verdict="news", run="cheap@none"),
             "n01:3": Decision(verdict="skip", run="cheap@none"),
         },
-        missing={"n01": [MissingItem(title="Missed", url="https://m.example")]},
+        missing={"n01": [MissingItem(title="Missed", url="https://m.example/story")]},
     )
 
     items, undecided = news_review.expected_items(_newsletter("n01"), RUNS, decisions, full=False)
 
     assert undecided == []
     assert [(item.title, item.url, item.sponsor) for item in items] == [
-        ("Agreed", "https://a.example", False),
-        ("Ad", "https://ad.example", True),
+        ("Agreed", "https://a.example/story", False),
+        ("Ad", "https://ad.example/story", True),
         ("Bad URL", "https://b.example/wrong", False),
-        ("Missed", "https://m.example", False),
+        ("Missed", "https://m.example/story", False),
     ]
 
 
@@ -138,8 +142,8 @@ def test_recurring_blocks_share_a_title_key_across_editions() -> None:
 def test_unanimous_sponsors_are_accepted_outside_full_checks(monkeypatch) -> None:
     monkeypatch.setattr(news_review, "full_check_keys", lambda newsletters: set())
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example", sponsor=True)]),
-        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example", sponsor=True)]),
+        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]),
+        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]),
     }
 
     review = news_review.build_review([_newsletter("n01")], runs)
@@ -154,8 +158,8 @@ def test_unanimous_sponsors_are_accepted_outside_full_checks(monkeypatch) -> Non
 
 def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example", sponsor=True)]),
-        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example", sponsor=True)]),
+        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]),
+        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]),
     }
 
     _, undecided = news_review.expected_items(
@@ -163,3 +167,20 @@ def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
     )
 
     assert undecided == ["n01:0"]
+
+
+def test_unusable_urls_become_no_link_in_the_answer_key() -> None:
+    newsletter = _newsletter("n01").model_copy(
+        update={"body": "Story https://a.example/story Footer https://app.example READ MORE"}
+    )
+    runs = {
+        REFERENCE_RUN: _run("gpt-5.5", [
+            _item("Story", "https://a.example/story"),
+            _item("Homepage", "https://app.example"),
+            _item("Button", "READ MORE"),
+        ]),
+    }
+
+    items, _ = news_review.expected_items(newsletter, runs, Decisions(runs_hash="x"), full=False)
+
+    assert [item.url for item in items] == ["https://a.example/story", "", ""]

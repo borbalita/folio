@@ -74,9 +74,23 @@ def match_items(
     return sorted(pairs)
 
 
+def is_front_page(url: str) -> bool:
+    """A site's front page (no path), like the newsletter's own footer link."""
+    return urlsplit(url.strip()).path in ("", "/")
+
+
 def url_in_text(url: str, body: str) -> bool:
-    """A URL is grounded when it appears verbatim in the newsletter text."""
-    return bool(url.strip()) and url.strip() in body
+    """A usable article link: an http(s) URL past a site's front page that appears verbatim
+    in the newsletter text. Footers link the newsletter's home page in every edition, and
+    models sometimes copy a button label ("READ MORE") into the URL field."""
+    url = url.strip()
+    parts = urlsplit(url)
+    return (
+        parts.scheme in ("http", "https")
+        and bool(parts.netloc)
+        and not is_front_page(url)
+        and url in body
+    )
 
 
 def grounded_choice(versions: dict[str, ExtractedItem], body: str) -> str | None:

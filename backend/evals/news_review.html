@@ -41,6 +41,8 @@
   .missing input { font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:4px; }
   .missing li { margin:2px 0; }
   label.filter { font-size:13px; }
+  .ok { font-size:12px; color:var(--ok); }
+  .unusable { font-size:12px; color:var(--bad); }
 </style>
 </head>
 <body>
@@ -116,7 +118,11 @@ function groupCard(group) {
         }) : null,
         el('div', { class: 'text' },
           el('div', { class: 'title' }, item.title, item.sponsor ? el('span', { class: 'sponsor' }, '  sponsor') : null),
-          el('a', { href: item.url, target: '_blank', rel: 'noreferrer noopener' }, item.url),
+          item.url
+            ? el('a', { href: item.url, target: '_blank', rel: 'noreferrer noopener' }, item.url)
+            : el('div', { class: 'runs' }, '(no link)'),
+          item.url ? el('div', { class: group.usable_url[runs[0]] ? 'ok' : 'unusable' },
+            group.usable_url[runs[0]] ? 'link in text ✓' : 'not a usable link ✗ (counts as no link)') : null,
           el('div', { class: 'runs' }, runs.join(', ')),
         ),
       )),
