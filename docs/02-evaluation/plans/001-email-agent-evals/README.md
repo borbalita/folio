@@ -199,7 +199,7 @@ Jev labelling is about 100 times cheaper than regular chat models, so labelling 
 - [x] [001/02 — Scoping integration test](tasks/02-scoping-integration-test.md)
 - [x] [001/03 — Scenario and emails](tasks/03-scenario-and-emails.md)
 - [x] [001/04 — Cases and data v1](tasks/04-cases.md)
-- [ ] [001/05 — Ingest data into Docker](tasks/05-ingest-into-docker.md)
+- [x] [001/05 — Ingest data into Docker](tasks/05-ingest-into-docker.md)
 - [ ] [001/06 — Retrieval test](tasks/06-retrieval-test.md)
 - [ ] [001/07 — Langfuse datasets and experiments](tasks/07-langfuse-experiments.md)
 - [ ] [001/08 — Optional reference date in the email prompt](tasks/08-prompt-reference-date.md)

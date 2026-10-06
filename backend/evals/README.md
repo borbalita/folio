@@ -22,11 +22,14 @@ Run from `backend/`.
 # Start the eval database (pgvector Postgres on localhost:5433)
 docker compose -f docker-compose.eval.yml up -d
 
-# Rebuild it: drop everything, migrate, seed fake users and mailboxes
-uv run --env-file .env.eval python -m evals.prepare
+# Rebuild it: drop everything, migrate, seed fake users and mailboxes,
+# and ingest data v1 with real embeddings and Jev labelling (under a minute, cents)
+uv run --env-file .env.eval python -m evals.prepare [--version v1]
 ```
 
-Seeded fixtures (`evals/fixtures.py`): user A with an active and an inactive mailbox, user B with one active mailbox.
+Seeded fixtures (`evals/fixtures.py`): user A with an active and an inactive mailbox, user B with one active mailbox. The data version's emails go into user A's active mailbox through the normal `ingest_messages`.
+
+`prepare` prints the ingestion summary and every email whose stored label differs from the scenario (borderline-label traps are marked). Mismatches are reported, never corrected. It writes the gitignored `evals/out/ids-<version>.json`, mapping scenario email keys to database email and chunk IDs. Rerun `prepare` only when data or ingestion code changes; runs reuse the database.
 
 ## Generating data
 
@@ -55,7 +58,7 @@ The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/
 
 ## Scoping integration test
 
-Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run; it rolls back everything it writes and makes no network calls.
+Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run (with or without ingested data); it rolls back everything it writes and makes no network calls.
 
 ```bash
 uv run --env-file .env.eval pytest -m integration tests/retrieval/email

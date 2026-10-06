@@ -80,6 +80,8 @@ def test_search_returns_only_the_users_active_mailbox(
     )
     found = EmailRetriever().search(KEYWORD, filters=filters, session=session)
 
-    assert {passage.subject for passage in found} == {
-        f"Invoice {KEYWORD} {A_ACTIVE.address}"
-    }
+    # The probe chunks match the query exactly, so any that leaked through would rank first.
+    # Other mail already in the eval mailbox may fill the rest of the results.
+    assert {passage.mailbox_name for passage in found} == {A_ACTIVE.display_name}
+    probes = {passage.subject for passage in found if KEYWORD in passage.subject}
+    assert probes == {f"Invoice {KEYWORD} {A_ACTIVE.address}"}
