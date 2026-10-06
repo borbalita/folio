@@ -126,6 +126,13 @@ def title_key(title: str) -> str:
     return " ".join(letters.split())
 
 
+def open_reasons(group: ItemGroup, names: list[str], body: str) -> list[str]:
+    """Disagreements a person must settle. An item every run flags as a sponsor, with
+    nothing else in question, is accepted as a sponsor (approved 2026-10-06); a sponsor
+    passed off as news still shows up, as a differing sponsor flag."""
+    return [reason for reason in group.disagreement(names, body) if reason != "flagged sponsor"]
+
+
 def suggested_run(group: ItemGroup, body: str) -> str:
     choice = grounded_choice(group.versions, body)
     if choice is not None:
@@ -142,7 +149,7 @@ def build_review(
     for newsletter in newsletters:
         groups: list[ReviewGroup] = []
         for index, group in enumerate(newsletter_groups(newsletter, runs)):
-            reasons = group.disagreement(names, newsletter.body)
+            reasons = open_reasons(group, names, newsletter.body)
             if reasons or newsletter.key in full:
                 groups.append(
                     ReviewGroup(
@@ -180,10 +187,10 @@ def expected_items(
         decision = decisions.groups.get(group_id)
         suggested = suggested_run(group, newsletter.body)
         if decision is None:
-            if group.disagreement(names, newsletter.body) or full:
+            if open_reasons(group, names, newsletter.body) or full:
                 undecided.append(group_id)
                 continue
-            # Every run agrees it is news, and the text settles any URL difference.
+            # Every run agrees (news, or a sponsor), and the text settles any URL difference.
             items.append(group.versions[suggested])
             continue
         if decision.verdict == "skip":

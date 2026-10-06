@@ -40,7 +40,7 @@ Stored `news_items` can't serve as the reference: sponsors were filtered out bef
 
 1. **Runs first, on the local files.** A reference run with today's production setup (GPT-5.5, default effort) and one run per candidate, all on every newsletter, keeping sponsor flags and token usage. These runs are not Langfuse experiments yet, because the dataset isn't synced.
 2. **Full check of 6 newsletters** (3 per source): the owner checks every item against the email. This catches mistakes all models share, which comparing models can't show.
-3. **Dispute review across all 64**: a review file lists every item where any run disagrees with the reference (an item one run has and another lacks, a different URL, a different sponsor flag), and every item any run flagged as a sponsor. The owner decides each one.
+3. **Dispute review across all 64**: a review file lists every item where any run disagrees with the reference (an item one run has and another lacks, a different URL, a different sponsor flag). The owner decides each one. Items every run flags as a sponsor are accepted without review (see below).
 4. The reviewed answers become the expected output: the owner's decision on every disputed item, the full check where one was done, and the unanimous answer everywhere else. Each newsletter is marked `full` or `disputes`.
 
 The owner's time is about 30–45 minutes, depending on how often the models disagree.
@@ -49,6 +49,7 @@ The owner's time is about 30–45 minutes, depending on how often the models dis
 
 - **The text settles URL disputes.** Every TLDR URL a careful model returns appears verbatim in the newsletter text, so a URL is right when it is in the text. If no run's URL is in the text, the text has no link and an empty URL is right. Only two different URLs that both appear in the text go to the owner. This cut URL disputes between the cheap models from 123 to 11.
 - **Alpha Signal items have no links, in production too.** All 156 Alpha Signal items stored in September have an empty URL, because the stored body has no per-article links. That's an ingest bug and is handled separately. For this benchmark an empty URL is the right answer for Alpha Signal, and a made-up URL is an error: `gpt-5.4-nano` invented 130.
+- **Review size.** With five runs, 437 items needed a decision, well above the 30–45 minute estimate. Approved on 2026-10-06: outside the full checks, an item every run flags as a sponsor (78 of them) is accepted as a sponsor without review. A sponsor passed off as news still reaches the owner, as a differing sponsor flag. That left about 360 items, roughly 50–60 minutes.
 - **Recurring blocks.** Job ads, "Advertise", and banners repeat in every TLDR edition and some models list them. The review offers the same decision for every undecided item with the same title (digits and punctuation ignored).
 
 ### Production change: a separate extraction model setting

@@ -133,3 +133,33 @@ def test_recurring_blocks_share_a_title_key_across_editions() -> None:
         news_review.title_key("TLDR 2026-09-02 Reach 8 million tech professionals!")
     )
     assert news_review.title_key("Advertise") != news_review.title_key("Want to work at TLDR?")
+
+
+def test_unanimous_sponsors_are_accepted_outside_full_checks(monkeypatch) -> None:
+    monkeypatch.setattr(news_review, "full_check_keys", lambda newsletters: set())
+    runs = {
+        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example", sponsor=True)]),
+        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example", sponsor=True)]),
+    }
+
+    review = news_review.build_review([_newsletter("n01")], runs)
+    items, undecided = news_review.expected_items(
+        _newsletter("n01"), runs, Decisions(runs_hash="x"), full=False
+    )
+
+    assert review == []
+    assert undecided == []
+    assert [(item.title, item.sponsor) for item in items] == [("Ad", True)]
+
+
+def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
+    runs = {
+        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example", sponsor=True)]),
+        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example", sponsor=True)]),
+    }
+
+    _, undecided = news_review.expected_items(
+        _newsletter("n01"), runs, Decisions(runs_hash="x"), full=True
+    )
+
+    assert undecided == ["n01:0"]
