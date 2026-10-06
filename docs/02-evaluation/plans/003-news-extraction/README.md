@@ -2,11 +2,13 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation, 003/03.
+- Current stage: Implementation, 003/05.
 
 ## Approval state
 
 Approved on 2026-10-06: real newsletters stored only in Langfuse with a private Supabase Storage backup, review where the models disagree plus a full check of 6 newsletters, the pass bar over all 64, and a separate extraction model setting that leaves production unchanged until a model passes.
+
+Changed on 2026-10-06, during the review: no hand labelling for news-v1. The GPT-5.5 reference run is the answer key (see "Change: GPT-5.5 as the answer key").
 
 ## Problem
 
@@ -34,7 +36,7 @@ Plan 001 uses synthetic mail in a local database. Extraction is different: the r
 - **Backup:** the sync also writes the full dataset as one JSON file (`news-extraction-v1.json`) to a private Supabase Storage bucket, `eval-datasets`, in the app's project. The newsletters could be re-exported from the app database, but the owner's review decisions exist nowhere else. This is the only eval write to the app's Supabase project: Storage only, no tables, once per dataset version.
 - About 64 newsletters (40 TLDR, 24 Alpha Signal, September 2026).
 
-### Reference answers: review where the models disagree
+### Reference answers: review where the models disagree (superseded, see below)
 
 Stored `news_items` can't serve as the reference: sponsors were filtered out before storage, so sponsor flagging can't be scored from them. A GPT-5.5 run alone isn't a reference either, and hand-checking every item of 64 newsletters would take over three hours. Most items are easy and every model gets them the same, so the owner's time goes where answers differ.
 
@@ -51,6 +53,18 @@ The owner's time is about 30–45 minutes, depending on how often the models dis
 - **Alpha Signal items have no links, in production too.** All 156 Alpha Signal items stored in September have an empty URL, because the stored body has no per-article links. That's an ingest bug and is handled separately. For this benchmark an empty URL is the right answer for Alpha Signal, and a made-up URL is an error: `gpt-5.4-nano` invented 130.
 - **Review size.** With five runs, 437 items needed a decision, well above the 30–45 minute estimate. Approved on 2026-10-06: outside the full checks, an item every run flags as a sponsor (78 of them) is accepted as a sponsor without review. A sponsor passed off as news still reaches the owner, as a differing sponsor flag. That left about 360 items, roughly 50–60 minutes.
 - **Recurring blocks.** Job ads, "Advertise", and banners repeat in every TLDR edition and some models list them. The review offers the same decision for every undecided item with the same title (digits and punctuation ignored).
+
+### Change: GPT-5.5 as the answer key
+
+After about 25 of 358 decisions, the owner chose not to hand-label news-v1. The answer key is now the GPT-5.5 default-effort run (`evals.news_review reference`), with the link rule applied: a URL is kept only when it is a usable article link in the text, otherwise the expected URL is empty. Every newsletter is marked `reference`.
+
+What this changes:
+
+- Scores measure **agreement with GPT-5.5**, not correctness. A candidate that fixes one of GPT-5.5's mistakes is marked down for it, and mistakes all models share stay invisible.
+- GPT-5.5 at default effort scores 100% by definition, so it is the baseline, not a candidate. GPT-5.5 at low effort is still a meaningful comparison.
+- The question the benchmark answers becomes "can a cheaper model replace today's production extraction without changing what gets stored?", which is the practical decision here.
+
+**In a real project we would hand-label part of the data.** Agreement with a stronger model is a reasonable first filter, but the decision to switch models should rest on human-checked answers: at least a few fully checked newsletters per source to catch mistakes all models share, and the items where models disagree, since that is where a cheaper model's errors show up. The review page (`evals.news_review serve`, then `build`) does exactly that and stays in the code for later versions. The owner's partial decisions are kept in the gitignored `evals/out/news-review/news-v1/decisions.json`.
 
 ### Production change: a separate extraction model setting
 
@@ -72,7 +86,7 @@ Blurbs are free text and not scored in v1; a judge can come later if the numbers
 
 ### Candidates and the pass bar
 
-Candidates: `gpt-5.5` at low effort, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, each at its lowest supported reasoning effort. A candidate may replace GPT-5.5 when, over all 64 reviewed newsletters, recall is at least 0.97, URL exact match at least 0.98, and sponsor leaks and invented URLs are zero; the cheapest passing model wins. The reference run is scored against the same reviewed answers, since GPT-5.5 may not meet the bar either.
+Candidates: `gpt-5.5` at low effort, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, each at its lowest supported reasoning effort. A candidate may replace GPT-5.5 when, over all 64 newsletters and measured against the GPT-5.5 answer key, recall is at least 0.97, URL exact match at least 0.98, and sponsor leaks and invented URLs are zero; the cheapest passing model wins. (Before the change to GPT-5.5 as the answer key, the bar was against reviewed answers, and GPT-5.5 itself would have been scored too.)
 
 After sync, the official comparison runs as one Langfuse experiment per model. Cheap models are called again (cents). The GPT-5.5 reference is scored from its saved outputs instead of a second $5–8 run, and its run metadata says so.
 
@@ -82,20 +96,22 @@ Downstream story matching (do the 13 big stories survive) is left for after the 
 
 - [x] 003/01 — `news_extraction_model` and `news_extraction_reasoning_effort` settings; `extract_with_model` takes model and effort; unit tests. No behavior change.
 - [x] 003/02 — `evals.news_export` to the gitignored working folder `evals/data/news-v1/`.
-- [ ] 003/03 — Reference run and candidate runs on the local files, keeping outputs and token usage.
-- [ ] 003/04 — Review file: full check of 6 newsletters, plus every disputed item and every sponsor flag across all 64; the owner's decisions become the expected output.
-- [ ] 003/05 — Sync newsletters, reviewed items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
+- [x] 003/03 — Reference run and candidate runs on the local files, keeping outputs and token usage.
+- [x] 003/04 — ~~Review file: full check of 6 newsletters, plus every disputed item across all 64; the owner's decisions become the expected output.~~ Changed: the GPT-5.5 reference run is the answer key (`evals.news_review reference`). The review page is built and kept for later hand labelling.
+- [ ] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
 - [ ] 003/06 — `evals.run --mode extraction --model M [--effort E]` with the metrics above, a Langfuse experiment per model, and a local report; items are read from Langfuse.
 - [ ] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes.
 
 ## Cost
 
-Reference run about $5–8, once; the four candidates together under $1 per full pass, run twice (before review and as official experiments). Each later rerun of one cheap model costs cents.
+Estimated: reference run about $5–8, the four candidates together under $1 per full pass.
+
+Actual local runs on 2026-10-06 (64 newsletters each): GPT-5.5 default $3.44 (20,788 reasoning tokens), GPT-5.5 low $2.86 (620 reasoning tokens), `gpt-5.4-mini` $0.42, `gpt-5.4-nano` $0.12, `gpt-5.6-luna` $0.11. GPT-5.5 extraction costs about $0.054 per newsletter, under $4 a month, lower than the problem section's estimate. The official runs call the cheap models again for cents; the reference is scored from its saved outputs.
 
 ## Risks
 
-- **Shared mistakes**: an error every model makes never shows up as a dispute. The 6 fully checked newsletters estimate how often that happens; if it's more than rare, check more newsletters fully.
-- **Many disputes**: if a weak model disagrees on most items, the review grows. Drop that model from the review and score it afterwards.
+- **Reference bias**: with GPT-5.5 as the answer key, its mistakes count as right and a candidate that fixes them is marked down. Hand-label a sample before relying on a close result (see the change above).
+- **Many disputes**: hand review grew to 437 items with five runs. A later hand-labelled version should review fewer runs at once or label a fixed sample of newsletters fully.
 - **Reasoning effort support** differs by model; the run records the effort actually sent and fails clearly if a model rejects it.
 - **Price drift**: prices live in one dated table; reports store token counts, so cost can be recomputed.
 - **One month of data**: newsletter layouts change; a later export becomes `news-v2` and v1 stays as the baseline.

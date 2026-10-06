@@ -184,3 +184,24 @@ def test_unusable_urls_become_no_link_in_the_answer_key() -> None:
     items, _ = news_review.expected_items(newsletter, runs, Decisions(runs_hash="x"), full=False)
 
     assert [item.url for item in items] == ["https://a.example/story", "", ""]
+
+
+def test_reference_answers_take_the_reference_run_with_usable_links_only() -> None:
+    newsletter = _newsletter("n01").model_copy(
+        update={"body": "Story https://a.example/story Footer https://app.example"}
+    )
+    runs = {
+        REFERENCE_RUN: _run("gpt-5.5", [
+            _item("Story", "https://a.example/story"),
+            _item("Ad", "https://app.example", sponsor=True),
+        ]),
+        "cheap@none": _run("cheap", [_item("Only cheap", "https://c.example/story")]),
+    }
+
+    expected = news_review.reference_answers([newsletter], runs)
+
+    assert expected["n01"]["review"] == "reference"
+    assert [(item["title"], item["url"], item["sponsor"]) for item in expected["n01"]["items"]] == [
+        ("Story", "https://a.example/story", False),
+        ("Ad", "", True),
+    ]

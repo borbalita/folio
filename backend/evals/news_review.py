@@ -4,8 +4,10 @@
 plus every item of the fully checked newsletters, and saves decisions as they are made to the
 gitignored evals/out/news-review/<version>/decisions.json. `build` turns runs plus decisions
 into the expected items per newsletter and refuses while any decision is missing.
+`reference` skips the review and uses the GPT-5.5 reference run as the answer key, which is
+what news-v1 does (plan 003).
 
-Run: uv run python -m evals.news_review serve|build [--version news-v1]
+Run: uv run python -m evals.news_review serve|build|reference [--version news-v1]
 """
 
 from __future__ import annotations
@@ -297,19 +299,50 @@ def build(version: str) -> int:
     if waiting:
         print(f"{len(waiting)} items still need a decision, e.g. {waiting[:5]}", file=sys.stderr)
         return 1
-    out = review_dir(version) / "expected.json"
-    out.write_text(json.dumps(reviewed, indent=2) + "\n")
-    total = sum(len(entry["items"]) for entry in reviewed.values())  # type: ignore[arg-type]
-    print(f"wrote {total} reviewed items for {len(reviewed)} newsletters to {out}")
+    _write_expected(version, reviewed)
     return 0
+
+
+def reference_answers(
+    newsletters: list[Newsletter], runs: dict[str, RunFile]
+) -> dict[str, dict[str, object]]:
+    """The reference run as the answer key, without a person checking it.
+
+    Scores then measure agreement with GPT-5.5, not correctness; see plan 003.
+    """
+    expected: dict[str, dict[str, object]] = {}
+    for newsletter in newsletters:
+        result = next(r for r in runs[REFERENCE_RUN].results if r.key == newsletter.key)
+        expected[newsletter.key] = {
+            "review": "reference",
+            "items": [
+                as_expected(item, newsletter.body, item.sponsor).model_dump()
+                for item in result.items or []
+            ],
+        }
+    return expected
+
+
+def reference(version: str) -> int:
+    _write_expected(version, reference_answers(load_newsletters(version), load_runs(version)))
+    return 0
+
+
+def _write_expected(version: str, expected: dict[str, dict[str, object]]) -> None:
+    out = review_dir(version) / "expected.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(expected, indent=2) + "\n")
+    total = sum(len(entry["items"]) for entry in expected.values())  # type: ignore[arg-type]
+    print(f"wrote {total} expected items for {len(expected)} newsletters to {out}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["serve", "build"])
+    parser.add_argument("command", choices=["serve", "build", "reference"])
     parser.add_argument("--version", default=DEFAULT_NEWS_VERSION)
     args = parser.parse_args()
-    return serve(args.version) if args.command == "serve" else build(args.version)
+    commands = {"serve": serve, "build": build, "reference": reference}
+    return commands[args.command](args.version)
 
 
 if __name__ == "__main__":

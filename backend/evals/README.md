@@ -98,3 +98,32 @@ Proves against the eval database that email search returns only the user's activ
 ```bash
 uv run --env-file .env.eval pytest -m integration tests/retrieval/email
 ```
+
+## News extraction benchmark
+
+Compares models for AI-newsletter item extraction (`ingest/email/news.py`) on the owner's real newsletters. Plan: [docs/02-evaluation/plans/003-news-extraction](../../docs/02-evaluation/plans/003-news-extraction/README.md).
+
+Unlike the rest of this folder, it uses real data, and its export is the one eval command that reads the app database (read only). The newsletters contain per-recipient tracking links, so they never go into git: the working copy is gitignored, and the lasting copy is the Langfuse dataset `news-extraction-v1` (backup in a private Supabase Storage bucket).
+
+```bash
+# Export the stored ai_newsletter emails (app database, read only) to evals/data/news-v1/
+uv run python -m evals.news_export
+
+# Run one model over every newsletter; outputs, tokens, cost, and latency go to evals/out/news-runs/
+uv run python -m evals.news_runs --model gpt-5.4-nano --effort none
+
+# Answer key from the GPT-5.5 reference run (what news-v1 uses)
+uv run python -m evals.news_review reference
+
+# Or hand-label: review page on 127.0.0.1:8765, then build the answer key from the decisions
+uv run python -m evals.news_review serve
+uv run python -m evals.news_review build
+```
+
+A URL counts only when it is an http(s) article link that appears verbatim in the newsletter text; front-page footer links and button labels don't. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
+
+### Ground truth: GPT-5.5, not hand labels
+
+news-v1's answer key is the GPT-5.5 default-effort output, not human-checked answers, so scores measure agreement with GPT-5.5 rather than correctness: GPT-5.5's own mistakes count as right, and a cheaper model that fixes one is marked down. That is enough to answer "can a cheaper model replace today's extraction without changing what gets stored".
+
+In a real project we would hand-label at least part of the data before switching models on these numbers: a few fully checked newsletters per source, to catch mistakes every model shares, plus the items where models disagree, which is where a cheaper model's errors show up. `news_review serve` and `build` are built for exactly that.
