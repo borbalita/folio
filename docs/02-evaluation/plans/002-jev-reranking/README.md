@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation, starting with 002/01.
+- Current stage: 002/01 done; decide how 002/03 measures reranking before 002/02.
 
 ## Approval state
 
@@ -39,9 +39,23 @@ Written in the repo, reusing the TypeSafe provider from labelling: it is about 4
 
 ## Tasks
 
-- [ ] 002/01 — v2 data: story lines, filler, planned questions; `prepare` and `sync` for v2; retrieval baseline on v2.
+- [x] 002/01 — v2 data: story lines, filler, planned questions; `prepare` and `sync` for v2; retrieval baseline on v2.
 - [ ] 002/02 — Jev evidence reranker in `EmailRetriever` with settings, fail-open, tracing, and unit tests.
 - [ ] 002/03 — Retrieval test with reranking off vs on (quality and latency per search); later the answer and end-to-end tests from plan 001 compare both.
+
+## v2 baseline (2026-10-06)
+
+v2 has 115 emails and 49 cases (v1's 31 plus 5 multi_email, 5 superseded, 5 vague, 3 unanswerable), synced as `email-rag-v2` and `email-labels-v2`. Retrieval without reranking, concurrency 4:
+
+| kind | recall@10 | recall@1 | recall@3 | MRR |
+| --- | --- | --- | --- | --- |
+| overall (36 answerable) | 1.000 | | | 0.972 |
+| multi_email | 1.000 | 0.43 | 0.93 | 1.000 |
+| superseded | 1.000 | 0.80 | 1.00 | 0.900 |
+| vague | 1.000 | 0.90 | 1.00 | 1.000 |
+| near_duplicate | 1.000 | 0.75 | 1.00 | 0.875 |
+
+Recall@10 is still saturated. What the new cases do show: every superseded and multi_email search returns its planned distractors (outdated values, look-alikes) at ranks 2–6, and every unanswerable search returns 10 emails, with a look-alike in the top 3 for 12 of 13. Reorder-and-drop targets exactly that, so it shows up in precision, distractors returned, and empty results on unanswerable cases rather than in recall, which mainly guards against wrong drops.
 
 ## Risks
 
