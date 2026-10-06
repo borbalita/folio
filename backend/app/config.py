@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
+from openai.types.shared import ReasoningEffort
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
@@ -45,6 +46,9 @@ class Settings(BaseSettings):
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     email_timezone: str = "Europe/Berlin"
     news_match_window_hours: int = Field(default=48, gt=0)
+    # Unset: extraction uses openai_chat_model at the model's default effort.
+    news_extraction_model: str | None = None
+    news_extraction_reasoning_effort: ReasoningEffort | None = None
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
@@ -65,7 +69,14 @@ class Settings(BaseSettings):
     def normalize_log_level(cls, value: str) -> str:
         return value.upper()
 
-    @field_validator("yahoo_email", "yahoo_app_password", "typesafe_api_key", mode="before")
+    @field_validator(
+        "yahoo_email",
+        "yahoo_app_password",
+        "typesafe_api_key",
+        "news_extraction_model",
+        "news_extraction_reasoning_effort",
+        mode="before",
+    )
     @classmethod
     def blank_optional_str(cls, value: str | None) -> str | None:
         if value is None or not str(value).strip():
