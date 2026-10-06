@@ -94,6 +94,25 @@ After sync, the official comparison runs as one Langfuse experiment per model. C
 
 Downstream story matching (do the 13 big stories survive) is left for after the story-matching speedup, because today it would take thousands of Jev calls per run.
 
+## Results (2026-10-06)
+
+Official Langfuse experiments on news-extraction-v1 (64 newsletters, 691 expected news items), all scored with the final link rule. GPT-5.5 default is the answer key, so its row is a self-check.
+
+| Model (effort) | Recall | Precision | URL exact | Sponsor leaks | Invented URLs | Cost (64) | Bar |
+|---|---|---|---|---|---|---|---|
+| `gpt-5.5` (default), replayed | 1.000 | 1.000 | 0.993 | 0 | 0 | $3.44 | passes (answer key) |
+| `gpt-5.6-luna` (none) | 0.999 | 0.990 | 0.991 | 5 | 0 | $0.11 | fails: sponsor leaks |
+| `gpt-5.5` (low), replayed | 1.000 | 0.999 | 0.925 | 1 | 49 | $2.86 | fails |
+| `gpt-5.4-nano` (none) | 0.990 | 0.972 | 0.820 | 6 | 121 | $0.12 | fails |
+| `gpt-5.4-mini` (none) | 0.941 | 0.986 | 0.849 | 3 | 94 | $0.41 | fails |
+
+- **Luna is the only close candidate**, at about 3% of GPT-5.5's cost. Its only bar failure is 5 sponsor leaks (3 in an earlier local run, so it varies between runs). Most are Alpha Signal "Signals" entries in a `Brand: pitch` format ("Attio: …", "WorkOS: …", "Voices: …"), which look like paid placements but aren't labelled; GPT-5.5 calls them sponsors and Luna calls them news. One ("Nyra, 1.4k stars: CrisperWhisper 2.0") looks more like a repo highlight, where GPT-5.5 may be the one that's wrong. One is a real Luna mistake: a TLDR job ad returned as news.
+- **nano and mini make up links**: for Alpha Signal, whose stored text has no article links, they write guessed URLs (`alphasignal.com/go/...`, `example.com/...`). That alone rules them out.
+- **GPT-5.5 at low effort invents links too** (49), unlike at default effort. Lowering effort isn't a safe saving.
+- The `url_exact` ceiling is 0.993 for everyone: the frozen answer key has no link for 3 TLDR items from an earlier link rule, plus GPT-5.5's own deviations.
+
+No candidate passes the bar as written, so `news_extraction_model` stays unset until the owner decides.
+
 ## Tasks
 
 - [x] 003/01 — `news_extraction_model` and `news_extraction_reasoning_effort` settings; `extract_with_model` takes model and effort; unit tests. No behavior change.
@@ -102,7 +121,7 @@ Downstream story matching (do the 13 big stories survive) is left for after the 
 - [x] 003/04 — ~~Review file: full check of 6 newsletters, plus every disputed item across all 64; the owner's decisions become the expected output.~~ Changed: the GPT-5.5 reference run is the answer key (`evals.news_review reference`). The review page is built and kept for later hand labelling.
 - [x] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
 - [x] 003/06 — `evals.run --mode extraction --model M [--effort E]` with the metrics above, a Langfuse experiment per model, and a local report; items are read from Langfuse.
-- [ ] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes.
+- [ ] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes. Runs done (see Results); none passes the bar as written, decision pending.
 
 ## Cost
 
