@@ -1,0 +1,19 @@
+From: SwiftParcel <tracking@swiftparcel.example>
+To: Anna Weber <anna@example.com>
+Date: Wed, 05 Aug 2026 15:40:00 +0200
+Subject: Your Oakline parcel was delivered
+Message-ID: <e30@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html><html><head><meta charset=3D"UTF-8"></head><body style=3D"font=
+-family:Arial,sans-serif;color:#333333;line-height:1.5;padding:20px;"><p>Hell=
+o Anna Weber,</p><p>Your Oakline parcel has been delivered to your chosen col=
+lection point and is ready for you to collect.</p><p><strong>Tracking number:=
+</strong> SP-805116<br><strong>Collection point:</strong> Kiosk Hazel<br><str=
+ong>Pickup code:</strong> 462913</p><p>Please have your pickup code ready to =
+show the staff when you arrive. Keep this email handy so you can easily find =
+your collection details.</p><p>Thank you for choosing SwiftParcel. We hope yo=
+u enjoy your delivery!</p><p>Best regards,<br>The SwiftParcel Team</p></body>=
+</html>

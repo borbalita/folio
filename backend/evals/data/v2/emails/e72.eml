@@ -1,0 +1,28 @@
+From: Reed Paper <orders@reedpaper.example>
+To: Anna Weber <anna@example.com>
+Date: Tue, 08 Sep 2026 12:20:00 +0200
+Subject: Your stationery order RP-60982
+Message-ID: <e72@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Order confirmation</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#f5f5f2;font-family:Ari=
+al,sans-serif;color:#333333;">
+<div style=3D"max-width:600px;margin:0 auto;padding:24px;background-color:#ff=
+ffff;">
+<p style=3D"margin:0 0 16px;">Dear Anna Weber,</p>
+<p style=3D"margin:0 0 16px;">Thank you for shopping with Reed Paper. We have=
+ accepted your order RP-60982 for a Mossline planner and a brass page clip.</=
+p>
+<p style=3D"margin:0 0 16px;">Your order is being prepared for dispatch. We=
+=E2=80=99ll let you know when it=E2=80=99s on its way.</p>
+<p style=3D"margin:0 0 16px;">If you have any questions about your order, ple=
+ase reply to this email and our team will be happy to help.</p>
+<p style=3D"margin:0;">Kind regards,<br>Reed Paper</p>
+</div>
+</body>
+</html>

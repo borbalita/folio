@@ -1,0 +1,27 @@
+From: CanalNet Billing <billing@canalnet.example>
+To: Anna Weber <anna@example.com>
+Date: Mon, 21 Sep 2026 05:45:00 +0200
+Subject: Your internet invoice =?utf-8?b?4oCU?= September
+Message-ID: <e94@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Your internet invoice</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #333333; line-height: 1=
+.5; padding: 20px;">
+<p>Dear Anna Weber,</p>
+<p>Your September invoice for coworking internet service is ready. Please rev=
+iew the billing details below and arrange payment by the due date.</p>
+<p><strong>Invoice number:</strong> CN-0926-906<br>
+<strong>Amount due:</strong> =E2=82=AC35.45<br>
+<strong>Payment due:</strong> 5 October 2026</p>
+<p>Please include the invoice number with your payment so we can apply it to =
+your account correctly. If you have any questions about the charges or need a=
+ssistance with payment, simply reply to this email.</p>
+<p>Thank you for choosing CanalNet.</p>
+<p>Kind regards,<br>CanalNet Billing</p>
+</body>
+</html>

@@ -1,0 +1,28 @@
+From: Lindenstrom Billing <billing@lindenstrom.example>
+To: Anna Weber <anna@example.com>
+Date: Fri, 12 Jun 2026 08:05:00 +0200
+Subject: Your monthly electricity invoice =?utf-8?b?4oCU?= June
+Message-ID: <e02@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html>
+<head><title>Your electricity invoice</title></head>
+<body style=3D"margin:0; padding:24px; font-family:Arial,sans-serif; color:#3=
+33333; line-height:1.6;">
+<p>Dear Anna Weber,</p>
+<p>Your June electricity invoice from Lindenstrom is ready. Please find the p=
+ayment details below:</p>
+<p><strong>Invoice number:</strong> LS-2606-418<br>
+<strong>Amount due:</strong> =E2=82=AC46.80<br>
+<strong>Payment due date:</strong> 26 June 2026</p>
+<p>Please pay the amount due by the date shown and use the invoice number as =
+your payment reference so we can match your payment correctly.</p>
+<p>If you have any questions about this invoice, please reply to this email. =
+We=E2=80=99ll be happy to help.</p>
+<p>Thank you for choosing Lindenstrom.</p>
+<p>Kind regards,<br>Lindenstrom Billing</p>
+</body>
+</html>

@@ -1,0 +1,41 @@
+From: Layout Letter <editor@layoutletter.example>
+To: Anna Weber <anna@example.com>
+Date: Wed, 15 Jul 2026 07:35:00 +0200
+Subject: Layout Letter 188: Better critique sessions
+Message-ID: <e19@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Layout Letter</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#f5f5f3;color:#252525;f=
+ont-family:Arial,sans-serif;line-height:1.6;">
+<div style=3D"max-width:600px;margin:0 auto;padding:24px;background-color:#ff=
+ffff;">
+<p style=3D"margin-top:0;color:#666666;">Layout Letter =C2=B7 Issue 188</p>
+<h1 style=3D"font-size:26px;line-height:1.2;">Better critique sessions</h1>
+<p>Hi Anna,</p>
+<p>A useful design critique starts with a shared understanding of what=E2=80=
+=99s on the screen=E2=80=94not a race to suggest changes.</p>
+<p>In this issue, guest contributor Oskar Heim explains how to separate obser=
+vations from proposed solutions. Instead of opening with =E2=80=9CMove the bu=
+tton,=E2=80=9D try =E2=80=9CThe primary action is difficult to distinguish fr=
+om the secondary actions.=E2=80=9D That gives the designer a problem to explo=
+re without prescribing the answer.</p>
+<h2 style=3D"font-size:19px;">Try this in your next critique</h2>
+<ul style=3D"padding-left:22px;">
+<li>State the design goal and the feedback you need before presenting.</li>
+<li>Ask reviewers to describe what they notice, then explain why it matters.<=
+/li>
+<li>Collect possible solutions separately, after the group agrees on the prob=
+lem.</li>
+<li>Close by summarizing the decisions and any questions still open.</li>
+</ul>
+<p>The aim isn=E2=80=99t to remove strong opinions. It=E2=80=99s to make thei=
+r reasoning visible, so the team can use them.</p>
+<p>Thanks for reading,<br>The Layout Letter team</p>
+</div>
+</body>
+</html>

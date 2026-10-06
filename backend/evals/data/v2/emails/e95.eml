@@ -1,0 +1,29 @@
+From: SpreeMobile <accounts@spreemobile.example>
+To: Anna Weber <anna@example.com>
+Date: Mon, 07 Sep 2026 06:55:00 +0200
+Subject: September mobile payment summary
+Message-ID: <e95@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><title>September mobile payment summary</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #222; line-height: 1.5;=
+ padding: 20px;">
+<p>Hello Anna Weber,</p>
+<p>Your September payment summary for your backup mobile plan is ready. We ha=
+ve charged your account as shown below:</p>
+<p><strong>Invoice number:</strong> SM-69041<br>
+<strong>Amount charged:</strong> =E2=82=AC23.90<br>
+<strong>Direct debit collection date:</strong> 15 September 2026</p>
+<p>Payment will be collected automatically by direct debit, so no manual paym=
+ent is needed. Please ensure your linked bank account has sufficient funds av=
+ailable for collection.</p>
+<p>If you have any questions about this charge, please reply to this email an=
+d our accounts team will help.</p>
+<p>Thank you for choosing SpreeMobile.</p>
+<p>Kind regards,<br>SpreeMobile Accounts Team</p>
+</body>
+</html>

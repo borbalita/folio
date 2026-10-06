@@ -1,0 +1,29 @@
+From: Birch Energy Accounts <accounts@birchenergy.example>
+To: Anna Weber <anna@example.com>
+Date: Fri, 04 Sep 2026 08:20:00 +0200
+Subject: August electricity usage: payment due
+Message-ID: <e93@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Electricity invoice</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #333333; line-height: 1=
+.6; padding: 24px;">
+<p>Dear Anna Weber,</p>
+<p>Your electricity invoice for your workshop=E2=80=99s August usage is ready=
+. Please review the payment details below and arrange payment by the due date=
+.</p>
+<p><strong>Invoice number:</strong> BE-0826-418<br>
+<strong>Amount due:</strong> =E2=82=AC49.65<br>
+<strong>Payment due:</strong> 20 September 2026</p>
+<p>Please include the invoice number as your payment reference so we can allo=
+cate your payment correctly. If you have any questions about your usage or th=
+e invoice, please reply to this email and our accounts team will assist you.<=
+/p>
+<p>Thank you for choosing Birch Energy.</p>
+<p>Kind regards,<br>Birch Energy Accounts</p>
+</body>
+</html>

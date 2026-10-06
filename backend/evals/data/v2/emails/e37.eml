@@ -1,0 +1,28 @@
+From: Lindenstrom Billing <billing@lindenstrom.example>
+To: Anna Weber <anna@example.com>
+Date: Wed, 19 Aug 2026 08:00:00 +0200
+Subject: August electricity account balance
+Message-ID: <e37@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Electricity account balance</title></hea=
+d>
+<body style=3D"font-family: Arial, sans-serif; color: #333333; line-height: 1=
+.5; padding: 20px;">
+<p>Dear Anna Weber,</p>
+<p>Your invoice for August electricity usage is ready. The balance on your ac=
+count is shown below:</p>
+<p><strong>Invoice number:</strong> LS-2608-418<br><strong>Amount due:</stron=
+g> =E2=82=AC48.65<br><strong>Payment due:</strong> 2 September 2026</p>
+<p>Please arrange payment by the due date and include the invoice number as y=
+our payment reference so we can apply it to your account.</p>
+<p>If you have any questions about the balance or need help with payment, ple=
+ase reply to this email.</p>
+<p>Thank you for choosing Lindenstrom.</p>
+<p>Kind regards,<br>Lindenstrom Billing</p>
+</body>
+</html>
