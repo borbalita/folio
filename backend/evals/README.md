@@ -122,7 +122,14 @@ uv run python -m evals.news_review build
 # Freeze: upload to the Langfuse dataset news-extraction-v1, back up to the private
 # eval-datasets bucket, then delete the local newsletters (--keep-local to keep them)
 uv run python -m evals.news_sync
+
+# Score a model against the frozen dataset as a Langfuse experiment (no database involved)
+uv run python -m evals.run --mode extraction --model gpt-5.4-nano --effort none --concurrency 4
+# Score a saved local run instead of calling the model again (used for GPT-5.5)
+uv run python -m evals.run --mode extraction --model gpt-5.5 --replay
 ```
+
+Metrics per newsletter and pooled over all of them: recall and precision of news items, `url_exact` (found items whose URL equals the expected one), `order`, `sponsor_leaks` (sponsors returned as news), `sponsor_drops` (news flagged as sponsors), `invented_urls`, cost, and latency. The pass bar from the plan is recall ≥ 0.97, url_exact ≥ 0.98, and no sponsor leaks or invented URLs. Replaying GPT-5.5 against its own answer key scores 1.0 everywhere except 5 raw links the answer key drops as unusable.
 
 A URL counts only when it is an http(s) article link that appears verbatim in the newsletter text; front-page footer links and button labels don't. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
 

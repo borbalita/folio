@@ -40,6 +40,8 @@ def match_items(
     """Pairs of (expected index, actual index); each item is used at most once.
 
     Exact normalized URL first, then the most similar remaining titles above TITLE_MATCH.
+    Only article links identify an item: empty URLs, front pages, and button labels repeat
+    across items, so matching on them would pair items by position.
     """
     pairs: list[tuple[int, int]] = []
     free_expected = set(range(len(expected)))
@@ -47,8 +49,11 @@ def match_items(
 
     by_url: dict[str, list[int]] = {}
     for index in sorted(free_actual):
-        by_url.setdefault(normalize_url(actual[index].url), []).append(index)
+        if is_article_link(actual[index].url):
+            by_url.setdefault(normalize_url(actual[index].url), []).append(index)
     for expected_index in sorted(free_expected):
+        if not is_article_link(expected[expected_index].url):
+            continue
         candidates = by_url.get(normalize_url(expected[expected_index].url), [])
         if candidates:
             actual_index = candidates.pop(0)
@@ -56,16 +61,16 @@ def match_items(
             free_expected.discard(expected_index)
             free_actual.discard(actual_index)
 
+    # Most similar first; ties go to the earlier items, so duplicates pair in reading order.
     scored = sorted(
         (
-            (title_similarity(expected[e].title, actual[a].title), e, a)
+            (-title_similarity(expected[e].title, actual[a].title), e, a)
             for e in free_expected
             for a in free_actual
         ),
-        reverse=True,
     )
-    for score, expected_index, actual_index in scored:
-        if score < TITLE_MATCH:
+    for negative_score, expected_index, actual_index in scored:
+        if -negative_score < TITLE_MATCH:
             break
         if expected_index in free_expected and actual_index in free_actual:
             pairs.append((expected_index, actual_index))
@@ -79,18 +84,16 @@ def is_front_page(url: str) -> bool:
     return urlsplit(url.strip()).path in ("", "/")
 
 
+def is_article_link(url: str) -> bool:
+    """An http(s) URL past a site's front page. Footers link the newsletter's home page in
+    every edition, and models sometimes copy a button label ("READ MORE") into the URL."""
+    parts = urlsplit(url.strip())
+    return parts.scheme in ("http", "https") and bool(parts.netloc) and not is_front_page(url)
+
+
 def url_in_text(url: str, body: str) -> bool:
-    """A usable article link: an http(s) URL past a site's front page that appears verbatim
-    in the newsletter text. Footers link the newsletter's home page in every edition, and
-    models sometimes copy a button label ("READ MORE") into the URL field."""
-    url = url.strip()
-    parts = urlsplit(url)
-    return (
-        parts.scheme in ("http", "https")
-        and bool(parts.netloc)
-        and not is_front_page(url)
-        and url in body
-    )
+    """A usable article link: an article link that appears verbatim in the newsletter text."""
+    return is_article_link(url) and url.strip() in body
 
 
 def grounded_choice(versions: dict[str, ExtractedItem], body: str) -> str | None:

@@ -155,3 +155,11 @@ def test_a_button_label_is_not_a_link() -> None:
 
     assert not url_in_text("READ MORE", body)
     assert url_in_text("https://a.example/story", "see https://a.example/story")
+
+
+def test_items_without_article_links_are_matched_by_title_not_position() -> None:
+    expected = [_item("First story", ""), _item("Second story", ""), _item("Third story", "")]
+    # The run skips the first item and puts a front-page link on another.
+    actual = [_item("Second story", "https://app.alphasignal.ai"), _item("Third story", "")]
+
+    assert match_items(expected, actual) == [(1, 0), (2, 1)]
