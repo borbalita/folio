@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import contextvars
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
-from functools import cache
+import asyncio
+from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Annotated, Literal
 
 import structlog
@@ -24,7 +22,8 @@ if TYPE_CHECKING:
 log = structlog.get_logger(__name__)
 
 Evidence = Literal["full", "partial", "none"]
-Judge = Callable[[str], Evidence | None]
+Judge = Callable[[str], Awaitable[Evidence | None]]
+"""Takes the judge input, returns a verdict or None on failure. Tests inject one; Jev otherwise."""
 
 # Single-value literals keep each option's description in the schema Jev sees.
 _EvidenceOption = (
@@ -70,9 +69,10 @@ def rerank(
     *,
     query: str,
     question: str | None,
-    judge: Judge,
     top_k: int,
+    judge: Judge | None = None,
 ) -> list[EmailPassage]:
+    """Sync, like the rest of search: callers run it off the event loop (the agent tool does)."""
     langfuse = get_client()
     with langfuse.start_as_current_observation(
         as_type="span",
@@ -80,7 +80,8 @@ def rerank(
         input={"query": query, "question": question, "candidates": len(passages)},
         metadata={"model": settings.typesafe_label_model, "top_k": top_k},
     ) as span:
-        verdicts = _judge_all(passages, query, question, judge)
+        prompts = [judge_input(query, question, passage) for passage in passages]
+        verdicts = asyncio.run(_judge_all(prompts, judge)) if prompts else []
         kept = sorted(
             (
                 (_GROUP[verdict], position, passage)
@@ -117,34 +118,29 @@ def judge_input(query: str, question: str | None, passage: EmailPassage) -> str:
     )
 
 
-def judge_with_jev(prompt: str) -> Evidence | None:
+async def _judge_all(prompts: list[str], judge: Judge | None) -> list[Evidence | None]:
+    if judge is not None:
+        return list(await asyncio.gather(*map(judge, prompts)))
+    # A fresh agent per search: its HTTP client belongs to this event loop, and
+    # `async with` closes it before asyncio.run tears the loop down.
+    agent = _judge_agent()
+    async with agent:
+        return list(
+            await asyncio.gather(*(judge_with_jev(agent, prompt) for prompt in prompts))
+        )
+
+
+async def judge_with_jev(
+    agent: Agent[None, EvidenceJudgement], prompt: str
+) -> Evidence | None:
     try:
-        result = _judge_agent().run_sync(prompt)
+        result = await agent.run(prompt)
     except (AgentRunError, UnexpectedModelBehavior) as exc:
         log.warning("email_rerank_model_error", error=type(exc).__name__)
         return None
     return result.output.evidence
 
 
-def _judge_all(
-    passages: list[EmailPassage], query: str, question: str | None, judge: Judge
-) -> list[Evidence | None]:
-    if not passages:
-        return []
-    # Each call runs in a copy of the current context so its trace nests under the span.
-    with ThreadPoolExecutor(max_workers=len(passages)) as pool:
-        futures = [
-            pool.submit(
-                contextvars.copy_context().run,
-                judge,
-                judge_input(query, question, passage),
-            )
-            for passage in passages
-        ]
-        return [future.result() for future in futures]
-
-
-@cache
 def _judge_agent() -> Agent[None, EvidenceJudgement]:
     model = TypeSafeModel(
         settings.typesafe_label_model,

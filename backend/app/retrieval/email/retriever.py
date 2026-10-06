@@ -102,8 +102,8 @@ class EmailRetriever(HybridRetriever[EmailSearchFilters, EmailPassage]):
             passages,
             query=query,
             question=question,
-            judge=self.judge or rerank.judge_with_jev,
             top_k=settings.retrieval_top_k,
+            judge=self.judge,
         )
 
     def _fused_count(self) -> int:

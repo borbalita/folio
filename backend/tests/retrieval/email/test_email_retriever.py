@@ -40,7 +40,8 @@ def _patch_hits(monkeypatch: pytest.MonkeyPatch, loaded: dict) -> None:
         "app.retrieval.email.retriever.load_passages",
         lambda _session, _ids, _filters: loaded,
     )
-    monkeypatch.setattr("app.retrieval.email.rerank.judge_with_jev", lambda _p: "full")
+    # Reranking has its own tests; these cover plain hybrid search.
+    monkeypatch.setattr("app.retrieval.email.retriever.settings.email_rerank", False)
 
 
 def test_search_returns_from_subject_and_date(monkeypatch: pytest.MonkeyPatch) -> None:

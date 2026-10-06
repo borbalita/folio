@@ -84,8 +84,12 @@ Needs `prepare` and `sync` to have run for the same data version.
 ```bash
 # Retrieval test: real email search with each case's fixed query and filters, no chat model
 # (about 1.5 minutes at concurrency 1, 35 seconds at 4; embedding and keyword-helper calls only)
-uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1] [--concurrency 4]
+uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank off [--version v2] [--concurrency 4]
+# Same with Jev evidence reranking: 20 fused candidates judged per search, then reordered and cut
+uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank on --version v2 --concurrency 4
 ```
+
+`--rerank` is required so every run, report, and Langfuse subject says which search it measured. Search results vary slightly between runs (the keyword helper is an LLM), so compare several runs of each. The summary also gives seconds per search (mean, p95, max), which includes reranking.
 
 Concurrency defaults to 1 (stops early on bugs, readable traces); raise it to 4–5 once a mode is stable. Each run prints per-case scores, averages (overall and per case kind), and the Langfuse run URL, and writes a JSON report to the gitignored `evals/out/reports/`.
 

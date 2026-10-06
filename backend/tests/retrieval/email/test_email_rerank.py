@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -31,13 +32,20 @@ def _passage(n: int, subject: str | None = None) -> EmailPassage:
 
 
 def _judge_by_subject(verdicts: dict[str, rerank.Evidence | None]) -> rerank.Judge:
-    def judge(prompt: str) -> rerank.Evidence | None:
+    async def judge(prompt: str) -> rerank.Evidence | None:
         subject = next(
             line.removeprefix("Subject: ")
             for line in prompt.splitlines()
             if line.startswith("Subject: ")
         )
         return verdicts[subject]
+
+    return judge
+
+
+def _always(verdict: rerank.Evidence | None) -> rerank.Judge:
+    async def judge(_prompt: str) -> rerank.Evidence | None:
+        return verdict
 
     return judge
 
@@ -67,7 +75,7 @@ def test_result_is_capped_at_top_k() -> None:
     passages = [_passage(n) for n in range(1, 6)]
 
     result = rerank.rerank(
-        passages, query="q", question=None, judge=lambda _p: "full", top_k=2
+        passages, query="q", question=None, judge=_always("full"), top_k=2
     )
 
     assert _subjects(result) == ["Subject 1", "Subject 2"]
@@ -77,7 +85,7 @@ def test_nothing_survives_when_every_passage_has_no_evidence() -> None:
     passages = [_passage(n) for n in range(1, 4)]
 
     result = rerank.rerank(
-        passages, query="q", question=None, judge=lambda _p: "none", top_k=10
+        passages, query="q", question=None, judge=_always("none"), top_k=10
     )
 
     assert result == []
@@ -87,7 +95,7 @@ def test_an_outage_keeps_plain_fused_order() -> None:
     passages = [_passage(n) for n in range(1, 13)]
 
     result = rerank.rerank(
-        passages, query="q", question=None, judge=lambda _p: None, top_k=10
+        passages, query="q", question=None, judge=_always(None), top_k=10
     )
 
     assert result == passages[:10]
@@ -124,14 +132,12 @@ def test_judge_input_without_question_only_has_the_search() -> None:
     assert prompt.startswith("Search: rent")
 
 
-def test_jev_model_error_is_a_failed_judgement(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_jev_model_error_is_a_failed_judgement() -> None:
     class _Failing:
-        def run_sync(self, _prompt: str) -> None:
+        async def run(self, _prompt: str) -> None:
             raise ModelHTTPError(status_code=503, model_name="jev")
 
-    monkeypatch.setattr(rerank, "_judge_agent", lambda: _Failing())
-
-    assert rerank.judge_with_jev("anything") is None
+    assert asyncio.run(rerank.judge_with_jev(_Failing(), "anything")) is None  # type: ignore[arg-type]
 
 
 def _patch_search(monkeypatch: pytest.MonkeyPatch, count: int) -> list[int]:
@@ -169,7 +175,7 @@ def test_reranking_judges_more_candidates_and_passes_the_question(
     hydrated = _patch_search(monkeypatch, 30)
     prompts: list[str] = []
 
-    def judge(prompt: str) -> rerank.Evidence:
+    async def judge(prompt: str) -> rerank.Evidence:
         prompts.append(prompt)
         return "full"
 
@@ -186,7 +192,7 @@ def test_reranking_judges_more_candidates_and_passes_the_question(
 def test_reranking_off_is_plain_hybrid_search(monkeypatch: pytest.MonkeyPatch) -> None:
     hydrated = _patch_search(monkeypatch, 30)
 
-    def judge(_prompt: str) -> rerank.Evidence:
+    async def judge(_prompt: str) -> rerank.Evidence:
         raise AssertionError("judge should not run")
 
     found = EmailRetriever(rerank=False, judge=judge).search(

@@ -1,6 +1,7 @@
 """Run one evaluation mode over a data version as a Langfuse experiment, with a local report.
 
-Run: uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1] [--concurrency N]
+Run: uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank on|off
+     [--version v1] [--concurrency N]
 """
 
 from __future__ import annotations
@@ -18,10 +19,8 @@ from evals.modes import retrieval
 from evals.tracing import LangfuseNotConfiguredError, eval_tracing
 
 
-def _write_report(
-    report: dict[str, object], started: datetime, mode: str, version: str
-) -> Path:
-    path = OUT_ROOT / "reports" / f"{started:%Y%m%dT%H%M%S}-{mode}-{version}.json"
+def _write_report(report: dict[str, object], started: datetime, name: str) -> Path:
+    path = OUT_ROOT / "reports" / f"{started:%Y%m%dT%H%M%S}-{name}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2) + "\n")
     return path
@@ -31,6 +30,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=["retrieval"], required=True)
     parser.add_argument("--version", default=DEFAULT_VERSION)
+    parser.add_argument(
+        "--rerank",
+        choices=["on", "off"],
+        required=True,
+        help="Jev evidence reranking in email search; explicit so every run says which.",
+    )
     parser.add_argument(
         "--concurrency",
         type=int,
@@ -47,7 +52,9 @@ def main() -> int:
     started = datetime.now(UTC)
     try:
         with eval_tracing() as client:
-            outcome = retrieval.run(client, args.version, args.concurrency)
+            outcome = retrieval.run(
+                client, args.version, args.concurrency, rerank=args.rerank == "on"
+            )
     except LangfuseNotConfiguredError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -57,7 +64,9 @@ def main() -> int:
         "started_at": started.isoformat(),
         **outcome,
     }
-    path = _write_report(report, started, args.mode, args.version)
+    path = _write_report(
+        report, started, f"{args.mode}-{args.version}-rerank-{args.rerank}"
+    )
 
     retrieval.print_summary(outcome["summary"])
     publication = outcome["publication"]
