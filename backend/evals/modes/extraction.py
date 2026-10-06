@@ -28,6 +28,8 @@ class ExtractionResult(BaseModel):
     key: str
     source: str
     error: str | None
+    items: list[ExtractedItem] | None
+    """What the model returned, kept in the local report for inspecting errors."""
     scores: ExtractionScores | None
     input_tokens: int
     output_tokens: int
@@ -68,6 +70,7 @@ def evaluate(
         key=newsletter.key,
         source=newsletter.source,
         error=extracted.error,
+        items=extracted.items,
         scores=scores,
         input_tokens=extracted.input_tokens,
         output_tokens=extracted.output_tokens,
