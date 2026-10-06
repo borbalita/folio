@@ -2,6 +2,7 @@ from evals.news_compare import (
     ItemGroup,
     grounded_choice,
     group_items,
+    is_article_link,
     match_items,
     normalize_url,
     url_in_text,
@@ -163,3 +164,13 @@ def test_items_without_article_links_are_matched_by_title_not_position() -> None
     actual = [_item("Second story", "https://app.alphasignal.ai"), _item("Third story", "")]
 
     assert match_items(expected, actual) == [(1, 0), (2, 1)]
+
+
+def test_only_the_newsletters_own_front_page_is_unusable() -> None:
+    assert not is_article_link("https://app.alphasignal.ai")
+    assert not is_article_link("https://alphasignal.ai/?utm_source=x")
+    assert is_article_link("https://alphasignal.ai/go/some-story")
+    # A blog's front page or a query-addressed post can be the item's real link.
+    assert is_article_link("https://www.thecloudcast.net/?utm_source=tldrit")
+    assert is_article_link("https://scottaaronson.blog/?p=10062&utm_source=tldrnewsletter")
+    assert not is_article_link("READ MORE")

@@ -79,16 +79,35 @@ def match_items(
     return sorted(pairs)
 
 
+NEWSLETTER_HOSTS = ("tldr.tech", "tldrnewsletter.com", "alphasignal.ai")
+"""The newsletters' own sites, linked from every edition's header and footer."""
+
+
 def is_front_page(url: str) -> bool:
-    """A site's front page (no path), like the newsletter's own footer link."""
-    return urlsplit(url.strip()).path in ("", "/")
+    """No path and no query beyond tracking parameters: `blog.example/?p=10062` is an article."""
+    parts = urlsplit(url.strip())
+    query = [
+        key for key, _ in parse_qsl(parts.query, keep_blank_values=True)
+        if not key.lower().startswith("utm_")
+    ]
+    return parts.path in ("", "/") and not query
+
+
+def is_own_site(url: str) -> bool:
+    host = urlsplit(url.strip()).hostname or ""
+    return any(host == own or host.endswith("." + own) for own in NEWSLETTER_HOSTS)
 
 
 def is_article_link(url: str) -> bool:
-    """An http(s) URL past a site's front page. Footers link the newsletter's home page in
-    every edition, and models sometimes copy a button label ("READ MORE") into the URL."""
+    """An http(s) URL that isn't the newsletter's own front page. Footers link that page in
+    every edition, and models sometimes copy a button label ("READ MORE") into the URL.
+    A third-party front page can be the real link (TLDR links some blogs that way)."""
     parts = urlsplit(url.strip())
-    return parts.scheme in ("http", "https") and bool(parts.netloc) and not is_front_page(url)
+    return (
+        parts.scheme in ("http", "https")
+        and bool(parts.netloc)
+        and not (is_front_page(url) and is_own_site(url))
+    )
 
 
 def url_in_text(url: str, body: str) -> bool:

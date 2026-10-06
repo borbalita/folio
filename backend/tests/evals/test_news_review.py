@@ -171,12 +171,12 @@ def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
 
 def test_unusable_urls_become_no_link_in_the_answer_key() -> None:
     newsletter = _newsletter("n01").model_copy(
-        update={"body": "Story https://a.example/story Footer https://app.example READ MORE"}
+        update={"body": "Story https://a.example/story Footer https://app.alphasignal.ai READ MORE"}
     )
     runs = {
         REFERENCE_RUN: _run("gpt-5.5", [
             _item("Story", "https://a.example/story"),
-            _item("Homepage", "https://app.example"),
+            _item("Homepage", "https://app.alphasignal.ai"),
             _item("Button", "READ MORE"),
         ]),
     }
@@ -188,12 +188,12 @@ def test_unusable_urls_become_no_link_in_the_answer_key() -> None:
 
 def test_reference_answers_take_the_reference_run_with_usable_links_only() -> None:
     newsletter = _newsletter("n01").model_copy(
-        update={"body": "Story https://a.example/story Footer https://app.example"}
+        update={"body": "Story https://a.example/story Footer https://app.alphasignal.ai"}
     )
     runs = {
         REFERENCE_RUN: _run("gpt-5.5", [
             _item("Story", "https://a.example/story"),
-            _item("Ad", "https://app.example", sponsor=True),
+            _item("Ad", "https://app.alphasignal.ai", sponsor=True),
         ]),
         "cheap@none": _run("cheap", [_item("Only cheap", "https://c.example/story")]),
     }

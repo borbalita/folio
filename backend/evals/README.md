@@ -129,9 +129,9 @@ uv run python -m evals.run --mode extraction --model gpt-5.4-nano --effort none 
 uv run python -m evals.run --mode extraction --model gpt-5.5 --replay
 ```
 
-Metrics per newsletter and pooled over all of them: recall and precision of news items, `url_exact` (found items whose URL equals the expected one), `order`, `sponsor_leaks` (sponsors returned as news), `sponsor_drops` (news flagged as sponsors), `invented_urls`, cost, and latency. The pass bar from the plan is recall ≥ 0.97, url_exact ≥ 0.98, and no sponsor leaks or invented URLs. Replaying GPT-5.5 against its own answer key scores 1.0 everywhere except 5 raw links the answer key drops as unusable.
+Metrics per newsletter and pooled over all of them: recall and precision of news items, `url_exact` (found items whose URL equals the expected one), `order`, `sponsor_leaks` (sponsors returned as news), `sponsor_drops` (news flagged as sponsors), `invented_urls`, cost, and latency. The pass bar from the plan is recall ≥ 0.97, url_exact ≥ 0.98, and no sponsor leaks or invented URLs. Replaying GPT-5.5 against its own answer key scores 1.0 except url_exact 0.993 and 2 invented URLs: two GitHub links it guessed for an Alpha Signal edition that contains no links. The url_exact gap is 3 TLDR items (n24, n39, n42) whose real links an earlier version of the link rule dropped from the frozen answer key; they cost every model the same at most 0.4%.
 
-A URL counts only when it is an http(s) article link that appears verbatim in the newsletter text; front-page footer links and button labels don't. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
+A URL counts only when it is an http(s) link that appears verbatim in the newsletter text and isn't the newsletter's own front page (the footer link in every edition); button labels copied into the URL field don't count either. A third-party front page can be an item's real link. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
 
 ### Ground truth: GPT-5.5, not hand labels
 
