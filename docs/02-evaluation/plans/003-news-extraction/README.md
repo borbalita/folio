@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation, 003/02.
+- Current stage: Implementation, 003/03.
 
 ## Approval state
 
@@ -73,7 +73,7 @@ Downstream story matching (do the 13 big stories survive) is left for after the 
 ## Tasks
 
 - [x] 003/01 — `news_extraction_model` and `news_extraction_reasoning_effort` settings; `extract_with_model` takes model and effort; unit tests. No behavior change.
-- [ ] 003/02 — `evals.news_export` to the gitignored working folder `evals/data/news-v1/`.
+- [x] 003/02 — `evals.news_export` to the gitignored working folder `evals/data/news-v1/`.
 - [ ] 003/03 — Reference run and candidate runs on the local files, keeping outputs and token usage.
 - [ ] 003/04 — Review file: full check of 6 newsletters, plus every disputed item and every sponsor flag across all 64; the owner's decisions become the expected output.
 - [ ] 003/05 — Sync newsletters, reviewed items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
