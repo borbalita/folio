@@ -45,6 +45,12 @@ Stored `news_items` can't serve as the reference: sponsors were filtered out bef
 
 The owner's time is about 30–45 minutes, depending on how often the models disagree.
 
+### Found during the runs (2026-10-06)
+
+- **The text settles URL disputes.** Every TLDR URL a careful model returns appears verbatim in the newsletter text, so a URL is right when it is in the text. If no run's URL is in the text, the text has no link and an empty URL is right. Only two different URLs that both appear in the text go to the owner. This cut URL disputes between the cheap models from 123 to 11.
+- **Alpha Signal items have no links, in production too.** All 156 Alpha Signal items stored in September have an empty URL, because the stored body has no per-article links. That's an ingest bug and is handled separately. For this benchmark an empty URL is the right answer for Alpha Signal, and a made-up URL is an error: `gpt-5.4-nano` invented 130.
+- **Recurring blocks.** Job ads, "Advertise", and banners repeat in every TLDR edition and some models list them. The review offers the same decision for every undecided item with the same title (digits and punctuation ignored).
+
 ### Production change: a separate extraction model setting
 
 - New settings `news_extraction_model` (defaults to `openai_chat_model`, so nothing changes until it's set) and `news_extraction_reasoning_effort` (unset means the API default).
@@ -56,6 +62,7 @@ Items are matched to the reviewed answers by normalized URL, falling back to tit
 
 - **Item recall and precision** (non-sponsor items).
 - **URL exact match** among matched items; a wrong URL is a broken citation link.
+- **Invented URLs**: non-empty URLs that don't appear in the newsletter text. These become broken links.
 - **Sponsor leaks**: reference sponsors returned as news. **Sponsor drops**: news items flagged as sponsors.
 - **Order**: share of matched item pairs in the same order.
 - **Cost** from the returned token usage (reasoning tokens included) and a dated price table in `evals/prices.py`, plus **latency**.
@@ -64,7 +71,7 @@ Blurbs are free text and not scored in v1; a judge can come later if the numbers
 
 ### Candidates and the pass bar
 
-Candidates: `gpt-5.5` at low effort, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, each at its lowest supported reasoning effort. A candidate may replace GPT-5.5 when, over all 64 reviewed newsletters, recall is at least 0.97, URL exact match at least 0.98, and sponsor leaks are zero; the cheapest passing model wins. The reference run is scored against the same reviewed answers, since GPT-5.5 may not meet the bar either.
+Candidates: `gpt-5.5` at low effort, `gpt-5.4-mini`, `gpt-5.4-nano`, `gpt-5.6-luna`, each at its lowest supported reasoning effort. A candidate may replace GPT-5.5 when, over all 64 reviewed newsletters, recall is at least 0.97, URL exact match at least 0.98, and sponsor leaks and invented URLs are zero; the cheapest passing model wins. The reference run is scored against the same reviewed answers, since GPT-5.5 may not meet the bar either.
 
 After sync, the official comparison runs as one Langfuse experiment per model. Cheap models are called again (cents). The GPT-5.5 reference is scored from its saved outputs instead of a second $5–8 run, and its run metadata says so.
 
