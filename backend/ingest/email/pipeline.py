@@ -28,6 +28,7 @@ from ingest.embeddings import embed_texts
 
 log = structlog.get_logger(__name__)
 
+
 @dataclass
 class IngestSummary:
     fetched: int = 0
@@ -289,9 +290,7 @@ def _write_news_items(
 
 
 def stored_row_news_items(session: Session, email_id: uuid.UUID) -> list[NewsItem]:
-    return list(
-        session.scalars(select(NewsItem).where(NewsItem.email_id == email_id))
-    )
+    return list(session.scalars(select(NewsItem).where(NewsItem.email_id == email_id)))
 
 
 def stored_row_attachments(
@@ -363,9 +362,7 @@ def ingest_fetched(
         classifier=classifier,
         extract=extract,
     )
-    record_sync(
-        session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid
-    )
+    record_sync(session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid)
     return summary
 
 

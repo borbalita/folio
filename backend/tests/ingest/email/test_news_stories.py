@@ -52,7 +52,10 @@ def test_jev_no_stays_two_stories() -> None:
 
     assert len(planned) == 2
     assert all(story.is_big is False for story in planned)
-    assert {_ids(story) for story in planned} == {frozenset([tldr.id]), frozenset([alpha.id])}
+    assert {_ids(story) for story in planned} == {
+        frozenset([tldr.id]),
+        frozenset([alpha.id]),
+    }
 
 
 def test_failed_check_does_not_pair() -> None:
@@ -64,7 +67,10 @@ def test_failed_check_does_not_pair() -> None:
         [tldr, alpha], day, same_story=lambda _left, _right: None, window_hours=48
     )
 
-    assert {_ids(story) for story in planned} == {frozenset([tldr.id]), frozenset([alpha.id])}
+    assert {_ids(story) for story in planned} == {
+        frozenset([tldr.id]),
+        frozenset([alpha.id]),
+    }
 
 
 def test_item_outside_the_window_is_not_paired() -> None:
@@ -104,7 +110,10 @@ def test_outside_item_that_shared_a_story_becomes_its_own() -> None:
     )
 
     assert len(planned) == 2
-    assert {_ids(story) for story in planned} == {frozenset([tldr.id]), frozenset([alpha.id])}
+    assert {_ids(story) for story in planned} == {
+        frozenset([tldr.id]),
+        frozenset([alpha.id]),
+    }
     assert all(story.is_big is False for story in planned)
 
 

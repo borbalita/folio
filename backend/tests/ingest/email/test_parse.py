@@ -35,7 +35,9 @@ def test_plain_body_is_preferred_over_html() -> None:
 
 
 def test_html_only_body_strips_tags() -> None:
-    raw = _message(message_id="<id@example.com>", plain=None, html="<p>Hello <b>there</b></p>")
+    raw = _message(
+        message_id="<id@example.com>", plain=None, html="<p>Hello <b>there</b></p>"
+    )
     parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
     assert parsed.body == "Hello there"
 
@@ -69,7 +71,9 @@ def test_only_pdf_bytes_are_kept(
     message["Date"] = "Fri, 02 Jan 2026 03:04:05 +0000"
     message["Message-ID"] = "<id@example.com>"
     message.set_content("See attached.")
-    message.add_attachment(payload, maintype=maintype, subtype=subtype, filename=filename)
+    message.add_attachment(
+        payload, maintype=maintype, subtype=subtype, filename=filename
+    )
     parsed = parse_rfc822(message.as_bytes(), provider_message_id="1", folder="INBOX")
     assert parsed.attachment_filenames == (filename,)
     if kept:

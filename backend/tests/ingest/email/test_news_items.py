@@ -73,7 +73,9 @@ def test_other_mail_is_not_extracted(monkeypatch: pytest.MonkeyPatch) -> None:
         [_parsed(from_address="person@example.com")],
         uidvalidity=1,
         highest_uid=1,
-        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        embed=lambda texts: [
+            [0.0] * settings.openai_embedding_dimensions for _ in texts
+        ],
         classifier=lambda _prompt: "other",
         extract=extract,
     )

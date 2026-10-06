@@ -36,7 +36,7 @@ def fetch_inbox(imap: imaplib.IMAP4, *, limit: int, since: date | None) -> Fetch
     if status != "OK":
         raise RuntimeError(f"Could not open {FOLDER}")
     uidvalidity = _uidvalidity(imap)
-    criteria = "ALL" if since is None else f'(SINCE {since.strftime("%d-%b-%Y")})'
+    criteria = "ALL" if since is None else f"(SINCE {since.strftime('%d-%b-%Y')})"
     status, data = imap.uid("SEARCH", criteria)
     if status != "OK" or not data or not data[0]:
         return FetchResult([], uidvalidity, None)
@@ -51,9 +51,7 @@ def fetch_inbox(imap: imaplib.IMAP4, *, limit: int, since: date | None) -> Fetch
         raw = fetched[0][1]
         if not isinstance(raw, bytes):
             continue
-        messages.append(
-            parse_rfc822(raw, provider_message_id=str(uid), folder=FOLDER)
-        )
+        messages.append(parse_rfc822(raw, provider_message_id=str(uid), folder=FOLDER))
     highest = max(uids) if uids else None
     return FetchResult(messages, uidvalidity, highest)
 
