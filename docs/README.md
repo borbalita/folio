@@ -25,7 +25,8 @@ The filing assistant.
 
 How the copilot is traced and evaluated. Later agents add their checks here.
 
-- [Evals and monitoring](02-evaluation/evals-todo.md)
+- [Evaluation plans](02-evaluation/plans/README.md)
+- [Legacy evals and monitoring guide](02-evaluation/legacy/evals-todo.md)
 
 ## 03-email
 
