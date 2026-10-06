@@ -28,6 +28,18 @@ uv run --env-file .env.eval python -m evals.prepare
 
 Seeded fixtures (`evals/fixtures.py`): user A with an active and an inactive mailbox, user B with one active mailbox.
 
+## Generating data
+
+```bash
+# Plan a scenario with gpt-6.1-sol, then render ~60 .eml files (about 4 minutes, under $1)
+uv run python -m evals.generate
+
+# Keep the scenario, re-render only the emails
+uv run python -m evals.generate --reuse-scenario
+```
+
+Writes to the gitignored `evals/data/draft/`: `scenario.json` (senders, emails with intended label and facts, traps, unanswerable topics) and `emails/*.eml`. Headers come from the scenario; the LLM writes only bodies, and every body is parsed with the production parser and checked to contain its facts (up to three render attempts). Prompts are in `evals/prompts/` and use their own label definitions, not the production classifier's.
+
 ## Scoping integration test
 
 Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run; it rolls back everything it writes and makes no network calls.
