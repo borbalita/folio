@@ -58,6 +58,26 @@ Prompts are in `evals/prompts/`; `labels.md` holds the generator's own label def
 
 The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
 
+## Running evaluations
+
+Needs `prepare` to have run for the same data version.
+
+```bash
+# Retrieval test: real email search with each case's fixed query and filters, no chat model
+# (about 1.5 minutes; embedding and keyword-helper calls only)
+uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1]
+```
+
+Each run prints per-case scores and averages (overall and per case kind) and writes a JSON report to the gitignored `evals/out/reports/`.
+
+Retrieval metrics are per email, not per chunk; each email takes the rank of its first chunk, with k = `retrieval_top_k` (10):
+
+- **recall@10**: expected emails found in the top 10 / expected emails.
+- **precision@10**: expected emails / emails returned. Search almost always fills all 10 slots, so with one expected email this sits near 0.1; read MRR for ranking quality.
+- **MRR**: 1 / rank of the first expected email, 0 if none.
+
+Unanswerable cases have no expected email; they are reported as not applicable and counted separately. The report also lists which distractors (near-duplicate twins, near misses) were retrieved.
+
 ## Scoping integration test
 
 Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run (with or without ingested data); it rolls back everything it writes and makes no network calls.
