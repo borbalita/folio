@@ -27,3 +27,11 @@ uv run --env-file .env.eval python -m evals.prepare
 ```
 
 Seeded fixtures (`evals/fixtures.py`): user A with an active and an inactive mailbox, user B with one active mailbox.
+
+## Scoping integration test
+
+Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run; it rolls back everything it writes and makes no network calls.
+
+```bash
+uv run --env-file .env.eval pytest -m integration tests/retrieval/email
+```

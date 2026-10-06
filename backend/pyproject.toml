@@ -42,7 +42,7 @@ dev = [
 
 [tool.pytest.ini_options]
 markers = [
-    "integration: tests that require live Supabase or OpenAI",
+    "integration: tests that require live Supabase, OpenAI, or the local eval database (evals/README.md)",
 ]
 
 [tool.ruff.lint.isort]
