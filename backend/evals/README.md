@@ -58,17 +58,30 @@ Prompts are in `evals/prompts/`; `labels.md` holds the generator's own label def
 
 The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
 
+## Langfuse
+
+Eval commands need `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` (from `backend/.env`) and stop without them.
+
+```bash
+# Upload the case files to the datasets email-rag-v1 and email-labels-v1
+uv run python -m evals.langfuse_sync [--version v1]
+```
+
+Rerunning `sync` is safe: unchanged items are skipped. An item whose content differs from the committed case is refused, because a version is frozen once synced; put changes into a new version (`v2`). Runs refuse to start if the dataset does not match the committed cases.
+
+Each run is one Langfuse experiment (dataset run) for one mode and one model or variant, with a score per item and metadata: Git commit (`-dirty` if uncommitted), mode, subject (model or variant), data version, fixed today, and hashes of the prompts involved. Eval traces land in the `sdk-experiment` environment with the tags `eval`, `mode:<mode>`, and `data:<version>`, and the app's spans (search, agent, tools) nest under each item. Scores are computed locally; if publishing fails, the local report is still written, marked `"published": false`, and the command exits non-zero. Nothing is re-run to retry an upload.
+
 ## Running evaluations
 
-Needs `prepare` to have run for the same data version.
+Needs `prepare` and `sync` to have run for the same data version.
 
 ```bash
 # Retrieval test: real email search with each case's fixed query and filters, no chat model
-# (about 1.5 minutes; embedding and keyword-helper calls only)
-uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1]
+# (about 1.5 minutes at concurrency 1, 35 seconds at 4; embedding and keyword-helper calls only)
+uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1] [--concurrency 4]
 ```
 
-Each run prints per-case scores and averages (overall and per case kind) and writes a JSON report to the gitignored `evals/out/reports/`.
+Concurrency defaults to 1 (stops early on bugs, readable traces); raise it to 4–5 once a mode is stable. Each run prints per-case scores, averages (overall and per case kind), and the Langfuse run URL, and writes a JSON report to the gitignored `evals/out/reports/`.
 
 Retrieval metrics are per email, not per chunk; each email takes the rank of its first chunk, with k = `retrieval_top_k` (10):
 
@@ -76,7 +89,7 @@ Retrieval metrics are per email, not per chunk; each email takes the rank of its
 - **precision@10**: expected emails / emails returned. Search almost always fills all 10 slots, so with one expected email this sits near 0.1; read MRR for ranking quality.
 - **MRR**: 1 / rank of the first expected email, 0 if none.
 
-Unanswerable cases have no expected email; they are reported as not applicable and counted separately. The report also lists which distractors (near-duplicate twins, near misses) were retrieved.
+Unanswerable cases have no expected email; they are reported as not applicable (no score in Langfuse) and counted separately. The report also lists which distractors (near-duplicate twins, near misses) were retrieved.
 
 ## Scoping integration test
 

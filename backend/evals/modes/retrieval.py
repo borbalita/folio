@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+import asyncio
+from collections import defaultdict
+from datetime import UTC, datetime
 from uuid import UUID
 
+from langfuse import Evaluation, Langfuse
 from pydantic import BaseModel
 
 from app.config import settings
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.retriever import EmailRetriever
 from evals.cases import RagCase
-from evals.dataset import IdMap
-from evals.scoring import RetrievalScores, emails_in_rank_order, retrieval_scores
+from evals.dataset import IdMap, load_id_map, load_rag_cases
+from evals.experiment import RunConfig, publication, run_experiment
+from evals.langfuse_sync import item_id, local_rag_payloads, rag_dataset_name
+from evals.scoring import (
+    RetrievalScores,
+    emails_in_rank_order,
+    mean,
+    retrieval_scores,
+)
 
 
 class RetrievalResult(BaseModel):
@@ -53,3 +64,98 @@ def run_case(case: RagCase, owners: dict[UUID, str]) -> RetrievalResult:
             ranked, case.expected_email_keys, k=settings.retrieval_top_k
         ),
     )
+
+
+METRICS = ("recall", "precision", "mrr")
+
+
+def summarize(results: list[RetrievalResult]) -> dict[str, object]:
+    """Averages overall and per case kind; unanswerable cases are only counted."""
+
+    def averages(group: list[RetrievalResult]) -> dict[str, float | None]:
+        return {m: mean(getattr(r.scores, m) for r in group) for m in METRICS}
+
+    by_kind: dict[str, list[RetrievalResult]] = defaultdict(list)
+    for result in results:
+        by_kind[result.kind].append(result)
+    answerable = [r for r in results if r.answerable]
+    return {
+        "cases": len(results),
+        "unanswerable_cases": len(results) - len(answerable),
+        "overall": averages(answerable),
+        "by_kind": {kind: averages(group) for kind, group in sorted(by_kind.items())},
+        "distractor_retrieved_cases": sum(
+            1 for r in results if r.distractors_retrieved
+        ),
+    }
+
+
+def retrieval_evaluations(result: RetrievalResult) -> list[Evaluation]:
+    """One score per applicable metric; unanswerable cases get none rather than a fake 1.0."""
+    comment = f"retrieved {result.retrieved_email_keys}, expected {result.expected_email_keys}"
+    return [
+        Evaluation(name=metric, value=value, comment=comment)
+        for metric in METRICS
+        if (value := getattr(result.scores, metric)) is not None
+    ]
+
+
+def run(client: Langfuse, version: str, concurrency: int) -> dict[str, object]:
+    cases = load_rag_cases(version)
+    dataset_name = rag_dataset_name(version)
+    by_item = {item_id(dataset_name, case.case_id): case for case in cases}
+    owners = chunk_owners(load_id_map(version))
+
+    async def task(key: str) -> RetrievalResult:
+        result = await asyncio.to_thread(run_case, by_item[key], owners)
+        print(f"  {result.case_id} {result.kind:14} {_scores_line(result)}")
+        return result
+
+    config = RunConfig(
+        mode="retrieval",
+        version=version,
+        subject=f"email-search ({settings.openai_embedding_model}, keywords {settings.openai_chat_model})",
+        today=cases[0].today,
+        prompts={"keyword_prompt": EmailRetriever.keyword_prompt},
+        concurrency=concurrency,
+    )
+    experiment = run_experiment(
+        client,
+        dataset_name=dataset_name,
+        local=local_rag_payloads(version),
+        config=config,
+        run_name=f"retrieval {version} {datetime.now(UTC):%Y-%m-%d %H:%M:%S}",
+        task=task,
+        scores=retrieval_evaluations,
+    )
+    ordered = [experiment.results[key] for key in by_item if key in experiment.results]
+    return {
+        "top_k": settings.retrieval_top_k,
+        "summary": summarize(ordered),
+        "publication": publication(experiment),
+        "results": [result.model_dump(mode="json") for result in ordered],
+    }
+
+
+def _scores_line(result: RetrievalResult) -> str:
+    if not result.answerable:
+        return f"n/a (unanswerable, {len(result.retrieved_email_keys)} emails returned)"
+    s = result.scores
+    return f"recall {s.recall:.2f}  precision {s.precision:.2f}  mrr {s.mrr:.2f}"
+
+
+def print_summary(summary: dict[str, object]) -> None:
+    print(
+        f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable (recall n/a)"
+    )
+    for name, averages in [
+        ("overall", summary["overall"]),
+        *summary["by_kind"].items(),
+    ]:
+        print(
+            f"  {name:15} " + "  ".join(f"{m} {_format(averages[m])}" for m in METRICS)
+        )
+
+
+def _format(value: float | None) -> str:
+    return "n/a" if value is None else f"{value:.3f}"
