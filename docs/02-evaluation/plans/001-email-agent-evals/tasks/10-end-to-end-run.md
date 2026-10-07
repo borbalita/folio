@@ -31,7 +31,7 @@
 
 - Luna and Sol runs in Langfuse with per-case scores, tool arguments, and retrieval recall: passed. Rerank off: [Luna](https://cloud.langfuse.com/project/cmtk97zmg0038ad0frh0pv72c/datasets/cmuwing8j079ead0cc8ushb4c/runs/75627aa6-1c7b-4095-8063-b8b47ad32071), [Sol](https://cloud.langfuse.com/project/cmtk97zmg0038ad0frh0pv72c/datasets/cmuwing8j079ead0cc8ushb4c/runs/34ebdb11-1e22-43ad-8d0e-185de783d07f). Rerank on: [Luna](https://cloud.langfuse.com/project/cmtk97zmg0038ad0frh0pv72c/datasets/cmuwing8j079ead0cc8ushb4c/runs/58d77314-76f0-497c-9e47-73c6ce9e4db8), [Sol](https://cloud.langfuse.com/project/cmtk97zmg0038ad0frh0pv72c/datasets/cmuwing8j079ead0cc8ushb4c/runs/12a614e1-8868-489f-b6ba-5a96465b6594). Checked in the browser: the experiment view shows `search_recall` next to the answer scores per item, and the c01 trace output has `searches` (query, filters, emails returned) and `steps` (tool arguments).
 - Recall across several tool calls: passed (unit tests in `tests/evals/test_e2e.py`, including an agent run with two searches through `RecordingRetriever`).
-- PR: not opened yet.
+- PR: [borbalita/folio#7](https://github.com/borbalita/folio/pull/7).
 
 | | Luna, rerank off | Luna, rerank on | Sol, rerank off | Sol, rerank on |
 | --- | --- | --- | --- | --- |
