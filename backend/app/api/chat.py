@@ -35,7 +35,7 @@ async def create_thread(
 @router.get("/threads")
 async def list_threads(
     user: Annotated[CurrentUser, Depends(get_current_user)],
-    agent: AgentName = Query(default="documents"),
+    agent: Annotated[AgentName, Query()] = "documents",
 ) -> list[dict[str, Any]]:
     if agent == "email":
         await require_email_access(user)

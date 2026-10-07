@@ -64,7 +64,7 @@ backend/
 ## Database migrations
 
 - Alembic is the source of truth for schema changes. Do not change production tables manually in the Supabase dashboard.
-- SQLAlchemy models describe normal tables and columns. Create the revision with `uv run alembic revision --autogenerate -m "..."` from `backend/`, then review the file before applying. Do not hand-write a migration for a column, table, or constraint autogenerate can see. Hand-write only what it misses: `create extension vector`, generated `tsvector` columns, HNSW/GIN indexes, RLS enablement, and RLS policies.
+- SQLAlchemy models describe normal tables and columns. Create the revision with `uv run alembic revision --autogenerate -m "..."` from `backend/`, then review the file before applying. Do not hand-write a migration for a column, table, or constraint autogenerate can see. Hand-write only what it misses: `create extension vector`, generated `tsvector` columns, HNSW/GIN indexes, RLS enablement, and RLS policies. A post-write hook in `alembic.ini` runs `ruff check --fix` on every new revision file.
 - Every table has RLS enabled, because the anon key ships in the frontend and Supabase exposes `public` over its REST API. The migration that creates a table enables RLS on it and lists it in a module-level `RLS_TABLES` tuple; `tests/database/test_rls_migration.py` fails otherwise.
 - Alembic must use the direct/session database connection, not the Supabase transaction pooler URL.
 - Run migrations from `backend/` with `uv run alembic upgrade head`.

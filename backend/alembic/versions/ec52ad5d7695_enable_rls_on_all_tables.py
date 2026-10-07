@@ -5,16 +5,15 @@ Revises: 6459ddacd6e8
 Create Date: 2026-10-02 14:39:39.220763
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision: str = 'ec52ad5d7695'
-down_revision: Union[str, Sequence[str], None] = '6459ddacd6e8'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = '6459ddacd6e8'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # RLS with no policies: the anon and authenticated roles (whose key ships in the
 # frontend) read nothing over the Data API; the backend's service role bypasses RLS.
