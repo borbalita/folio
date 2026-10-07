@@ -21,9 +21,9 @@ jobs:
       - run: uv run ruff check .
       - run: uv run pytest -m "not integration"
         env:
-          # Settings refuse EMAIL_RERANK (on by default) without a key; the fast suite
-          # mocks Jev, so the key is never used for a call.
-          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+          # Settings refuse EMAIL_RERANK (on by default) without TYPESAFE_API_KEY. The
+          # fast suite sets reranking explicitly where it tests it, so no key is needed.
+          EMAIL_RERANK: "false"
 
   frontend:
     runs-on: ubuntu-latest
