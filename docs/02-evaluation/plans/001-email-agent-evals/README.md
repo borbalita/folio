@@ -2,7 +2,7 @@
 
 - Created: 2026-10-02
 - Status: In progress
-- Current stage: Implementation; 001/01–08 done. [Plan 002](../002-jev-reranking/README.md) is done; 001/09 onward runs on data v2. 001/09 replays fixed evidence, so search and reranking don't run in it; 001/10 compares reranking off and on.
+- Current stage: Implementation; 001/01–09 done. [Plan 002](../002-jev-reranking/README.md) is done; 001/09 onward runs on data v2. 001/09 replays fixed evidence, so search and reranking don't run in it; 001/10 compares reranking off and on.
 
 ## Approval state
 
@@ -163,6 +163,7 @@ Facts use the judge because the agent formats dates and amounts in many ways; th
 ### Models, sizes, and cost
 
 - **Candidates**: `gpt-6-luna` and `gpt-6.1-sol`. The app's current `gpt-5.5` and `gpt-6-astra` are left out for now; each is a one-line addition.
+- **API (changed 2026-10-07)**: candidates run through the Responses API at their default reasoning effort (`--effort` overrides). GPT-6.1 Sol and Astra call tools only there; on Chat Completions, GPT-6 models accept tools only with reasoning off, which 6.1 Sol and Astra don't allow. The app still uses Chat Completions with `gpt-5.5`, so the agent modes differ from production in this one call; switching the app is one line in `agent.py`.
 - **Judge**: Claude Sonnet 5.5, with an optional `anthropic_api_key` setting used only by evals.
 - **Sizes**: about 60 emails (about 12 per model-assigned label) and about 30 RAG cases, roughly 8 unanswerable, shared by all RAG modes.
 - **Runs**: a normal run is one pass per model and mode; a final benchmark repeats each three times.
@@ -203,7 +204,7 @@ Jev labelling is about 100 times cheaper than regular chat models, so labelling 
 - [x] [001/06 — Retrieval test](tasks/06-retrieval-test.md)
 - [x] [001/07 — Langfuse datasets and experiments](tasks/07-langfuse-experiments.md)
 - [x] [001/08 — Optional reference date in the email prompt](tasks/08-prompt-reference-date.md)
-- [ ] [001/09 — Answer test with fixed evidence](tasks/09-answer-test.md)
+- [x] [001/09 — Answer test with fixed evidence](tasks/09-answer-test.md)
 - [ ] [001/10 — End-to-end run](tasks/10-end-to-end-run.md)
 - [ ] [001/11 — LLM judge](tasks/11-judge.md)
 - [ ] [001/12 — Judge calibration](tasks/12-judge-calibration.md)
