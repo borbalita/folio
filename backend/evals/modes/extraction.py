@@ -122,7 +122,12 @@ def summarize(results: list[ExtractionResult]) -> dict[str, object]:
         "totals": totals,
         "by_source": by_source,
         "passes_bar": ok and len(scored) == len(results),
-        "bar_failures": reasons + ([f"{len(results) - len(scored)} newsletters failed"] if len(scored) < len(results) else []),
+        "bar_failures": reasons
+        + (
+            [f"{len(results) - len(scored)} newsletters failed"]
+            if len(scored) < len(results)
+            else []
+        ),
         "cost_usd": sum(costs) if all(c is not None for c in costs) else None,
         "prices_checked": PRICES_CHECKED,
         "reasoning_tokens": sum(r.reasoning_tokens for r in results),
@@ -142,10 +147,14 @@ def run(
     name = dataset_name(version)
     payloads = remote_payloads(client, name)
     if not payloads:
-        raise DatasetMissingError(f"{name} is not in Langfuse; run `python -m evals.news_sync`")
+        raise DatasetMissingError(
+            f"{name} is not in Langfuse; run `python -m evals.news_sync`"
+        )
     subject = run_name(model, effort)
     saved = (
-        {result.key: result for result in load_run(version, subject).results} if replay else {}
+        {result.key: result for result in load_run(version, subject).results}
+        if replay
+        else {}
     )
 
     async def task(item_id: str) -> ExtractionResult:
@@ -207,12 +216,20 @@ def print_summary(summary: dict[str, object]) -> None:
     assert isinstance(totals, dict)
 
     def fmt(value: object) -> str:
-        return "n/a" if value is None else f"{value:.3f}" if isinstance(value, float) else str(value)
+        return (
+            "n/a"
+            if value is None
+            else f"{value:.3f}"
+            if isinstance(value, float)
+            else str(value)
+        )
 
     print(f"\n{summary['newsletters']} newsletters, {summary['failed']} failed")
     print("  " + "  ".join(f"{key} {fmt(value)}" for key, value in totals.items()))
     cost = summary["cost_usd"]
-    print(f"  cost {fmt(cost)} USD (prices checked {summary['prices_checked']}), median {fmt(summary['median_seconds'])}s")
+    print(
+        f"  cost {fmt(cost)} USD (prices checked {summary['prices_checked']}), median {fmt(summary['median_seconds'])}s"
+    )
     verdict = "PASSES" if summary["passes_bar"] else "fails"
     reasons = summary["bar_failures"]
     print(f"  {verdict} the bar" + (f": {'; '.join(reasons)}" if reasons else ""))  # type: ignore[arg-type]

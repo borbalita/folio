@@ -159,9 +159,16 @@ def test_a_button_label_is_not_a_link() -> None:
 
 
 def test_items_without_article_links_are_matched_by_title_not_position() -> None:
-    expected = [_item("First story", ""), _item("Second story", ""), _item("Third story", "")]
+    expected = [
+        _item("First story", ""),
+        _item("Second story", ""),
+        _item("Third story", ""),
+    ]
     # The run skips the first item and puts a front-page link on another.
-    actual = [_item("Second story", "https://app.alphasignal.ai"), _item("Third story", "")]
+    actual = [
+        _item("Second story", "https://app.alphasignal.ai"),
+        _item("Third story", ""),
+    ]
 
     assert match_items(expected, actual) == [(1, 0), (2, 1)]
 
@@ -172,7 +179,9 @@ def test_only_the_newsletters_own_front_page_is_unusable() -> None:
     assert is_article_link("https://alphasignal.ai/go/some-story")
     # A blog's front page or a query-addressed post can be the item's real link.
     assert is_article_link("https://www.thecloudcast.net/?utm_source=tldrit")
-    assert is_article_link("https://scottaaronson.blog/?p=10062&utm_source=tldrnewsletter")
+    assert is_article_link(
+        "https://scottaaronson.blog/?p=10062&utm_source=tldrnewsletter"
+    )
     assert not is_article_link("READ MORE")
 
 

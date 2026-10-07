@@ -3,13 +3,15 @@
 An LLM plans a scenario and renders each email; cases are derived from the scenario in code,
 with only question wording from an LLM.
 
-Run: uv run python -m evals.generate [--out DIR] [--reuse-scenario | --cases-only | --add-hard N]
+Run: uv run python -m evals.generate [--out DIR]
+     [--reuse-scenario | --cases-only | --add-hard N | --extend-from VERSION]
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -20,7 +22,15 @@ from zoneinfo import ZoneInfo
 from pydantic import BaseModel
 
 from app.config import settings
-from evals.cases import label_cases, rag_case, rag_intents, rag_splits
+from evals.cases import (
+    RagCase,
+    RagIntent,
+    label_cases,
+    rag_case,
+    rag_intents,
+    rag_splits,
+)
+from evals.dataset import data_dir
 from evals.emails import build_eml, missing_facts
 from evals.llm import GENERATION_MODEL, ask
 from evals.questions import phrase_questions
@@ -35,10 +45,12 @@ from evals.scenario import (
     ScenarioDraft,
     ScenarioEmail,
     ScenarioExtension,
+    StoryExtension,
     TrapKind,
     extend,
     extension_problems,
     scenario_problems,
+    story_problems,
 )
 from ingest.email.parse import parse_rfc822
 
@@ -131,6 +143,49 @@ def _labels() -> str:
     return (PROMPTS / "labels.md").read_text().strip()
 
 
+STORY_MINIMUMS = {"multi_email": 5, "superseded": 4, "vague": 5, "unanswerable": 3}
+
+
+def extend_stories(model: str, scenario: Scenario) -> Scenario:
+    """Add story lines, look-alike filler, and planned questions. Existing emails are kept."""
+    system = (
+        (PROMPTS / "stories.md")
+        .read_text()
+        .format(
+            owner_name=scenario.owner_name,
+            owner_address=scenario.owner_address,
+            today=scenario.today.isoformat(),
+            new_emails=50,
+            story_lines=8,
+            labels=_labels(),
+            min_multi_email=STORY_MINIMUMS["multi_email"],
+            min_superseded=STORY_MINIMUMS["superseded"],
+            min_vague=STORY_MINIMUMS["vague"],
+            min_unanswerable=STORY_MINIMUMS["unanswerable"],
+            next_key=f"e{len(scenario.emails) + 1:02d}",
+            next_question=f"{len(scenario.questions) + 1:02d}",
+            history_days=HISTORY_DAYS,
+        )
+    )
+    existing = scenario.model_dump_json(
+        include={"senders", "emails", "unanswerable", "questions"}, indent=1
+    )
+    request = f"The existing mailbox:\n{existing}"
+    for attempt in range(1, SCENARIO_ATTEMPTS + 1):
+        extension = ask(model, system, request, StoryExtension)
+        problems = story_problems(scenario, extension, STORY_MINIMUMS)
+        if not problems:
+            return extend(scenario, extension)
+        print(f"story attempt {attempt}: {len(problems)} problems", file=sys.stderr)
+        for problem in problems:
+            print(f"  {problem}", file=sys.stderr)
+        request = (
+            f"The existing mailbox:\n{existing}\n\nA previous attempt had these "
+            "problems; avoid them:\n" + "\n".join(f"- {p}" for p in problems)
+        )
+    raise RuntimeError("no valid story extension; see the problems above")
+
+
 def render_email(
     model: str, scenario: Scenario, email: ScenarioEmail
 ) -> tuple[bytes, int]:
@@ -190,8 +245,12 @@ def render_all(
 
 
 def write_cases(model: str, scenario: Scenario, out: Path) -> None:
+    """Rewrite both case files. Existing wording is kept for cases whose intent is unchanged."""
     intents = rag_intents(scenario)
-    questions = phrase_questions(model, scenario, intents)
+    known = _known_questions(out / "rag_cases.jsonl", intents)
+    questions = known | phrase_questions(
+        model, scenario, [i for i in intents if i.case_id not in known]
+    )
     splits = rag_splits(intents)
     rag = [
         rag_case(intent, questions[intent.case_id], scenario, splits[intent.case_id])
@@ -203,6 +262,23 @@ def write_cases(model: str, scenario: Scenario, out: Path) -> None:
     print(
         f"cases: {len(rag)} rag ({unanswerable} unanswerable), {len(scenario.emails)} label"
     )
+
+
+def _known_questions(path: Path, intents: list[RagIntent]) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    existing = {
+        case.case_id: case
+        for case in map(RagCase.model_validate_json, path.read_text().splitlines())
+    }
+    return {
+        intent.case_id: existing[intent.case_id].question
+        for intent in intents
+        if intent.case_id in existing
+        and existing[intent.case_id].kind == intent.kind
+        and existing[intent.case_id].expected_email_keys == intent.expected_email_keys
+        and existing[intent.case_id].distractor_keys == intent.distractor_keys
+    }
 
 
 def _write_jsonl(path: Path, rows: Sequence[BaseModel]) -> None:
@@ -239,10 +315,25 @@ def main() -> int:
             "and rewrite label cases. RAG cases are unaffected."
         ),
     )
+    step.add_argument(
+        "--extend-from",
+        metavar="VERSION",
+        help=(
+            "Copy a committed data version to --out, then add story lines, look-alike "
+            "filler, and planned questions; existing cases keep their wording."
+        ),
+    )
     args = parser.parse_args()
 
     scenario_path = args.out / "scenario.json"
-    if args.reuse_scenario or args.cases_only or args.add_hard:
+    if args.extend_from:
+        if args.out.exists():
+            print(
+                f"{args.out} exists; remove it or pass another --out", file=sys.stderr
+            )
+            return 1
+        shutil.copytree(data_dir(args.extend_from), args.out)
+    if args.reuse_scenario or args.cases_only or args.add_hard or args.extend_from:
         scenario = Scenario.model_validate_json(scenario_path.read_text())
     else:
         scenario = generate_scenario(args.model, args.today)
@@ -250,9 +341,12 @@ def main() -> int:
         scenario_path.write_text(scenario.model_dump_json(indent=2) + "\n")
 
     to_render = [] if args.cases_only else None
-    if args.add_hard:
+    if args.add_hard or args.extend_from:
         known = {email.key for email in scenario.emails}
-        scenario = extend_scenario(args.model, scenario, args.add_hard)
+        if args.add_hard:
+            scenario = extend_scenario(args.model, scenario, args.add_hard)
+        else:
+            scenario = extend_stories(args.model, scenario)
         to_render = [email for email in scenario.emails if email.key not in known]
         scenario_path.write_text(scenario.model_dump_json(indent=2) + "\n")
     print(f"scenario: {len(scenario.emails)} emails, {len(scenario.senders)} senders")
@@ -275,11 +369,7 @@ def main() -> int:
         if failed:
             return 1
 
-    if args.add_hard:
-        _write_jsonl(args.out / "label_cases.jsonl", label_cases(scenario))
-        print(f"cases: {len(scenario.emails)} label (RAG cases unchanged)")
-    else:
-        write_cases(args.model, scenario, args.out)
+    write_cases(args.model, scenario, args.out)
     return 0
 
 

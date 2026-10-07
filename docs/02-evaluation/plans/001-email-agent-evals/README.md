@@ -2,7 +2,7 @@
 
 - Created: 2026-10-02
 - Status: In progress
-- Current stage: Implementation; 001/01–08 done. Paused for [plan 002](../002-jev-reranking/README.md) (v2 data and reranking); 001/09 onward runs on v2.
+- Current stage: Implementation; 001/01–08 done. [Plan 002](../002-jev-reranking/README.md) is done; 001/09 onward runs on data v2. 001/09 replays fixed evidence, so search and reranking don't run in it; 001/10 compares reranking off and on.
 
 ## Approval state
 

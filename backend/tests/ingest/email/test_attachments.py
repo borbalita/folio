@@ -41,7 +41,9 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
         [parsed],
         uidvalidity=1,
         highest_uid=4,
-        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        embed=lambda texts: [
+            [0.0] * settings.openai_embedding_dimensions for _ in texts
+        ],
         classifier=lambda _prompt: "other",
     )
     stored = [row for row in session.added if isinstance(row, EmailAttachment)]
@@ -54,7 +56,9 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
     assert by_name["statement.pdf"].content is None
     assert by_name["statement.pdf"].size_bytes == len(large)
     assert by_name["statement.pdf"].skipped_reason == "too_large"
-    email = next(row for row in session.added if getattr(row, "label", None) == EmailLabel.OTHER)
+    email = next(
+        row for row in session.added if getattr(row, "label", None) == EmailLabel.OTHER
+    )
     assert email.label == EmailLabel.OTHER
 
 

@@ -19,6 +19,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.models.base import Base
 
+
 class EmailLabel(StrEnum):
     NEEDS_REPLY = "needs_reply"
     PROMOTIONAL = "promotional"

@@ -33,6 +33,8 @@ def phrase_questions(
         owner_name=scenario.owner_name, today=scenario.today.isoformat()
     )
     accepted: dict[str, str] = {}
+    if not intents:
+        return accepted
     pending = intents
     feedback: dict[str, list[str]] = {}
     for _attempt in range(PHRASING_ATTEMPTS):

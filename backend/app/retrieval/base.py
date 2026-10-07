@@ -72,11 +72,15 @@ class HybridRetriever[FiltersT: BaseModel, PassageT: BaseModel](ABC):
                     [hit.chunk_id for hit in full_text],
                 ],
                 k=settings.retrieval_rrf_k,
-            )[: settings.retrieval_top_k]
+            )[: self._fused_count()]
 
             passages = self._hydrate(session, fused, filters) if fused else []
             span.update(output=self._span_output(passages))
             return passages
+
+    def _fused_count(self) -> int:
+        """How many fused hits to hydrate; more than top_k when a later step filters them."""
+        return settings.retrieval_top_k
 
     def _span_output(self, passages: list[PassageT]) -> dict[str, Any]:
         return {"passage_count": len(passages)}

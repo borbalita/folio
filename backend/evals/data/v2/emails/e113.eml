@@ -1,0 +1,30 @@
+From: SwiftPost <tracking@swiftpost.example>
+To: Anna Weber <anna@example.com>
+Date: Mon, 05 Oct 2026 16:10:00 +0200
+Subject: Your Stride Lane parcel is ready for collection
+Message-ID: <e113@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html>
+<head><meta charset=3D"utf-8"><title>Parcel ready for collection</title></hea=
+d>
+<body style=3D"font-family:Arial,sans-serif;color:#222;line-height:1.5;paddin=
+g:20px;">
+<p>Hello Anna Weber,</p>
+<p>Your Stride Lane parcel is ready for collection. You can now pick it up us=
+ing the details below:</p>
+<p><strong>Tracking number:</strong> SW-100523<br>
+<strong>Collection location:</strong> Parcel Locker 29<br>
+<strong>Pickup code:</strong> 817240</p>
+<p>Please collect your parcel before 11 October 2026. At the locker, follow t=
+he on-screen instructions and enter your pickup code to open the compartment =
+containing your parcel.</p>
+<p>Keep this email handy when you visit, and keep your pickup code private un=
+til you=E2=80=99re ready to collect.</p>
+<p>Thank you for choosing SwiftPost.</p>
+<p>Best regards,<br>SwiftPost</p>
+</body>
+</html>

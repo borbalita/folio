@@ -114,9 +114,7 @@ def summarize(run: RunFile) -> str:
     reasoning = sum(result.reasoning_tokens for result in run.results)
     cost = cost_usd(run.model, input_tokens, output_tokens)
     items = sum(len(result.items or []) for result in done)
-    sponsors = sum(
-        sum(item.sponsor for item in result.items or []) for result in done
-    )
+    sponsors = sum(sum(item.sponsor for item in result.items or []) for result in done)
     seconds = sorted(result.seconds for result in run.results)
     median = seconds[len(seconds) // 2] if seconds else 0.0
     cost_text = f"${cost:.2f}" if cost is not None else "unknown price"
@@ -138,13 +136,18 @@ def main() -> int:
 
     newsletters = load_newsletters(args.version)
     if not newsletters:
-        print(f"no exported newsletters for {args.version}; run evals.news_export", file=sys.stderr)
+        print(
+            f"no exported newsletters for {args.version}; run evals.news_export",
+            file=sys.stderr,
+        )
         return 1
 
     started = datetime.now(UTC)
     with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
         results = list(
-            pool.map(lambda item: extract_one(item, args.model, args.effort), newsletters)
+            pool.map(
+                lambda item: extract_one(item, args.model, args.effort), newsletters
+            )
         )
     run = RunFile(
         version=args.version,

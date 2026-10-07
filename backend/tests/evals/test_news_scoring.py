@@ -21,14 +21,25 @@ EXPECTED = [
 def test_a_perfect_run_scores_full_marks() -> None:
     scores = score_extraction(EXPECTED, list(EXPECTED), BODY)
 
-    assert (scores.recall, scores.precision, scores.url_exact, scores.order) == (1, 1, 1, 1)
-    assert (scores.sponsor_leaks, scores.sponsor_drops, scores.invented_urls) == (0, 0, 0)
+    assert (scores.recall, scores.precision, scores.url_exact, scores.order) == (
+        1,
+        1,
+        1,
+        1,
+    )
+    assert (scores.sponsor_leaks, scores.sponsor_drops, scores.invented_urls) == (
+        0,
+        0,
+        0,
+    )
 
 
 def test_misses_leaks_drops_and_invented_urls_are_told_apart() -> None:
     actual = [
         _item("Story A", "https://a.example/1"),
-        _item("Story B", "https://b.example/2", sponsor=True),  # news flagged as sponsor
+        _item(
+            "Story B", "https://b.example/2", sponsor=True
+        ),  # news flagged as sponsor
         _item("Ad", "https://ad.example/x"),  # sponsor passed off as news
         _item("Extra", "https://made-up.example/story"),  # not expected, invented URL
     ]  # Story C missing
@@ -63,16 +74,24 @@ def test_wrong_url_on_a_found_item_and_swapped_order() -> None:
 
 def test_an_empty_expected_url_is_matched_by_title_and_must_stay_empty() -> None:
     expected = [_item("Alpha story", "")]
-    homepage = score_extraction(expected, [_item("Alpha story", "https://app.alphasignal.ai")], "")
+    homepage = score_extraction(
+        expected, [_item("Alpha story", "https://app.alphasignal.ai")], ""
+    )
     empty = score_extraction(expected, [_item("Alpha story", "")], "")
 
-    assert homepage.recall == 1 and homepage.url_exact == 0 and homepage.invented_urls == 1
+    assert (
+        homepage.recall == 1 and homepage.url_exact == 0 and homepage.invented_urls == 1
+    )
     assert empty.url_exact == 1 and empty.invented_urls == 0
 
 
 def test_pooled_totals_and_the_pass_bar() -> None:
     good = score_extraction(EXPECTED, list(EXPECTED), BODY)
-    leaky = score_extraction(EXPECTED, [*EXPECTED[:2], _item("Ad", "https://ad.example/x"), EXPECTED[3]], BODY)
+    leaky = score_extraction(
+        EXPECTED,
+        [*EXPECTED[:2], _item("Ad", "https://ad.example/x"), EXPECTED[3]],
+        BODY,
+    )
 
     assert passes(pooled([good, good])) == (True, [])
     ok, reasons = passes(pooled([good, leaky]))

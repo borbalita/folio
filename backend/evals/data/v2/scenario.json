@@ -1,0 +1,3517 @@
+{
+  "senders": [
+    {
+      "key": "s_mira",
+      "name": "Mira Falk",
+      "address": "mira@formhaven.example",
+      "organization": "Formhaven Studio"
+    },
+    {
+      "key": "s_landlord",
+      "name": "Jonas Berg",
+      "address": "jonas@bergwohnen.example",
+      "organization": "Berg Wohnen"
+    },
+    {
+      "key": "s_power",
+      "name": "Lindenstrom Billing",
+      "address": "billing@lindenstrom.example",
+      "organization": "Lindenstrom"
+    },
+    {
+      "key": "s_phone",
+      "name": "KiezMobile Accounts",
+      "address": "accounts@kiezmobile.example",
+      "organization": "KiezMobile"
+    },
+    {
+      "key": "s_internet",
+      "name": "SpreeLink Billing",
+      "address": "billing@spreelink.example",
+      "organization": "SpreeLink"
+    },
+    {
+      "key": "s_dentist",
+      "name": "Clara Sommer",
+      "address": "reception@sommerzahn.example",
+      "organization": "Sommer Dental"
+    },
+    {
+      "key": "s_bank",
+      "name": "Elena Voss",
+      "address": "elena.voss@brueckenbank.example",
+      "organization": "Brückenbank"
+    },
+    {
+      "key": "s_leo",
+      "name": "Leo Winter",
+      "address": "leo@winterpost.example",
+      "organization": null
+    },
+    {
+      "key": "s_family",
+      "name": "Paula Weber",
+      "address": "paula@weberpost.example",
+      "organization": null
+    },
+    {
+      "key": "s_club",
+      "name": "Canal Runners",
+      "address": "updates@canalrunners.example",
+      "organization": "Canal Runners"
+    },
+    {
+      "key": "s_shop",
+      "name": "Paper Finch",
+      "address": "hello@paperfinch.example",
+      "organization": "Paper Finch"
+    },
+    {
+      "key": "s_shoes",
+      "name": "Stride & Stone",
+      "address": "offers@strideandstone.example",
+      "organization": "Stride & Stone"
+    },
+    {
+      "key": "s_furniture",
+      "name": "Oakline Living",
+      "address": "news@oakline.example",
+      "organization": "Oakline Living"
+    },
+    {
+      "key": "s_airline",
+      "name": "Aurora Wings",
+      "address": "travel@aurorawings.example",
+      "organization": "Aurora Wings"
+    },
+    {
+      "key": "s_city",
+      "name": "Berlin Neighbourhood Office",
+      "address": "bulletin@berlinservice.example",
+      "organization": "Berlin Neighbourhood Office"
+    },
+    {
+      "key": "s_design",
+      "name": "Layout Letter",
+      "address": "editor@layoutletter.example",
+      "organization": "Layout Letter"
+    },
+    {
+      "key": "s_parcel",
+      "name": "SwiftParcel",
+      "address": "tracking@swiftparcel.example",
+      "organization": "SwiftParcel"
+    },
+    {
+      "key": "s_museum",
+      "name": "Werkraum Museum",
+      "address": "mail@werkraummuseum.example",
+      "organization": "Werkraum Museum"
+    },
+    {
+      "key": "s_tool",
+      "name": "FrameDesk Accounts",
+      "address": "billing@framedesk.example",
+      "organization": "FrameDesk"
+    },
+    {
+      "key": "s_current",
+      "name": "HavelCurrent Billing",
+      "address": "billing@havelcurrent.example",
+      "organization": "HavelCurrent"
+    },
+    {
+      "key": "s_elin",
+      "name": "Elin Roth",
+      "address": "elin@gridroom.example",
+      "organization": "Gridroom Studio"
+    },
+    {
+      "key": "s_reedpaper",
+      "name": "Reed Paper",
+      "address": "orders@reedpaper.example",
+      "organization": "Reed Paper"
+    },
+    {
+      "key": "s_parkclub",
+      "name": "Park Loop Runners",
+      "address": "notes@parkloop.example",
+      "organization": "Park Loop Runners"
+    },
+    {
+      "key": "s_poweralt",
+      "name": "Birch Energy Accounts",
+      "address": "accounts@birchenergy.example",
+      "organization": "Birch Energy"
+    },
+    {
+      "key": "s_netalt",
+      "name": "CanalNet Billing",
+      "address": "billing@canalnet.example",
+      "organization": "CanalNet"
+    },
+    {
+      "key": "s_mobilealt",
+      "name": "SpreeMobile",
+      "address": "accounts@spreemobile.example",
+      "organization": "SpreeMobile"
+    },
+    {
+      "key": "s_dentalalt",
+      "name": "Nora Stein",
+      "address": "reception@steinzahn.example",
+      "organization": "Stein Dental"
+    },
+    {
+      "key": "s_architect",
+      "name": "David Moss",
+      "address": "david@mossrooms.example",
+      "organization": "Moss Rooms"
+    },
+    {
+      "key": "s_friendalt",
+      "name": "Leon Brand",
+      "address": "leon@brandpost.example",
+      "organization": null
+    },
+    {
+      "key": "s_furnalt",
+      "name": "Oakreed Living",
+      "address": "service@oakreed.example",
+      "organization": "Oakreed Living"
+    },
+    {
+      "key": "s_shoealt",
+      "name": "Stride Lane",
+      "address": "offers@stridelane.example",
+      "organization": "Stride Lane"
+    },
+    {
+      "key": "s_airalt",
+      "name": "Aurora Air",
+      "address": "travel@auroraair.example",
+      "organization": "Aurora Air"
+    },
+    {
+      "key": "s_toolalt",
+      "name": "FrameBoard",
+      "address": "mail@frameboard.example",
+      "organization": "FrameBoard"
+    },
+    {
+      "key": "s_cityalt",
+      "name": "Berlin District Forum",
+      "address": "bulletin@districtforum.example",
+      "organization": "Berlin District Forum"
+    },
+    {
+      "key": "s_designalt",
+      "name": "Layout Weekly",
+      "address": "editor@layoutweekly.example",
+      "organization": "Layout Weekly"
+    },
+    {
+      "key": "s_museumalt",
+      "name": "Werkhalle Museum",
+      "address": "journal@werkhalle.example",
+      "organization": "Werkhalle Museum"
+    },
+    {
+      "key": "s_parcelalt",
+      "name": "SwiftPost",
+      "address": "tracking@swiftpost.example",
+      "organization": "SwiftPost"
+    },
+    {
+      "key": "s_bankalt",
+      "name": "Eva Volk",
+      "address": "eva@brueckencredit.example",
+      "organization": "Brückencredit"
+    }
+  ],
+  "emails": [
+    {
+      "key": "e01",
+      "label": "needs_reply",
+      "sender_key": "s_mira",
+      "sent_at": "2026-06-10T09:12:00+02:00",
+      "subject": "Choose a direction for the onboarding screens",
+      "brief": "Please choose between the compact and spacious onboarding directions before our client review. Send me your preferred direction by 12 June 2026.",
+      "facts": [
+        {
+          "name": "decision deadline",
+          "value": "12 June 2026"
+        },
+        {
+          "name": "first design option",
+          "value": "compact"
+        },
+        {
+          "name": "second design option",
+          "value": "spacious"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e02",
+      "label": "invoice",
+      "sender_key": "s_power",
+      "sent_at": "2026-06-12T08:05:00+02:00",
+      "subject": "Your monthly electricity invoice — June",
+      "brief": "Your June electricity invoice LS-2606-418 totals €46.80. Please pay it by 26 June 2026 using the invoice number as your reference.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "LS-2606-418"
+        },
+        {
+          "name": "amount due",
+          "value": "€46.80"
+        },
+        {
+          "name": "due date",
+          "value": "26 June 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e12"
+          ],
+          "note": "The same electricity invoice template appears in July with a different amount, reference and deadline."
+        }
+      ]
+    },
+    {
+      "key": "e03",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-06-14T11:20:00+02:00",
+      "subject": "A brighter desk starts here",
+      "brief": "Our new colour-block notebooks are now available with 15% off. Use DESK15 at checkout before 21 June 2026.",
+      "facts": [
+        {
+          "name": "discount",
+          "value": "15%"
+        },
+        {
+          "name": "offer code",
+          "value": "DESK15"
+        },
+        {
+          "name": "offer expiry",
+          "value": "21 June 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e04",
+      "label": "newsletter",
+      "sender_key": "s_design",
+      "sent_at": "2026-06-16T07:40:00+02:00",
+      "subject": "Layout Letter 184: Designing for small screens",
+      "brief": "This week's issue explores thumb-friendly navigation and readable captions. Our featured interview is with illustrator Nela Brandt.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "184"
+        },
+        {
+          "name": "featured interviewee",
+          "value": "Nela Brandt"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e05",
+      "label": "other",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-06-18T14:10:00+02:00",
+      "subject": "Your dental check-up is booked",
+      "brief": "Your check-up is booked for 24 June 2026 at 09:20. Please arrive at our practice at Birkenweg 17 a few minutes early.",
+      "facts": [
+        {
+          "name": "appointment date",
+          "value": "24 June 2026"
+        },
+        {
+          "name": "appointment time",
+          "value": "09:20"
+        },
+        {
+          "name": "practice address",
+          "value": "Birkenweg 17"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e06",
+      "label": "needs_reply",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-06-20T16:35:00+02:00",
+      "subject": "Kitchen window inspection",
+      "brief": "The carpenter can inspect your kitchen window on 2 July 2026 between 13:00 and 15:00. Please tell me whether this access window works for you.",
+      "facts": [
+        {
+          "name": "inspection date",
+          "value": "2 July 2026"
+        },
+        {
+          "name": "access window",
+          "value": "13:00–15:00"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e07",
+      "label": "invoice",
+      "sender_key": "s_phone",
+      "sent_at": "2026-06-22T06:50:00+02:00",
+      "subject": "June mobile service charge",
+      "brief": "Your mobile service charge is €19.90 under invoice KM-66271. We will collect it by direct debit on 29 June 2026.",
+      "facts": [
+        {
+          "name": "amount charged",
+          "value": "€19.90"
+        },
+        {
+          "name": "invoice number",
+          "value": "KM-66271"
+        },
+        {
+          "name": "collection date",
+          "value": "29 June 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "Automatic collection removes the need for manual payment, but the message still states a service charge."
+        }
+      ]
+    },
+    {
+      "key": "e08",
+      "label": "promotional",
+      "sender_key": "s_airline",
+      "sent_at": "2026-06-24T12:15:00+02:00",
+      "subject": "Autumn fares to Porto",
+      "brief": "Discover Porto this autumn with one-way fares from €59. Book during our sale ending 28 June 2026.",
+      "facts": [
+        {
+          "name": "advertised destination",
+          "value": "Porto"
+        },
+        {
+          "name": "starting fare",
+          "value": "€59"
+        },
+        {
+          "name": "sale expiry",
+          "value": "28 June 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e09",
+      "label": "newsletter",
+      "sender_key": "s_club",
+      "sent_at": "2026-06-26T18:05:00+02:00",
+      "subject": "Canal Runners: June club notes",
+      "brief": "Our June club notes introduce the new volunteer route coordinator, Sven Adler. The Saturday social run now starts at the Moabit footbridge.",
+      "facts": [
+        {
+          "name": "route coordinator",
+          "value": "Sven Adler"
+        },
+        {
+          "name": "social run meeting point",
+          "value": "Moabit footbridge"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e10",
+      "label": "other",
+      "sender_key": "s_parcel",
+      "sent_at": "2026-06-28T10:45:00+02:00",
+      "subject": "Your Paper Finch parcel is on its way",
+      "brief": "Your Paper Finch parcel has left the sorting centre. Track shipment SP-604821 for the estimated delivery on 30 June 2026.",
+      "facts": [
+        {
+          "name": "tracking number",
+          "value": "SP-604821"
+        },
+        {
+          "name": "estimated delivery date",
+          "value": "30 June 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e11",
+      "label": "needs_reply",
+      "sender_key": "s_leo",
+      "sent_at": "2026-06-30T23:30:00+02:00",
+      "subject": "Dinner on Friday?",
+      "brief": "Would you like to meet for dinner at Copper Fig on 3 July 2026? I can book a table for 19:15 once you tell me you're free.",
+      "facts": [
+        {
+          "name": "restaurant",
+          "value": "Copper Fig"
+        },
+        {
+          "name": "proposed dinner date",
+          "value": "3 July 2026"
+        },
+        {
+          "name": "proposed dinner time",
+          "value": "19:15"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "Sent thirty minutes before July begins locally, this message belongs in June date ranges."
+        }
+      ]
+    },
+    {
+      "key": "e12",
+      "label": "invoice",
+      "sender_key": "s_power",
+      "sent_at": "2026-07-01T00:25:00+02:00",
+      "subject": "Your monthly electricity invoice — July",
+      "brief": "Your July electricity invoice LS-2607-418 totals €51.35. Please pay it by 15 July 2026 using the invoice number as your reference.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "LS-2607-418"
+        },
+        {
+          "name": "amount due",
+          "value": "€51.35"
+        },
+        {
+          "name": "due date",
+          "value": "15 July 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e02"
+          ],
+          "note": "The June invoice uses the same wording but has a different amount, reference and deadline."
+        },
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "Sent twenty-five minutes after local midnight, this invoice belongs in July rather than June."
+        }
+      ]
+    },
+    {
+      "key": "e13",
+      "label": "promotional",
+      "sender_key": "s_shoes",
+      "sent_at": "2026-07-03T09:30:00+02:00",
+      "subject": "Meet the Trailstep Lite",
+      "brief": "Our Trailstep Lite walking shoe has arrived in three summer colours. Get €20 off your first pair with code TRAIL20.",
+      "facts": [
+        {
+          "name": "product",
+          "value": "Trailstep Lite"
+        },
+        {
+          "name": "discount amount",
+          "value": "€20"
+        },
+        {
+          "name": "offer code",
+          "value": "TRAIL20"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e14",
+      "label": "newsletter",
+      "sender_key": "s_city",
+      "sent_at": "2026-07-05T08:25:00+02:00",
+      "subject": "Neighbourhood bulletin: July",
+      "brief": "This month's bulletin covers the library's summer reading programme and changes to park opening hours. The public gardening workshop takes place on 18 July 2026 at Linden Courtyard.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "18 July 2026"
+        },
+        {
+          "name": "workshop venue",
+          "value": "Linden Courtyard"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e15",
+      "label": "other",
+      "sender_key": "s_bank",
+      "sent_at": "2026-07-07T15:05:00+02:00",
+      "subject": "Your replacement debit card has been dispatched",
+      "brief": "Your replacement debit card ending in 7284 has been dispatched. Delivery is expected by 13 July 2026.",
+      "facts": [
+        {
+          "name": "card ending",
+          "value": "7284"
+        },
+        {
+          "name": "expected delivery deadline",
+          "value": "13 July 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e16",
+      "label": "needs_reply",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-07-09T13:20:00+02:00",
+      "subject": "Please confirm your revised cleaning slot",
+      "brief": "We can offer your next cleaning on 23 July 2026 at 11:40 following a change in our hygienist's schedule. Please reply to confirm that you can attend.",
+      "facts": [
+        {
+          "name": "proposed cleaning date",
+          "value": "23 July 2026"
+        },
+        {
+          "name": "proposed cleaning time",
+          "value": "11:40"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "Although it resembles an appointment notice, the proposed slot explicitly requires Anna's confirmation."
+        }
+      ]
+    },
+    {
+      "key": "e17",
+      "label": "invoice",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-07-11T10:10:00+02:00",
+      "subject": "Invoice for your June check-up",
+      "brief": "Attached is invoice SD-260624 for your completed check-up, with €78.40 payable. Please transfer the balance by 25 July 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "SD-260624"
+        },
+        {
+          "name": "amount due",
+          "value": "€78.40"
+        },
+        {
+          "name": "due date",
+          "value": "25 July 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e18",
+      "label": "promotional",
+      "sender_key": "s_furniture",
+      "sent_at": "2026-07-13T17:00:00+02:00",
+      "subject": "The Foldaway desk is here",
+      "brief": "Make room for a better home workspace with our new Foldaway desk. The introductory price is €229 through 20 July 2026.",
+      "facts": [
+        {
+          "name": "product",
+          "value": "Foldaway desk"
+        },
+        {
+          "name": "introductory price",
+          "value": "€229"
+        },
+        {
+          "name": "offer expiry",
+          "value": "20 July 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e19",
+      "label": "newsletter",
+      "sender_key": "s_design",
+      "sent_at": "2026-07-15T07:35:00+02:00",
+      "subject": "Layout Letter 188: Better critique sessions",
+      "brief": "This issue shares techniques for making design critiques more useful. Guest contributor Oskar Heim explains how to separate observations from proposed solutions.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "188"
+        },
+        {
+          "name": "guest contributor",
+          "value": "Oskar Heim"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e20",
+      "label": "other",
+      "sender_key": "s_mira",
+      "sent_at": "2026-07-17T16:45:00+02:00",
+      "subject": "Re: Choose a direction for the onboarding screens",
+      "brief": "The client has now approved the spacious direction after our internal review. I've archived the decision in design record FH-ADR-27.",
+      "facts": [
+        {
+          "name": "approved direction",
+          "value": "spacious"
+        },
+        {
+          "name": "design record",
+          "value": "FH-ADR-27"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e01",
+      "traps": []
+    },
+    {
+      "key": "e21",
+      "label": "needs_reply",
+      "sender_key": "s_mira",
+      "sent_at": "2026-07-19T14:30:00+02:00",
+      "subject": "Research workshop — please confirm",
+      "brief": "Please confirm whether you can join the research workshop on 6 August 2026 at 10:00 in Studio Birch. I'll finalise the attendee list after your reply.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "6 August 2026"
+        },
+        {
+          "name": "workshop time",
+          "value": "10:00"
+        },
+        {
+          "name": "workshop room",
+          "value": "Studio Birch"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e41"
+          ],
+          "note": "A later workshop request uses almost identical wording but proposes another date, time and room."
+        }
+      ]
+    },
+    {
+      "key": "e22",
+      "label": "invoice",
+      "sender_key": "s_internet",
+      "sent_at": "2026-07-21T05:55:00+02:00",
+      "subject": "Your home internet invoice — July",
+      "brief": "Your home internet invoice SL-0726-905 is ready, with €34.95 due. Please pay by 4 August 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "SL-0726-905"
+        },
+        {
+          "name": "amount due",
+          "value": "€34.95"
+        },
+        {
+          "name": "due date",
+          "value": "4 August 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e42"
+          ],
+          "note": "The August internet invoice repeats this template with a different amount and payment details."
+        }
+      ]
+    },
+    {
+      "key": "e23",
+      "label": "promotional",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-07-23T12:40:00+02:00",
+      "subject": "Summer smile package",
+      "brief": "Our optional Summer Smile whitening package is available for €169. Book by 10 August 2026 to receive a complimentary care kit.",
+      "facts": [
+        {
+          "name": "package name",
+          "value": "Summer Smile"
+        },
+        {
+          "name": "package price",
+          "value": "€169"
+        },
+        {
+          "name": "booking deadline",
+          "value": "10 August 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The dentist's familiar sender identity may suggest a care notice, but the email sells an optional package."
+        }
+      ]
+    },
+    {
+      "key": "e24",
+      "label": "newsletter",
+      "sender_key": "s_club",
+      "sent_at": "2026-07-25T18:20:00+02:00",
+      "subject": "Canal Runners: July club notes",
+      "brief": "This month's notes report on the relay results and explain our updated hot-weather running guidance. A short final section offers members 8% off club caps with code CANAL8.",
+      "facts": [
+        {
+          "name": "member cap discount",
+          "value": "8%"
+        },
+        {
+          "name": "cap discount code",
+          "value": "CANAL8"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The small merchandise offer is secondary to the recurring club news and safety information."
+        }
+      ]
+    },
+    {
+      "key": "e25",
+      "label": "other",
+      "sender_key": "s_airline",
+      "sent_at": "2026-07-27T09:05:00+02:00",
+      "subject": "Your Lisbon itinerary — QL7M2R",
+      "brief": "Your Lisbon itinerary under booking QL7M2R is confirmed for 12 September 2026. Flight AW214 departs Berlin at 08:10.",
+      "facts": [
+        {
+          "name": "booking reference",
+          "value": "QL7M2R"
+        },
+        {
+          "name": "flight date",
+          "value": "12 September 2026"
+        },
+        {
+          "name": "flight number",
+          "value": "AW214"
+        },
+        {
+          "name": "departure time",
+          "value": "08:10"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e45"
+          ],
+          "note": "The later itinerary for the same booking changes the departure time while retaining the other identifying details."
+        }
+      ]
+    },
+    {
+      "key": "e26",
+      "label": "needs_reply",
+      "sender_key": "s_bank",
+      "sent_at": "2026-07-29T11:55:00+02:00",
+      "subject": "Address verification document needed",
+      "brief": "To complete your address update, please send a copy of your registration certificate by 7 August 2026. Include case reference BV-3916 in your reply.",
+      "facts": [
+        {
+          "name": "requested document",
+          "value": "registration certificate"
+        },
+        {
+          "name": "response deadline",
+          "value": "7 August 2026"
+        },
+        {
+          "name": "case reference",
+          "value": "BV-3916"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "This bank administration message requires Anna to provide a document rather than merely read a notice."
+        }
+      ]
+    },
+    {
+      "key": "e27",
+      "label": "invoice",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-07-31T23:10:00+02:00",
+      "subject": "Replacement mailbox key charge",
+      "brief": "The replacement mailbox key you requested costs €24.50. Please transfer this amount by 14 August 2026 with reference BW-KEY-83.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€24.50"
+        },
+        {
+          "name": "due date",
+          "value": "14 August 2026"
+        },
+        {
+          "name": "payment reference",
+          "value": "BW-KEY-83"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "The message was sent fifty minutes before the end of July and must not be counted as August mail."
+        }
+      ]
+    },
+    {
+      "key": "e28",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-08-01T00:40:00+02:00",
+      "subject": "Midnight stationery sale",
+      "brief": "Our stationery sale is live with 25% off selected planners. Use PLAN25 before 5 August 2026.",
+      "facts": [
+        {
+          "name": "discount",
+          "value": "25%"
+        },
+        {
+          "name": "offer code",
+          "value": "PLAN25"
+        },
+        {
+          "name": "offer expiry",
+          "value": "5 August 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "Despite the midnight-sale wording, the actual send date is forty minutes into August."
+        }
+      ]
+    },
+    {
+      "key": "e29",
+      "label": "newsletter",
+      "sender_key": "s_city",
+      "sent_at": "2026-08-03T08:15:00+02:00",
+      "subject": "Neighbourhood bulletin: August",
+      "brief": "Our August bulletin explains the new bicycle-parking zones and shares updates from the neighbourhood council. The open council session is on 19 August 2026 at Maple Hall.",
+      "facts": [
+        {
+          "name": "council session date",
+          "value": "19 August 2026"
+        },
+        {
+          "name": "session venue",
+          "value": "Maple Hall"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e30",
+      "label": "other",
+      "sender_key": "s_parcel",
+      "sent_at": "2026-08-05T15:40:00+02:00",
+      "subject": "Your Oakline parcel was delivered",
+      "brief": "Shipment SP-805116 has been delivered to your chosen collection point. You can collect it from Kiosk Hazel using pickup code 462913.",
+      "facts": [
+        {
+          "name": "tracking number",
+          "value": "SP-805116"
+        },
+        {
+          "name": "collection point",
+          "value": "Kiosk Hazel"
+        },
+        {
+          "name": "pickup code",
+          "value": "462913"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e31",
+      "label": "needs_reply",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-08-07T09:50:00+02:00",
+      "subject": "Re: Kitchen window inspection",
+      "brief": "The carpenter's inspection found that the kitchen window seal needs replacing. Please choose either 20 August 2026 or 21 August 2026 for the repair visit.",
+      "facts": [
+        {
+          "name": "first repair date option",
+          "value": "20 August 2026"
+        },
+        {
+          "name": "second repair date option",
+          "value": "21 August 2026"
+        },
+        {
+          "name": "repair item",
+          "value": "kitchen window seal"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e06",
+      "traps": []
+    },
+    {
+      "key": "e32",
+      "label": "invoice",
+      "sender_key": "s_club",
+      "sent_at": "2026-08-09T17:15:00+02:00",
+      "subject": "Your autumn club membership dues",
+      "brief": "Your autumn Canal Runners membership dues are €42.00. Please pay by 24 August 2026 using member reference CR-1187.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€42.00"
+        },
+        {
+          "name": "due date",
+          "value": "24 August 2026"
+        },
+        {
+          "name": "member reference",
+          "value": "CR-1187"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e33",
+      "label": "promotional",
+      "sender_key": "s_phone",
+      "sent_at": "2026-08-11T10:25:00+02:00",
+      "subject": "Upgrade to our Weekend Plus plan",
+      "brief": "Get more weekend data with Weekend Plus for €27.90 per month. Sign up by 31 August 2026 to receive the first month at half price.",
+      "facts": [
+        {
+          "name": "plan name",
+          "value": "Weekend Plus"
+        },
+        {
+          "name": "monthly advertised price",
+          "value": "€27.90"
+        },
+        {
+          "name": "offer deadline",
+          "value": "31 August 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e34",
+      "label": "newsletter",
+      "sender_key": "s_museum",
+      "sent_at": "2026-08-13T07:55:00+02:00",
+      "subject": "Werkraum Journal: August",
+      "brief": "Our monthly journal goes behind the scenes of the furniture conservation workshop. Curator Lotte Kern describes the restoration of a bentwood reading chair.",
+      "facts": [
+        {
+          "name": "featured curator",
+          "value": "Lotte Kern"
+        },
+        {
+          "name": "restoration subject",
+          "value": "bentwood reading chair"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e35",
+      "label": "other",
+      "sender_key": "s_bank",
+      "sent_at": "2026-08-15T06:30:00+02:00",
+      "subject": "Your July account statement is available",
+      "brief": "Your July account statement is available in the secure document centre. Open document ST-2026-07-582 to view your account activity.",
+      "facts": [
+        {
+          "name": "statement document identifier",
+          "value": "ST-2026-07-582"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The financial sender and statement wording resemble billing, but the email only announces document availability."
+        }
+      ]
+    },
+    {
+      "key": "e36",
+      "label": "needs_reply",
+      "sender_key": "s_leo",
+      "sent_at": "2026-08-17T19:10:00+02:00",
+      "subject": "Which hiking route shall we take?",
+      "brief": "For our outing on 29 August 2026, would you prefer the Pine Ridge loop or the Lakeside trail? Let me know which route you fancy so I can plan the train journey.",
+      "facts": [
+        {
+          "name": "outing date",
+          "value": "29 August 2026"
+        },
+        {
+          "name": "first route option",
+          "value": "Pine Ridge loop"
+        },
+        {
+          "name": "second route option",
+          "value": "Lakeside trail"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e37",
+      "label": "invoice",
+      "sender_key": "s_power",
+      "sent_at": "2026-08-19T08:00:00+02:00",
+      "subject": "August electricity account balance",
+      "brief": "Invoice LS-2608-418 covers your August electricity usage and shows a balance of €48.65. Payment is due on 2 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "LS-2608-418"
+        },
+        {
+          "name": "amount due",
+          "value": "€48.65"
+        },
+        {
+          "name": "due date",
+          "value": "2 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e38",
+      "label": "promotional",
+      "sender_key": "s_airline",
+      "sent_at": "2026-08-21T13:45:00+02:00",
+      "subject": "A winter escape to Valencia",
+      "brief": "Explore Valencia with return fares starting at €118. Our winter escape offer ends on 30 August 2026.",
+      "facts": [
+        {
+          "name": "advertised destination",
+          "value": "Valencia"
+        },
+        {
+          "name": "starting return fare",
+          "value": "€118"
+        },
+        {
+          "name": "offer expiry",
+          "value": "30 August 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e39",
+      "label": "newsletter",
+      "sender_key": "s_design",
+      "sent_at": "2026-08-23T07:45:00+02:00",
+      "subject": "Layout Letter 193: Designing useful empty states",
+      "brief": "This week's digest examines how empty states can help people get started. The reading list includes the essay Small Prompts, Clear Paths.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "193"
+        },
+        {
+          "name": "featured essay",
+          "value": "Small Prompts, Clear Paths"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e40",
+      "label": "other",
+      "sender_key": "s_city",
+      "sent_at": "2026-08-25T14:05:00+02:00",
+      "subject": "Your document collection appointment",
+      "brief": "Your document collection appointment is scheduled for 9 September 2026 at 14:35. Bring appointment reference BN-5092 to counter 6.",
+      "facts": [
+        {
+          "name": "appointment date",
+          "value": "9 September 2026"
+        },
+        {
+          "name": "appointment time",
+          "value": "14:35"
+        },
+        {
+          "name": "appointment reference",
+          "value": "BN-5092"
+        },
+        {
+          "name": "counter",
+          "value": "6"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "Instructions to bring a reference are practical preparation, not a request to answer or confirm the appointment."
+        }
+      ]
+    },
+    {
+      "key": "e41",
+      "label": "needs_reply",
+      "sender_key": "s_mira",
+      "sent_at": "2026-08-27T11:30:00+02:00",
+      "subject": "Research workshop — please confirm",
+      "brief": "Please confirm whether you can join the research workshop on 8 September 2026 at 14:00 in Studio Alder. I'll finalise the attendee list after your reply.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "8 September 2026"
+        },
+        {
+          "name": "workshop time",
+          "value": "14:00"
+        },
+        {
+          "name": "workshop room",
+          "value": "Studio Alder"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e21"
+          ],
+          "note": "The earlier workshop request has the same subject and sentence structure but different scheduling details."
+        }
+      ]
+    },
+    {
+      "key": "e42",
+      "label": "invoice",
+      "sender_key": "s_internet",
+      "sent_at": "2026-08-29T05:50:00+02:00",
+      "subject": "Your home internet invoice — August",
+      "brief": "Your home internet invoice SL-0826-905 is ready, with €39.95 due. Please pay by 12 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "SL-0826-905"
+        },
+        {
+          "name": "amount due",
+          "value": "€39.95"
+        },
+        {
+          "name": "due date",
+          "value": "12 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e22"
+          ],
+          "note": "The July internet invoice uses the same template but states a lower amount and another deadline."
+        }
+      ]
+    },
+    {
+      "key": "e43",
+      "label": "promotional",
+      "sender_key": "s_furniture",
+      "sent_at": "2026-08-31T23:40:00+02:00",
+      "subject": "Last hours of our storage sale",
+      "brief": "Save 30% on the Stackwell shelving range during our final sale hours. Enter STACK30 before the offer closes tonight.",
+      "facts": [
+        {
+          "name": "product range",
+          "value": "Stackwell"
+        },
+        {
+          "name": "discount",
+          "value": "30%"
+        },
+        {
+          "name": "offer code",
+          "value": "STACK30"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "This late-night sale message is still August mail even though September begins twenty minutes later."
+        }
+      ]
+    },
+    {
+      "key": "e44",
+      "label": "newsletter",
+      "sender_key": "s_club",
+      "sent_at": "2026-09-01T00:15:00+02:00",
+      "subject": "Canal Runners: September club notes",
+      "brief": "September's club notes explain our autumn route rotation and introduce the new first-aid volunteers. The volunteer briefing is on 11 September 2026 at Canal Pavilion.",
+      "facts": [
+        {
+          "name": "briefing date",
+          "value": "11 September 2026"
+        },
+        {
+          "name": "briefing venue",
+          "value": "Canal Pavilion"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "The send timestamp places this bulletin in September even though it arrived just after midnight."
+        }
+      ]
+    },
+    {
+      "key": "e45",
+      "label": "other",
+      "sender_key": "s_airline",
+      "sent_at": "2026-09-03T10:35:00+02:00",
+      "subject": "Your Lisbon itinerary — QL7M2R",
+      "brief": "Your Lisbon itinerary under booking QL7M2R has been updated for 12 September 2026. Flight AW214 now departs Berlin at 09:05.",
+      "facts": [
+        {
+          "name": "booking reference",
+          "value": "QL7M2R"
+        },
+        {
+          "name": "flight date",
+          "value": "12 September 2026"
+        },
+        {
+          "name": "flight number",
+          "value": "AW214"
+        },
+        {
+          "name": "updated departure time",
+          "value": "09:05"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "near_duplicate",
+          "related_keys": [
+            "e25"
+          ],
+          "note": "The matching earlier itinerary lists 08:10, so a current-departure question must use this later update."
+        }
+      ]
+    },
+    {
+      "key": "e46",
+      "label": "needs_reply",
+      "sender_key": "s_family",
+      "sent_at": "2026-09-05T18:50:00+02:00",
+      "subject": "Can you bring the family photo album?",
+      "brief": "Could you bring the blue family photo album to our lunch on 27 September 2026? Please tell me whether you can find it before I ask Martin to look for his copy.",
+      "facts": [
+        {
+          "name": "requested item",
+          "value": "blue family photo album"
+        },
+        {
+          "name": "family lunch date",
+          "value": "27 September 2026"
+        },
+        {
+          "name": "alternative contact",
+          "value": "Martin"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e47",
+      "label": "invoice",
+      "sender_key": "s_phone",
+      "sent_at": "2026-09-07T06:45:00+02:00",
+      "subject": "Mobile account: September payment summary",
+      "brief": "Invoice KM-69014 includes your plan and roaming usage, totalling €23.60. Direct debit collection is scheduled for 16 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "KM-69014"
+        },
+        {
+          "name": "amount charged",
+          "value": "€23.60"
+        },
+        {
+          "name": "collection date",
+          "value": "16 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e48",
+      "label": "promotional",
+      "sender_key": "s_museum",
+      "sent_at": "2026-09-10T12:00:00+02:00",
+      "subject": "Werkraum members' digest: autumn shop offers",
+      "brief": "Refresh your bookshelf with 18% off our exhibition catalogues this week. Use code CATALOGUE18 by 17 September 2026, and browse our new limited-edition prints.",
+      "facts": [
+        {
+          "name": "catalogue discount",
+          "value": "18%"
+        },
+        {
+          "name": "offer code",
+          "value": "CATALOGUE18"
+        },
+        {
+          "name": "offer expiry",
+          "value": "17 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "Despite the digest title and museum sender, the content primarily promotes merchandise purchases."
+        }
+      ]
+    },
+    {
+      "key": "e49",
+      "label": "newsletter",
+      "sender_key": "s_museum",
+      "sent_at": "2026-09-13T08:10:00+02:00",
+      "subject": "Werkraum Journal: September",
+      "brief": "Our September journal explores the history of modular kitchens and shares notes from the archive team. This month's featured archive collection is Everyday Objects 1972.",
+      "facts": [
+        {
+          "name": "featured archive collection",
+          "value": "Everyday Objects 1972"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e50",
+      "label": "other",
+      "sender_key": "s_leo",
+      "sent_at": "2026-09-16T20:05:00+02:00",
+      "subject": "Re: Which hiking route shall we take?",
+      "brief": "I've uploaded the photos from our walk to the shared album called Late Summer Footpaths. The best picture is the one of you beside the old red boathouse.",
+      "facts": [
+        {
+          "name": "shared album title",
+          "value": "Late Summer Footpaths"
+        },
+        {
+          "name": "photo landmark",
+          "value": "old red boathouse"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e36",
+      "traps": []
+    },
+    {
+      "key": "e51",
+      "label": "needs_reply",
+      "sender_key": "s_mira",
+      "sent_at": "2026-09-19T09:25:00+02:00",
+      "subject": "Please approve the handoff checklist",
+      "brief": "Please review and approve handoff checklist FH-HO-64 before I send it to engineering. I need your decision by 23 September 2026.",
+      "facts": [
+        {
+          "name": "checklist identifier",
+          "value": "FH-HO-64"
+        },
+        {
+          "name": "approval deadline",
+          "value": "23 September 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e52",
+      "label": "invoice",
+      "sender_key": "s_tool",
+      "sent_at": "2026-09-22T07:15:00+02:00",
+      "subject": "FrameDesk annual subscription invoice",
+      "brief": "Your annual FrameDesk subscription renewal is €144.00 under invoice FD-AN-8031. Payment is due by 7 October 2026.",
+      "facts": [
+        {
+          "name": "annual subscription amount",
+          "value": "€144.00"
+        },
+        {
+          "name": "invoice number",
+          "value": "FD-AN-8031"
+        },
+        {
+          "name": "due date",
+          "value": "7 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e53",
+      "label": "promotional",
+      "sender_key": "s_shoes",
+      "sent_at": "2026-09-25T11:10:00+02:00",
+      "subject": "Your autumn running kit offer",
+      "brief": "Buy the Nightpace jacket and receive 22% off matching running tights. Use NIGHT22 before 4 October 2026.",
+      "facts": [
+        {
+          "name": "qualifying product",
+          "value": "Nightpace jacket"
+        },
+        {
+          "name": "tights discount",
+          "value": "22%"
+        },
+        {
+          "name": "offer code",
+          "value": "NIGHT22"
+        },
+        {
+          "name": "offer expiry",
+          "value": "4 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e54",
+      "label": "newsletter",
+      "sender_key": "s_city",
+      "sent_at": "2026-09-28T08:20:00+02:00",
+      "subject": "Neighbourhood bulletin: autumn update",
+      "brief": "This bulletin shares the autumn leaf-collection schedule and progress on the community garden. The garden open day is on 10 October 2026 at Willow Corner.",
+      "facts": [
+        {
+          "name": "garden open day",
+          "value": "10 October 2026"
+        },
+        {
+          "name": "garden venue",
+          "value": "Willow Corner"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e55",
+      "label": "other",
+      "sender_key": "s_bank",
+      "sent_at": "2026-09-30T23:25:00+02:00",
+      "subject": "Security settings updated",
+      "brief": "Your online banking security settings were updated successfully. The change is recorded under event reference SEC-77402.",
+      "facts": [
+        {
+          "name": "security event reference",
+          "value": "SEC-77402"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "The security notice belongs to September because it was sent thirty-five minutes before local midnight."
+        }
+      ]
+    },
+    {
+      "key": "e56",
+      "label": "needs_reply",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-10-01T00:35:00+02:00",
+      "subject": "Access for the smoke alarm inspection",
+      "brief": "The inspector can visit on 13 October 2026 between 16:00 and 18:00. Please confirm whether you will be home to provide access.",
+      "facts": [
+        {
+          "name": "inspection date",
+          "value": "13 October 2026"
+        },
+        {
+          "name": "access window",
+          "value": "16:00–18:00"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "date_boundary",
+          "related_keys": [],
+          "note": "This request belongs to October despite arriving only thirty-five minutes after September ended."
+        }
+      ]
+    },
+    {
+      "key": "e57",
+      "label": "invoice",
+      "sender_key": "s_power",
+      "sent_at": "2026-10-02T08:35:00+02:00",
+      "subject": "September electricity usage: payment due",
+      "brief": "Your September usage is covered by invoice LS-2609-418 for €54.10. Please pay by 19 October 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "LS-2609-418"
+        },
+        {
+          "name": "amount due",
+          "value": "€54.10"
+        },
+        {
+          "name": "due date",
+          "value": "19 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e58",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-10-03T10:50:00+02:00",
+      "subject": "Preorder our Berlin Sketchbook",
+      "brief": "Preorder the Berlin Sketchbook for €32 and receive a free pencil set. The preorder bonus is available until 12 October 2026.",
+      "facts": [
+        {
+          "name": "product",
+          "value": "Berlin Sketchbook"
+        },
+        {
+          "name": "preorder price",
+          "value": "€32"
+        },
+        {
+          "name": "bonus expiry",
+          "value": "12 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e59",
+      "label": "newsletter",
+      "sender_key": "s_design",
+      "sent_at": "2026-10-04T07:50:00+02:00",
+      "subject": "Layout Letter 199: Accessible colour systems",
+      "brief": "This week's issue discusses practical ways to test accessible colour systems. Our featured case study follows the redesign of the North Harbour library catalogue.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "199"
+        },
+        {
+          "name": "case study subject",
+          "value": "North Harbour library catalogue"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e60",
+      "label": "other",
+      "sender_key": "s_parcel",
+      "sent_at": "2026-10-05T16:20:00+02:00",
+      "subject": "Your Stride & Stone parcel is ready for collection",
+      "brief": "Shipment SP-100532 is ready for collection at Parcel Locker 28. Use pickup code 817204 before 8 October 2026.",
+      "facts": [
+        {
+          "name": "tracking number",
+          "value": "SP-100532"
+        },
+        {
+          "name": "collection location",
+          "value": "Parcel Locker 28"
+        },
+        {
+          "name": "pickup code",
+          "value": "817204"
+        },
+        {
+          "name": "collection deadline",
+          "value": "8 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e61",
+      "label": "needs_reply",
+      "sender_key": "s_club",
+      "sent_at": "2026-10-05T18:45:00+02:00",
+      "subject": "Canal Runners: October club notes",
+      "brief": "October's club notes cover reflective clothing, the route-marking team's report and the results of our volunteer survey. The equipment cupboard has moved to Reed House, and the updated inventory is linked below the committee minutes. Our next issue will include a guide to winter warm-ups. Anna, before I print the volunteer rota, could you reply by 9 October 2026 to say whether you can staff the equipment table?",
+      "facts": [
+        {
+          "name": "equipment cupboard location",
+          "value": "Reed House"
+        },
+        {
+          "name": "reply deadline",
+          "value": "9 October 2026"
+        },
+        {
+          "name": "requested volunteer assignment",
+          "value": "equipment table"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The recurring club-news layout tempts newsletter, but the final personalised question leaves the rota organiser waiting for Anna's answer, making needs_reply correct."
+        }
+      ]
+    },
+    {
+      "key": "e62",
+      "label": "invoice",
+      "sender_key": "s_leo",
+      "sent_at": "2026-09-24T20:40:00+02:00",
+      "subject": "Picnic photos and a little housekeeping",
+      "brief": "I've put the picnic photos in the shared album Blanket Weather; the ones with the runaway napkins are brilliant. I covered your share of the food, so you owe me €18.75. Please transfer it by 1 October 2026 with the reference PICNIC-LEO.",
+      "facts": [
+        {
+          "name": "shared album title",
+          "value": "Blanket Weather"
+        },
+        {
+          "name": "amount owed",
+          "value": "€18.75"
+        },
+        {
+          "name": "payment deadline",
+          "value": "1 October 2026"
+        },
+        {
+          "name": "payment reference",
+          "value": "PICNIC-LEO"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The friend's photo-sharing subject and opening tempt other, but the explicit debt and transfer request make invoice correct."
+        }
+      ]
+    },
+    {
+      "key": "e63",
+      "label": "promotional",
+      "sender_key": "s_tool",
+      "sent_at": "2026-10-02T09:45:00+02:00",
+      "subject": "FrameDesk account update: storage allowance",
+      "brief": "Your workspace storage report is ready in the account centre, with a breakdown of archived projects and shared assets. For additional capacity, activate the optional Archive Plus add-on at €6.45 per month using the Upgrade button beneath the report. Activate by 16 October 2026 with code ARCHIVE40 to save 40% on the first three months.",
+      "facts": [
+        {
+          "name": "optional add-on",
+          "value": "Archive Plus"
+        },
+        {
+          "name": "advertised monthly price",
+          "value": "€6.45"
+        },
+        {
+          "name": "offer deadline",
+          "value": "16 October 2026"
+        },
+        {
+          "name": "offer code",
+          "value": "ARCHIVE40"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The billing sender and account-report framing tempt other, but the substantive call to activate a discounted optional add-on makes promotional correct."
+        }
+      ]
+    },
+    {
+      "key": "e64",
+      "label": "newsletter",
+      "sender_key": "s_shop",
+      "sent_at": "2026-09-29T08:40:00+02:00",
+      "subject": "New on the shelf: three papers for ink lovers",
+      "brief": "In issue 14 of our monthly Paper Notes, the product-card panels compare ink behaviour on Cloudleaf cotton, Rill vellum and Slategrain recycled stock. Cloudleaf cotton showed the least feathering, while Rill vellum took longest to dry in our repeatable blotting test. Slategrain recycled stock produced the strongest show-through with broad nibs. The closing workshop column explains how paper sizing changes absorption and includes a worksheet for repeating the test at home.",
+      "facts": [
+        {
+          "name": "recurring publication",
+          "value": "Paper Notes"
+        },
+        {
+          "name": "least-feathering paper",
+          "value": "Cloudleaf cotton"
+        },
+        {
+          "name": "slowest-drying paper",
+          "value": "Rill vellum"
+        },
+        {
+          "name": "strongest-show-through paper",
+          "value": "Slategrain recycled stock"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The retailer, new-product subject and product-card layout tempt promotional, but the recurring issue delivers comparative test findings and educational guidance rather than a sales pitch, making newsletter correct."
+        }
+      ]
+    },
+    {
+      "key": "e65",
+      "label": "other",
+      "sender_key": "s_mira",
+      "sent_at": "2026-10-05T15:15:00+02:00",
+      "subject": "Approval requested: exhibition poster proof",
+      "brief": "The printer's forwarded cover sheet still says, 'Anna, please approve proof FH-POST-92 before production.' Since that sheet was generated, the client delegated sign-off to me and I approved the proof this afternoon. The printer has accepted my signature and locked the production file for the press run on 15 October 2026.",
+      "facts": [
+        {
+          "name": "poster proof identifier",
+          "value": "FH-POST-92"
+        },
+        {
+          "name": "press run date",
+          "value": "15 October 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": [
+        {
+          "kind": "borderline_label",
+          "related_keys": [],
+          "note": "The approval-request subject and quoted instruction tempt needs_reply, but the subsequent delegated sign-off and accepted production file resolve the request, making other correct."
+        }
+      ]
+    },
+    {
+      "key": "e66",
+      "label": "invoice",
+      "sender_key": "s_current",
+      "sent_at": "2026-09-04T08:10:00+02:00",
+      "subject": "August studio electricity invoice",
+      "brief": "Your studio electricity invoice HC-0826-419 has an amount due of €52.15. Please pay by 18 September 2026 using that invoice number.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "HC-0826-419"
+        },
+        {
+          "name": "amount due",
+          "value": "€52.15"
+        },
+        {
+          "name": "due date",
+          "value": "18 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e67",
+      "label": "invoice",
+      "sender_key": "s_current",
+      "sent_at": "2026-09-06T09:25:00+02:00",
+      "subject": "Re: August studio electricity invoice — corrected balance",
+      "brief": "A meter credit reduces the amount due to €49.15 for the studio electricity invoice. Use payment reference HC-CREDIT-419 when transferring the corrected balance.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€49.15"
+        },
+        {
+          "name": "payment reference",
+          "value": "HC-CREDIT-419"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e66",
+      "traps": []
+    },
+    {
+      "key": "e68",
+      "label": "invoice",
+      "sender_key": "s_current",
+      "sent_at": "2026-09-20T08:15:00+02:00",
+      "subject": "Re: August studio electricity invoice — payment reminder",
+      "brief": "The corrected studio electricity balance remains unpaid. We have extended the due date to 30 September 2026.",
+      "facts": [
+        {
+          "name": "due date",
+          "value": "30 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e67",
+      "traps": []
+    },
+    {
+      "key": "e69",
+      "label": "needs_reply",
+      "sender_key": "s_elin",
+      "sent_at": "2026-09-14T11:05:00+02:00",
+      "subject": "Research workshop — please confirm",
+      "brief": "Can you join our archive research workshop on 22 September 2026 at 10:45? Please confirm so I can reserve Room Juniper.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "22 September 2026"
+        },
+        {
+          "name": "workshop time",
+          "value": "10:45"
+        },
+        {
+          "name": "workshop room",
+          "value": "Room Juniper"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e70",
+      "label": "needs_reply",
+      "sender_key": "s_elin",
+      "sent_at": "2026-09-16T11:15:00+02:00",
+      "subject": "Re: Research workshop — new day",
+      "brief": "Our archive research workshop needs to move to 25 September 2026. Please let me know whether the new day works for you.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "25 September 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e69",
+      "traps": []
+    },
+    {
+      "key": "e71",
+      "label": "needs_reply",
+      "sender_key": "s_elin",
+      "sent_at": "2026-09-18T16:10:00+02:00",
+      "subject": "Re: Research workshop — final room and date",
+      "brief": "The archive research workshop will now be on 28 September 2026 in Room Rowan. Please confirm your attendance; the start time remains unchanged.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "28 September 2026"
+        },
+        {
+          "name": "workshop room",
+          "value": "Room Rowan"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e70",
+      "traps": []
+    },
+    {
+      "key": "e72",
+      "label": "other",
+      "sender_key": "s_reedpaper",
+      "sent_at": "2026-09-08T12:20:00+02:00",
+      "subject": "Your stationery order RP-60982",
+      "brief": "We have accepted order RP-60982 for a Mossline planner and a brass page clip. Your order is being prepared for dispatch.",
+      "facts": [
+        {
+          "name": "order number",
+          "value": "RP-60982"
+        },
+        {
+          "name": "first ordered item",
+          "value": "Mossline planner"
+        },
+        {
+          "name": "second ordered item",
+          "value": "brass page clip"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e73",
+      "label": "other",
+      "sender_key": "s_reedpaper",
+      "sent_at": "2026-09-10T15:10:00+02:00",
+      "subject": "Re: Your stationery order — first parcel",
+      "brief": "The planner from your stationery order has shipped under tracking number RP-SHIP-60982-A. The brass clip will follow separately once packing is complete.",
+      "facts": [
+        {
+          "name": "first parcel tracking number",
+          "value": "RP-SHIP-60982-A"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e72",
+      "traps": []
+    },
+    {
+      "key": "e74",
+      "label": "other",
+      "sender_key": "s_reedpaper",
+      "sent_at": "2026-09-15T15:35:00+02:00",
+      "subject": "Re: Your stationery order — second parcel",
+      "brief": "The clip has now shipped under tracking number RP-SHIP-60982-B. Its estimated delivery date is 21 September 2026.",
+      "facts": [
+        {
+          "name": "second parcel tracking number",
+          "value": "RP-SHIP-60982-B"
+        },
+        {
+          "name": "estimated delivery date",
+          "value": "21 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e73",
+      "traps": []
+    },
+    {
+      "key": "e75",
+      "label": "other",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-09-21T09:10:00+02:00",
+      "subject": "Hallway radiator valve inspection",
+      "brief": "The hallway radiator valve inspection is scheduled for 11 October 2026. The contractor will work from the communal landing.",
+      "facts": [
+        {
+          "name": "inspection date",
+          "value": "11 October 2026"
+        },
+        {
+          "name": "inspection item",
+          "value": "hallway radiator valve"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e76",
+      "label": "other",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-09-29T10:30:00+02:00",
+      "subject": "Re: Hallway radiator valve inspection — contractor update",
+      "brief": "The contractor has moved the hallway radiator visit to 17 October 2026. The visit will take place between 12:15 and 13:45.",
+      "facts": [
+        {
+          "name": "inspection date",
+          "value": "17 October 2026"
+        },
+        {
+          "name": "access window",
+          "value": "12:15–13:45"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e75",
+      "traps": []
+    },
+    {
+      "key": "e77",
+      "label": "needs_reply",
+      "sender_key": "s_landlord",
+      "sent_at": "2026-10-04T17:10:00+02:00",
+      "subject": "Re: Hallway radiator valve inspection — spare key",
+      "brief": "The contractor also needs access to the interior valve cover during the revised visit. Please tell me whether you can leave your spare key with caretaker Ruth Seidel.",
+      "facts": [
+        {
+          "name": "key recipient",
+          "value": "caretaker Ruth Seidel"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e76",
+      "traps": []
+    },
+    {
+      "key": "e78",
+      "label": "needs_reply",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-09-23T13:15:00+02:00",
+      "subject": "Night guard fitting — please confirm",
+      "brief": "We can offer your night guard fitting on 14 October 2026 at 08:50. Please reply to accept this slot.",
+      "facts": [
+        {
+          "name": "fitting date",
+          "value": "14 October 2026"
+        },
+        {
+          "name": "fitting time",
+          "value": "08:50"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e79",
+      "label": "needs_reply",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-09-30T14:20:00+02:00",
+      "subject": "Re: Night guard fitting — revised time",
+      "brief": "We need to move your night guard fitting to 12:25 on the same day. Please confirm that the revised time suits you.",
+      "facts": [
+        {
+          "name": "fitting time",
+          "value": "12:25"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e78",
+      "traps": []
+    },
+    {
+      "key": "e80",
+      "label": "other",
+      "sender_key": "s_dentist",
+      "sent_at": "2026-10-03T09:10:00+02:00",
+      "subject": "Re: Night guard fitting — confirmation received",
+      "brief": "Thank you for accepting the revised night guard fitting slot; it is now booked. Please bring your green appliance case to the appointment.",
+      "facts": [
+        {
+          "name": "item to bring",
+          "value": "green appliance case"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e79",
+      "traps": []
+    },
+    {
+      "key": "e81",
+      "label": "invoice",
+      "sender_key": "s_tool",
+      "sent_at": "2026-08-26T07:20:00+02:00",
+      "subject": "FrameDesk team export add-on invoice",
+      "brief": "Your team export add-on invoice FD-EX-8047 has an amount due of €36.20. Please pay by 6 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "FD-EX-8047"
+        },
+        {
+          "name": "amount due",
+          "value": "€36.20"
+        },
+        {
+          "name": "due date",
+          "value": "6 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e82",
+      "label": "invoice",
+      "sender_key": "s_tool",
+      "sent_at": "2026-08-28T07:30:00+02:00",
+      "subject": "Re: FrameDesk team export add-on — corrected seats",
+      "brief": "We removed an unused export seat, reducing the amount due to €31.20. Please use payment reference FD-EX-ADJ-8047 for the corrected invoice.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€31.20"
+        },
+        {
+          "name": "payment reference",
+          "value": "FD-EX-ADJ-8047"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e81",
+      "traps": []
+    },
+    {
+      "key": "e83",
+      "label": "other",
+      "sender_key": "s_tool",
+      "sent_at": "2026-09-04T07:40:00+02:00",
+      "subject": "Re: FrameDesk team export add-on — payment received",
+      "brief": "Your corrected team export add-on payment has been received. Receipt FD-RC-8059 is available in the account centre.",
+      "facts": [
+        {
+          "name": "receipt number",
+          "value": "FD-RC-8059"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e82",
+      "traps": []
+    },
+    {
+      "key": "e84",
+      "label": "newsletter",
+      "sender_key": "s_club",
+      "sent_at": "2026-09-12T18:15:00+02:00",
+      "subject": "Canal Runners special notes: lantern relay",
+      "brief": "Our special club notes introduce the lantern relay and describe its accessible course. The marshal briefing will be held at Alder Boathouse.",
+      "facts": [
+        {
+          "name": "relay briefing venue",
+          "value": "Alder Boathouse"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e85",
+      "label": "newsletter",
+      "sender_key": "s_club",
+      "sent_at": "2026-09-20T18:20:00+02:00",
+      "subject": "Re: Lantern relay notes — briefing schedule",
+      "brief": "This follow-up issue explains the marshal hand signals and wet-weather procedure. The lantern relay marshal briefing is scheduled for 18 October 2026 at 15:10.",
+      "facts": [
+        {
+          "name": "relay briefing date",
+          "value": "18 October 2026"
+        },
+        {
+          "name": "relay briefing time",
+          "value": "15:10"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e84",
+      "traps": []
+    },
+    {
+      "key": "e86",
+      "label": "needs_reply",
+      "sender_key": "s_club",
+      "sent_at": "2026-09-29T18:25:00+02:00",
+      "subject": "Re: Lantern relay — can you cover a marshal post?",
+      "brief": "Anna, could you take the east gate marshal post for the lantern relay? Please reply by 11 October 2026 so I can complete the assignments.",
+      "facts": [
+        {
+          "name": "requested relay assignment",
+          "value": "east gate marshal post"
+        },
+        {
+          "name": "relay reply deadline",
+          "value": "11 October 2026"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": "e85",
+      "traps": []
+    },
+    {
+      "key": "e87",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-09-18T10:40:00+02:00",
+      "subject": "Autumn letter-writing bundle",
+      "brief": "Buy our Autumn Correspondence bundle with 17% off using LETTER17. The offer expires on 26 September 2026.",
+      "facts": [
+        {
+          "name": "product",
+          "value": "Autumn Correspondence bundle"
+        },
+        {
+          "name": "discount",
+          "value": "17%"
+        },
+        {
+          "name": "offer code",
+          "value": "LETTER17"
+        },
+        {
+          "name": "offer expiry",
+          "value": "26 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e88",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-09-24T10:45:00+02:00",
+      "subject": "Re: Autumn letter-writing bundle — extended offer",
+      "brief": "We have extended the letter-writing bundle offer to 2 October 2026. Use the original code to claim your discount before the revised expiry.",
+      "facts": [
+        {
+          "name": "offer expiry",
+          "value": "2 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e87",
+      "traps": []
+    },
+    {
+      "key": "e89",
+      "label": "promotional",
+      "sender_key": "s_shop",
+      "sent_at": "2026-09-30T10:50:00+02:00",
+      "subject": "Re: Autumn letter-writing bundle — final extension",
+      "brief": "The letter-writing bundle discount is now available until 9 October 2026. Order this week and we will include a copper ink sample.",
+      "facts": [
+        {
+          "name": "offer expiry",
+          "value": "9 October 2026"
+        },
+        {
+          "name": "included bonus",
+          "value": "copper ink sample"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": "e88",
+      "traps": []
+    },
+    {
+      "key": "e90",
+      "label": "needs_reply",
+      "sender_key": "s_architect",
+      "sent_at": "2026-09-17T10:10:00+02:00",
+      "subject": "Research workshop — please confirm",
+      "brief": "Please confirm whether you can attend the materials research workshop on 29 September 2026 at 10:35. We will meet in Studio Ash.",
+      "facts": [
+        {
+          "name": "workshop date",
+          "value": "29 September 2026"
+        },
+        {
+          "name": "workshop time",
+          "value": "10:35"
+        },
+        {
+          "name": "workshop room",
+          "value": "Studio Ash"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e91",
+      "label": "needs_reply",
+      "sender_key": "s_dentalalt",
+      "sent_at": "2026-09-28T13:10:00+02:00",
+      "subject": "Please confirm your guard consultation",
+      "brief": "Can you attend your sports mouthguard consultation on 20 October 2026 at 12:35? Please reply so we can hold the slot.",
+      "facts": [
+        {
+          "name": "consultation date",
+          "value": "20 October 2026"
+        },
+        {
+          "name": "consultation time",
+          "value": "12:35"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e92",
+      "label": "needs_reply",
+      "sender_key": "s_friendalt",
+      "sent_at": "2026-09-22T19:30:00+02:00",
+      "subject": "Dinner and hiking plans",
+      "brief": "Would you like dinner at Copper Fern on 26 September 2026 at 19:25? Please tell me whether you are free before I book.",
+      "facts": [
+        {
+          "name": "restaurant",
+          "value": "Copper Fern"
+        },
+        {
+          "name": "proposed dinner date",
+          "value": "26 September 2026"
+        },
+        {
+          "name": "proposed dinner time",
+          "value": "19:25"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e93",
+      "label": "invoice",
+      "sender_key": "s_poweralt",
+      "sent_at": "2026-09-04T08:20:00+02:00",
+      "subject": "August electricity usage: payment due",
+      "brief": "Your workshop electricity invoice BE-0826-418 has an amount due of €49.65. Please pay by 20 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "BE-0826-418"
+        },
+        {
+          "name": "amount due",
+          "value": "€49.65"
+        },
+        {
+          "name": "due date",
+          "value": "20 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e94",
+      "label": "invoice",
+      "sender_key": "s_netalt",
+      "sent_at": "2026-09-21T05:45:00+02:00",
+      "subject": "Your internet invoice — September",
+      "brief": "Your coworking internet invoice CN-0926-906 is ready with €35.45 due. Please pay by 5 October 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "CN-0926-906"
+        },
+        {
+          "name": "amount due",
+          "value": "€35.45"
+        },
+        {
+          "name": "due date",
+          "value": "5 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e95",
+      "label": "invoice",
+      "sender_key": "s_mobilealt",
+      "sent_at": "2026-09-07T06:55:00+02:00",
+      "subject": "September mobile payment summary",
+      "brief": "Your backup mobile plan has been charged €23.90 under invoice SM-69041. Direct debit collection is scheduled for 15 September 2026.",
+      "facts": [
+        {
+          "name": "invoice number",
+          "value": "SM-69041"
+        },
+        {
+          "name": "amount charged",
+          "value": "€23.90"
+        },
+        {
+          "name": "collection date",
+          "value": "15 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e96",
+      "label": "invoice",
+      "sender_key": "s_parkclub",
+      "sent_at": "2026-08-10T17:20:00+02:00",
+      "subject": "Your autumn running club dues",
+      "brief": "Your Park Loop Runners autumn dues are €42.50. Please pay by 28 August 2026 using member reference PL-1189.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€42.50"
+        },
+        {
+          "name": "due date",
+          "value": "28 August 2026"
+        },
+        {
+          "name": "member reference",
+          "value": "PL-1189"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e97",
+      "label": "invoice",
+      "sender_key": "s_furnalt",
+      "sent_at": "2026-09-09T08:35:00+02:00",
+      "subject": "Replacement cabinet key charge",
+      "brief": "Your replacement cabinet key costs €24.80. Please transfer the amount by 22 September 2026 with payment reference OR-KEY-85.",
+      "facts": [
+        {
+          "name": "amount due",
+          "value": "€24.80"
+        },
+        {
+          "name": "due date",
+          "value": "22 September 2026"
+        },
+        {
+          "name": "payment reference",
+          "value": "OR-KEY-85"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e98",
+      "label": "promotional",
+      "sender_key": "s_shoealt",
+      "sent_at": "2026-09-25T11:20:00+02:00",
+      "subject": "Your autumn running kit offer",
+      "brief": "Buy the Nightstride jacket to get 21% off matching tights. Enter NIGHT21 at checkout this week.",
+      "facts": [
+        {
+          "name": "qualifying product",
+          "value": "Nightstride jacket"
+        },
+        {
+          "name": "tights discount",
+          "value": "21%"
+        },
+        {
+          "name": "offer code",
+          "value": "NIGHT21"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e99",
+      "label": "promotional",
+      "sender_key": "s_airalt",
+      "sent_at": "2026-08-22T13:35:00+02:00",
+      "subject": "Autumn fares to Porto",
+      "brief": "Discover Porto with one-way fares starting at €61. Our autumn fare sale ends on 4 September 2026.",
+      "facts": [
+        {
+          "name": "starting fare",
+          "value": "€61"
+        },
+        {
+          "name": "sale expiry",
+          "value": "4 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e100",
+      "label": "promotional",
+      "sender_key": "s_furnalt",
+      "sent_at": "2026-08-31T22:50:00+02:00",
+      "subject": "Last hours of our shelving sale",
+      "brief": "Save 29% on the Stackwood shelving range. Use STACK29 to claim the sale price tonight.",
+      "facts": [
+        {
+          "name": "product range",
+          "value": "Stackwood"
+        },
+        {
+          "name": "discount",
+          "value": "29%"
+        },
+        {
+          "name": "offer code",
+          "value": "STACK29"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e101",
+      "label": "promotional",
+      "sender_key": "s_mobilealt",
+      "sent_at": "2026-08-12T10:15:00+02:00",
+      "subject": "Upgrade your weekend data",
+      "brief": "Our Weekend Extra plan offers additional data for €28.40 per month. Sign up before 3 September 2026 for a bonus data pack.",
+      "facts": [
+        {
+          "name": "plan name",
+          "value": "Weekend Extra"
+        },
+        {
+          "name": "monthly advertised price",
+          "value": "€28.40"
+        },
+        {
+          "name": "offer deadline",
+          "value": "3 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e102",
+      "label": "promotional",
+      "sender_key": "s_dentalalt",
+      "sent_at": "2026-07-24T12:30:00+02:00",
+      "subject": "Summer smile treatment offer",
+      "brief": "Book our Summer Gleam whitening package for €172. The package includes a travel care pouch.",
+      "facts": [
+        {
+          "name": "package name",
+          "value": "Summer Gleam"
+        },
+        {
+          "name": "package price",
+          "value": "€172"
+        },
+        {
+          "name": "included bonus",
+          "value": "travel care pouch"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e103",
+      "label": "promotional",
+      "sender_key": "s_toolalt",
+      "sent_at": "2026-10-02T09:35:00+02:00",
+      "subject": "Account update: archive storage offer",
+      "brief": "Add Archive Extend to your FrameBoard workspace for €6.65 per month. Use EXTEND35 to receive the introductory discount.",
+      "facts": [
+        {
+          "name": "optional add-on",
+          "value": "Archive Extend"
+        },
+        {
+          "name": "advertised monthly price",
+          "value": "€6.65"
+        },
+        {
+          "name": "offer code",
+          "value": "EXTEND35"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e104",
+      "label": "promotional",
+      "sender_key": "s_reedpaper",
+      "sent_at": "2026-09-24T10:55:00+02:00",
+      "subject": "Autumn correspondence sale extended",
+      "brief": "Our Autumn Letter Kit is now 16% off through 6 October 2026. Use REED16 when ordering your kit.",
+      "facts": [
+        {
+          "name": "product",
+          "value": "Autumn Letter Kit"
+        },
+        {
+          "name": "discount",
+          "value": "16%"
+        },
+        {
+          "name": "offer expiry",
+          "value": "6 October 2026"
+        },
+        {
+          "name": "offer code",
+          "value": "REED16"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e105",
+      "label": "newsletter",
+      "sender_key": "s_parkclub",
+      "sent_at": "2026-09-01T00:30:00+02:00",
+      "subject": "Park Loop Runners: September club notes",
+      "brief": "September's notes introduce our volunteer marshals and explain the evening route rotation. The marshal briefing is on 10 September 2026 at Park Pavilion.",
+      "facts": [
+        {
+          "name": "briefing date",
+          "value": "10 September 2026"
+        },
+        {
+          "name": "briefing venue",
+          "value": "Park Pavilion"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e106",
+      "label": "newsletter",
+      "sender_key": "s_cityalt",
+      "sent_at": "2026-09-28T08:30:00+02:00",
+      "subject": "Neighbourhood bulletin: autumn gardens",
+      "brief": "This month's bulletin reports on leaf collection and new community planting beds. The garden open day is on 21 October 2026 at Willow Yard.",
+      "facts": [
+        {
+          "name": "garden open day",
+          "value": "21 October 2026"
+        },
+        {
+          "name": "garden venue",
+          "value": "Willow Yard"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e107",
+      "label": "newsletter",
+      "sender_key": "s_designalt",
+      "sent_at": "2026-10-04T07:35:00+02:00",
+      "subject": "Layout Weekly 198: Accessible colour systems",
+      "brief": "This week's digest examines contrast testing and colour naming. The featured case study follows the South Harbour archive catalogue.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "198"
+        },
+        {
+          "name": "case study subject",
+          "value": "South Harbour archive catalogue"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e108",
+      "label": "newsletter",
+      "sender_key": "s_museumalt",
+      "sent_at": "2026-09-13T08:25:00+02:00",
+      "subject": "Werkhalle Journal: September",
+      "brief": "Our September journal describes the restoration of domestic storage furniture. This month's archive feature is Ordinary Objects 1973.",
+      "facts": [
+        {
+          "name": "featured archive collection",
+          "value": "Ordinary Objects 1973"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e109",
+      "label": "newsletter",
+      "sender_key": "s_city",
+      "sent_at": "2026-09-15T08:15:00+02:00",
+      "subject": "Neighbourhood bulletin: library volunteering",
+      "brief": "This mid-month bulletin covers library volunteering and local reading groups. The volunteer orientation will take place at Cedar Reading Room on 24 September 2026.",
+      "facts": [
+        {
+          "name": "orientation venue",
+          "value": "Cedar Reading Room"
+        },
+        {
+          "name": "orientation date",
+          "value": "24 September 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e110",
+      "label": "newsletter",
+      "sender_key": "s_design",
+      "sent_at": "2026-09-21T07:45:00+02:00",
+      "subject": "Layout Letter 197: Archive navigation",
+      "brief": "This week's issue looks at navigation for large image archives. Guest contributor Tessa Lind shares a guide to meaningful thumbnail captions.",
+      "facts": [
+        {
+          "name": "issue number",
+          "value": "197"
+        },
+        {
+          "name": "guest contributor",
+          "value": "Tessa Lind"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e111",
+      "label": "newsletter",
+      "sender_key": "s_reedpaper",
+      "sent_at": "2026-09-29T08:30:00+02:00",
+      "subject": "Paper Journal: three stocks for fountain pens",
+      "brief": "Our monthly Paper Journal compares feathering and drying across three paper stocks. Fernleaf cotton showed the least feathering, while Brook vellum dried most slowly.",
+      "facts": [
+        {
+          "name": "recurring publication",
+          "value": "Paper Journal"
+        },
+        {
+          "name": "least-feathering paper",
+          "value": "Fernleaf cotton"
+        },
+        {
+          "name": "slowest-drying paper",
+          "value": "Brook vellum"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e112",
+      "label": "newsletter",
+      "sender_key": "s_parkclub",
+      "sent_at": "2026-09-20T18:30:00+02:00",
+      "subject": "Park Loop Runners: lantern relay notes",
+      "brief": "Our special notes describe the lantern relay course and marshal signals. The relay briefing will be held at Birch Boathouse on 22 October 2026.",
+      "facts": [
+        {
+          "name": "relay briefing venue",
+          "value": "Birch Boathouse"
+        },
+        {
+          "name": "relay briefing date",
+          "value": "22 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e113",
+      "label": "other",
+      "sender_key": "s_parcelalt",
+      "sent_at": "2026-10-05T16:10:00+02:00",
+      "subject": "Your Stride Lane parcel is ready for collection",
+      "brief": "Shipment SW-100523 is ready at Parcel Locker 29. Use pickup code 817240 before 11 October 2026.",
+      "facts": [
+        {
+          "name": "tracking number",
+          "value": "SW-100523"
+        },
+        {
+          "name": "collection location",
+          "value": "Parcel Locker 29"
+        },
+        {
+          "name": "pickup code",
+          "value": "817240"
+        },
+        {
+          "name": "collection deadline",
+          "value": "11 October 2026"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e114",
+      "label": "other",
+      "sender_key": "s_bankalt",
+      "sent_at": "2026-09-30T23:15:00+02:00",
+      "subject": "Security settings updated",
+      "brief": "Your Brückencredit security preferences have been saved successfully. The update is recorded under event reference SEC-77420.",
+      "facts": [
+        {
+          "name": "security event reference",
+          "value": "SEC-77420"
+        }
+      ],
+      "body_format": "plain",
+      "in_reply_to": null,
+      "traps": []
+    },
+    {
+      "key": "e115",
+      "label": "other",
+      "sender_key": "s_airalt",
+      "sent_at": "2026-09-03T10:25:00+02:00",
+      "subject": "Your Lyon itinerary — QM7L2S",
+      "brief": "Your Lyon itinerary under booking QM7L2S is confirmed for 25 October 2026. Flight AA241 departs Berlin at 09:15.",
+      "facts": [
+        {
+          "name": "booking reference",
+          "value": "QM7L2S"
+        },
+        {
+          "name": "flight date",
+          "value": "25 October 2026"
+        },
+        {
+          "name": "flight number",
+          "value": "AA241"
+        },
+        {
+          "name": "departure time",
+          "value": "09:15"
+        }
+      ],
+      "body_format": "html",
+      "in_reply_to": null,
+      "traps": []
+    }
+  ],
+  "unanswerable": [
+    {
+      "key": "u01",
+      "topic": "What is the amount and payment deadline for Anna's September water bill?",
+      "near_miss_keys": [
+        "e37",
+        "e57"
+      ]
+    },
+    {
+      "key": "u02",
+      "topic": "What is Anna's booking reference for a flight to Porto?",
+      "near_miss_keys": [
+        "e08",
+        "e25",
+        "e45"
+      ]
+    },
+    {
+      "key": "u03",
+      "topic": "Which hotel has Anna booked for her Lisbon trip, and what is its check-in time?",
+      "near_miss_keys": [
+        "e25",
+        "e45"
+      ]
+    },
+    {
+      "key": "u04",
+      "topic": "How much is Anna's monthly rent, and when is the October rent due?",
+      "near_miss_keys": [
+        "e27",
+        "e56"
+      ]
+    },
+    {
+      "key": "u05",
+      "topic": "What were the results of Anna's dental X-rays?",
+      "near_miss_keys": [
+        "e05",
+        "e16",
+        "e17"
+      ]
+    },
+    {
+      "key": "u06",
+      "topic": "What is the current balance of Anna's bank account?",
+      "near_miss_keys": [
+        "e35"
+      ]
+    },
+    {
+      "key": "u07",
+      "topic": "What Wi-Fi password should Anna use for her home internet connection?",
+      "near_miss_keys": [
+        "e22",
+        "e42"
+      ]
+    },
+    {
+      "key": "u08",
+      "topic": "What train departure time and ticket reference did Anna use for the hiking outing?",
+      "near_miss_keys": [
+        "e36",
+        "e50"
+      ]
+    },
+    {
+      "key": "u09",
+      "topic": "What is the annual membership price for Werkraum Museum?",
+      "near_miss_keys": [
+        "e34",
+        "e48",
+        "e49"
+      ]
+    },
+    {
+      "key": "u10",
+      "topic": "What was the purchase total for Anna's Stride & Stone order?",
+      "near_miss_keys": [
+        "e53",
+        "e60"
+      ]
+    }
+  ],
+  "today": "2026-10-06",
+  "owner_name": "Anna Weber",
+  "owner_address": "anna@example.com",
+  "questions": [
+    {
+      "key": "q01",
+      "kind": "multi_email",
+      "ask": "For my Reed Paper stationery order from last month, give the order number and the tracking numbers for both separate parcels.",
+      "answer_facts": [
+        {
+          "email_key": "e72",
+          "fact_name": "order number"
+        },
+        {
+          "email_key": "e73",
+          "fact_name": "first parcel tracking number"
+        },
+        {
+          "email_key": "e74",
+          "fact_name": "second parcel tracking number"
+        }
+      ],
+      "distractor_keys": [
+        "e10",
+        "e30",
+        "e60",
+        "e113"
+      ]
+    },
+    {
+      "key": "q02",
+      "kind": "multi_email",
+      "ask": "For the August studio electricity bill from HavelCurrent, what corrected amount and payment reference should I use, and what is the extended deadline?",
+      "answer_facts": [
+        {
+          "email_key": "e67",
+          "fact_name": "amount due"
+        },
+        {
+          "email_key": "e67",
+          "fact_name": "payment reference"
+        },
+        {
+          "email_key": "e68",
+          "fact_name": "due date"
+        }
+      ],
+      "distractor_keys": [
+        "e66",
+        "e37",
+        "e57",
+        "e93"
+      ]
+    },
+    {
+      "key": "q03",
+      "kind": "multi_email",
+      "ask": "For Canal Runners' lantern relay, where and when is the marshal briefing, and which post did they ask me to cover?",
+      "answer_facts": [
+        {
+          "email_key": "e84",
+          "fact_name": "relay briefing venue"
+        },
+        {
+          "email_key": "e85",
+          "fact_name": "relay briefing date"
+        },
+        {
+          "email_key": "e85",
+          "fact_name": "relay briefing time"
+        },
+        {
+          "email_key": "e86",
+          "fact_name": "requested relay assignment"
+        }
+      ],
+      "distractor_keys": [
+        "e44",
+        "e61",
+        "e105",
+        "e112"
+      ]
+    },
+    {
+      "key": "q04",
+      "kind": "multi_email",
+      "ask": "What was the corrected amount for my FrameDesk team export add-on, and what receipt number did they send after payment?",
+      "answer_facts": [
+        {
+          "email_key": "e82",
+          "fact_name": "amount due"
+        },
+        {
+          "email_key": "e83",
+          "fact_name": "receipt number"
+        }
+      ],
+      "distractor_keys": [
+        "e81",
+        "e52",
+        "e63",
+        "e103"
+      ]
+    },
+    {
+      "key": "q05",
+      "kind": "multi_email",
+      "ask": "For Elin's archive research workshop arranged last month, give the final date and room, along with the unchanged start time.",
+      "answer_facts": [
+        {
+          "email_key": "e71",
+          "fact_name": "workshop date"
+        },
+        {
+          "email_key": "e71",
+          "fact_name": "workshop room"
+        },
+        {
+          "email_key": "e69",
+          "fact_name": "workshop time"
+        }
+      ],
+      "distractor_keys": [
+        "e70",
+        "e21",
+        "e41",
+        "e90"
+      ]
+    },
+    {
+      "key": "q06",
+      "kind": "superseded",
+      "ask": "What is the corrected amount due for HavelCurrent's August studio electricity invoice?",
+      "answer_facts": [
+        {
+          "email_key": "e67",
+          "fact_name": "amount due"
+        }
+      ],
+      "distractor_keys": [
+        "e66",
+        "e37",
+        "e93"
+      ]
+    },
+    {
+      "key": "q07",
+      "kind": "superseded",
+      "ask": "What is the final date for Elin's archive research workshop after both moves?",
+      "answer_facts": [
+        {
+          "email_key": "e71",
+          "fact_name": "workshop date"
+        }
+      ],
+      "distractor_keys": [
+        "e69",
+        "e70",
+        "e41",
+        "e90"
+      ]
+    },
+    {
+      "key": "q08",
+      "kind": "superseded",
+      "ask": "What is the current date for the hallway radiator valve inspection after my landlord's contractor update?",
+      "answer_facts": [
+        {
+          "email_key": "e76",
+          "fact_name": "inspection date"
+        }
+      ],
+      "distractor_keys": [
+        "e75",
+        "e56",
+        "e31"
+      ]
+    },
+    {
+      "key": "q09",
+      "kind": "superseded",
+      "ask": "What is the current time of my Sommer Dental night guard fitting after the revised slot was accepted?",
+      "answer_facts": [
+        {
+          "email_key": "e79",
+          "fact_name": "fitting time"
+        }
+      ],
+      "distractor_keys": [
+        "e78",
+        "e91",
+        "e16",
+        "e05"
+      ]
+    },
+    {
+      "key": "q10",
+      "kind": "superseded",
+      "ask": "When does Paper Finch's Autumn Correspondence bundle offer expire after its final extension?",
+      "answer_facts": [
+        {
+          "email_key": "e89",
+          "fact_name": "offer expiry"
+        }
+      ],
+      "distractor_keys": [
+        "e87",
+        "e88",
+        "e104",
+        "e58"
+      ]
+    },
+    {
+      "key": "q11",
+      "kind": "vague",
+      "ask": "My landlord recently wrote about a radiator visit. What access window did he give, and who did he ask me to leave the spare key with?",
+      "answer_facts": [
+        {
+          "email_key": "e76",
+          "fact_name": "access window"
+        },
+        {
+          "email_key": "e77",
+          "fact_name": "key recipient"
+        }
+      ],
+      "distractor_keys": [
+        "e06",
+        "e31",
+        "e56",
+        "e97"
+      ]
+    },
+    {
+      "key": "q12",
+      "kind": "vague",
+      "ask": "The dentist recently confirmed my night guard appointment. What item did they tell me to bring?",
+      "answer_facts": [
+        {
+          "email_key": "e80",
+          "fact_name": "item to bring"
+        }
+      ],
+      "distractor_keys": [
+        "e91",
+        "e78",
+        "e102",
+        "e05"
+      ]
+    },
+    {
+      "key": "q13",
+      "kind": "vague",
+      "ask": "The running club asked me last month to help at a lantern relay. Which assignment was it, and when did they want my reply?",
+      "answer_facts": [
+        {
+          "email_key": "e86",
+          "fact_name": "requested relay assignment"
+        },
+        {
+          "email_key": "e86",
+          "fact_name": "relay reply deadline"
+        }
+      ],
+      "distractor_keys": [
+        "e61",
+        "e105",
+        "e112",
+        "e44"
+      ]
+    },
+    {
+      "key": "q14",
+      "kind": "vague",
+      "ask": "The stationery shop recently sent my order in two parcels, with the clip coming later. What is the later parcel's tracking number and expected delivery date?",
+      "answer_facts": [
+        {
+          "email_key": "e74",
+          "fact_name": "second parcel tracking number"
+        },
+        {
+          "email_key": "e74",
+          "fact_name": "estimated delivery date"
+        }
+      ],
+      "distractor_keys": [
+        "e73",
+        "e10",
+        "e30",
+        "e113",
+        "e60"
+      ]
+    },
+    {
+      "key": "q15",
+      "kind": "vague",
+      "ask": "The design newsletter I get sent an archive-navigation issue last month. Who was its guest contributor, and what was its issue number?",
+      "answer_facts": [
+        {
+          "email_key": "e110",
+          "fact_name": "guest contributor"
+        },
+        {
+          "email_key": "e110",
+          "fact_name": "issue number"
+        }
+      ],
+      "distractor_keys": [
+        "e107",
+        "e19",
+        "e39",
+        "e59"
+      ]
+    },
+    {
+      "key": "q16",
+      "kind": "unanswerable",
+      "ask": "What amount and payment deadline does my September SpreeLink home internet invoice state?",
+      "answer_facts": [],
+      "distractor_keys": [
+        "e22",
+        "e42",
+        "e94"
+      ]
+    },
+    {
+      "key": "q17",
+      "kind": "unanswerable",
+      "ask": "What is my booking reference for a confirmed Porto flight with Aurora Air?",
+      "answer_facts": [],
+      "distractor_keys": [
+        "e99",
+        "e115",
+        "e08",
+        "e25",
+        "e45"
+      ]
+    },
+    {
+      "key": "q18",
+      "kind": "unanswerable",
+      "ask": "What amount and deadline are on my October Lindenstrom electricity usage invoice?",
+      "answer_facts": [],
+      "distractor_keys": [
+        "e57",
+        "e37",
+        "e66",
+        "e93"
+      ]
+    }
+  ]
+}

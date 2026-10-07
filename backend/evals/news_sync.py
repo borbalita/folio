@@ -29,7 +29,9 @@ class Storage(Protocol):
     """The part of the Supabase storage client the backup uses, so tests can pass a fake."""
 
     def list_buckets(self) -> list[Any]: ...
-    def create_bucket(self, id: str, name: str | None = None, options: Any = None) -> Any: ...
+    def create_bucket(
+        self, id: str, name: str | None = None, options: Any = None
+    ) -> Any: ...
     def from_(self, id: str) -> Any: ...
 
 
@@ -60,7 +62,9 @@ def news_payload(newsletter: Newsletter, expected: dict[str, Any]) -> Payload:
         "metadata": {
             "key": newsletter.key,
             "review": expected["review"],
-            "answer_key_run": REFERENCE_RUN if expected["review"] == "reference" else None,
+            "answer_key_run": REFERENCE_RUN
+            if expected["review"] == "reference"
+            else None,
             "email_id": newsletter.email_id,
         },
     }
@@ -71,10 +75,13 @@ def local_payloads(version: str) -> dict[str, Payload]:
     expected = json.loads((review_dir(version) / "expected.json").read_text())
     missing = [item.key for item in newsletters if item.key not in expected]
     if missing:
-        raise SystemExit(f"no expected items for {missing}; run evals.news_review first")
+        raise SystemExit(
+            f"no expected items for {missing}; run evals.news_review first"
+        )
     name = dataset_name(version)
     return {
-        f"{name}-{item.key}": news_payload(item, expected[item.key]) for item in newsletters
+        f"{name}-{item.key}": news_payload(item, expected[item.key])
+        for item in newsletters
     }
 
 
@@ -88,7 +95,9 @@ def backup(storage: Storage, version: str, payloads: dict[str, Payload]) -> str:
     existing = {entry["name"] for entry in bucket.list()}
     if path in existing:
         if bucket.download(path) != body:
-            raise BackupConflictError(f"{BACKUP_BUCKET}/{path} exists with different content")
+            raise BackupConflictError(
+                f"{BACKUP_BUCKET}/{path} exists with different content"
+            )
         return f"{BACKUP_BUCKET}/{path} unchanged"
     bucket.upload(path, body, {"content-type": "application/json"})
     return f"{BACKUP_BUCKET}/{path} written"
@@ -97,7 +106,9 @@ def backup(storage: Storage, version: str, payloads: dict[str, Payload]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", default=DEFAULT_NEWS_VERSION)
-    parser.add_argument("--keep-local", action="store_true", help="Don't delete the working folder")
+    parser.add_argument(
+        "--keep-local", action="store_true", help="Don't delete the working folder"
+    )
     args = parser.parse_args()
 
     payloads = local_payloads(args.version)
@@ -113,9 +124,14 @@ def main() -> int:
                 "see docs/02-evaluation/plans/003-news-extraction"
             ),
         )
-    print(f"{name}: {len(plan.create)} created, {len(plan.unchanged)} unchanged, {len(plan.conflicts)} conflicting")
+    print(
+        f"{name}: {len(plan.create)} created, {len(plan.unchanged)} unchanged, {len(plan.conflicts)} conflicting"
+    )
     if plan.conflicts:
-        print(f"  refused: {', '.join(plan.conflicts)} differ from Langfuse; {name} is frozen.", file=sys.stderr)
+        print(
+            f"  refused: {', '.join(plan.conflicts)} differ from Langfuse; {name} is frozen.",
+            file=sys.stderr,
+        )
         return 1
 
     try:

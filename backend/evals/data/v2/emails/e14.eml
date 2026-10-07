@@ -1,0 +1,33 @@
+From: Berlin Neighbourhood Office <bulletin@berlinservice.example>
+To: Anna Weber <anna@example.com>
+Date: Sun, 05 Jul 2026 08:25:00 +0200
+Subject: Neighbourhood bulletin: July
+Message-ID: <e14@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Neighbourhood bulletin: July</title></he=
+ad>
+<body style=3D"margin:0;padding:24px;font-family:Arial,sans-serif;color:#3333=
+33;line-height:1.6;">
+<h1 style=3D"font-size:24px;color:#24543d;">Your July neighbourhood bulletin<=
+/h1>
+<p>Dear Anna Weber,</p>
+<p>Welcome to this month=E2=80=99s update from the Berlin Neighbourhood Offic=
+e.</p>
+<h2 style=3D"font-size:18px;">Summer reading at the library</h2>
+<p>The library=E2=80=99s summer reading programme is a chance to discover new=
+ books and enjoy reading throughout the summer. Ask the library team about ta=
+king part.</p>
+<h2 style=3D"font-size:18px;">Park opening hours</h2>
+<p>Park opening hours are changing. Please check the posted opening hours bef=
+ore your next visit.</p>
+<h2 style=3D"font-size:18px;">Public gardening workshop</h2>
+<p>Join the public gardening workshop on 18 July 2026 at Linden Courtyard. We=
+ hope to see you there.</p>
+<p>Kind regards,<br>Berlin Neighbourhood Office</p>
+</body>
+</html>

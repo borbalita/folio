@@ -40,9 +40,13 @@ uv run python -m evals.generate
 # Keep the scenario; re-render emails and rewrite cases
 uv run python -m evals.generate --reuse-scenario
 # Keep scenario and emails; only rewrite cases
-uv run python -m evals.generate --cases-only# Add N hard-to-label emails per label (borderline-label traps only), render just those,
+uv run python -m evals.generate --cases-only
+# Add N hard-to-label emails per label (borderline-label traps only), render just those,
 # and rewrite label cases; RAG cases are unaffected
 uv run python -m evals.generate --out evals/data/v1 --add-hard 1
+# Copy a committed version, add story lines, look-alike filler, and planned questions
+# (multi_email, superseded, vague, unanswerable); existing cases keep their wording
+uv run python -m evals.generate --extend-from v1 --out evals/data/v2
 ```
 
 Output goes to the gitignored `evals/data/draft/` (`--out` to change):
@@ -56,7 +60,9 @@ Prompts are in `evals/prompts/`; `labels.md` holds the generator's own label def
 
 ### Data versions
 
-The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 may still be regenerated until its first Langfuse sync; after that it is frozen and changes go into `v2`.
+The committed benchmark lives in `evals/data/v1/` (promoted with `mv evals/data/draft evals/data/v1`): 60 generated emails plus 5 hard labelling emails (`e61`–`e65`) from `--add-hard 1`. v1 is synced and frozen.
+
+`evals/data/v2/` extends v1 (plan 002): the same 65 emails and 31 cases, plus 50 emails (`e66`–`e115`) in linked story lines and look-alike filler, and 18 planned cases (`c32`–`c49`). Its stories prompt is `prompts/stories.md`. New emails never repeat a v1 fact under the same fact name, so v1 cases keep a single answer; `--cases-only` keeps existing wording and v1 label splits.
 
 ## Langfuse
 
@@ -78,18 +84,25 @@ Needs `prepare` and `sync` to have run for the same data version.
 ```bash
 # Retrieval test: real email search with each case's fixed query and filters, no chat model
 # (about 1.5 minutes at concurrency 1, 35 seconds at 4; embedding and keyword-helper calls only)
-uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1] [--concurrency 4]
+uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank off [--version v2] [--concurrency 4]
+# Same with Jev evidence reranking: 20 fused candidates judged per search, then reordered and cut
+uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank on --version v2 --concurrency 4
 ```
+
+`--rerank` is required so every run, report, and Langfuse subject says which search it measured. Search results vary slightly between runs (the keyword helper is an LLM), so compare several runs of each. The summary also gives seconds per search (mean, p95, max), which includes reranking.
 
 Concurrency defaults to 1 (stops early on bugs, readable traces); raise it to 4–5 once a mode is stable. Each run prints per-case scores, averages (overall and per case kind), and the Langfuse run URL, and writes a JSON report to the gitignored `evals/out/reports/`.
 
 Retrieval metrics are per email, not per chunk; each email takes the rank of its first chunk, with k = `retrieval_top_k` (10):
 
 - **recall@10**: expected emails found in the top 10 / expected emails.
+- **recall@3**: the same within the top 3; with only ~100 emails, recall@10 is nearly always 1.0.
 - **precision@10**: expected emails / emails returned. Search almost always fills all 10 slots, so with one expected email this sits near 0.1; read MRR for ranking quality.
 - **MRR**: 1 / rank of the first expected email, 0 if none.
+- **distractor rate**: the case's planned distractors (outdated values, near-duplicate twins, look-alikes, near misses) returned in the top 10 / planned distractors. Lower is better: the agent can't quote an outdated value it never sees.
+- **empty**: unanswerable cases only; 1.0 when search returns nothing.
 
-Unanswerable cases have no expected email; they are reported as not applicable (no score in Langfuse) and counted separately. The report also lists which distractors (near-duplicate twins, near misses) were retrieved.
+Unanswerable cases have no recall, precision, or MRR; Langfuse gets no score for a metric that doesn't apply. The report also lists which distractors were retrieved.
 
 ## Scoping integration test
 

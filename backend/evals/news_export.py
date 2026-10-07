@@ -70,18 +70,25 @@ def main() -> int:
 
     newsletters = _read_newsletters()
     if not newsletters:
-        print("no ai_newsletter emails found; is DATABASE_URL the app database?", file=sys.stderr)
+        print(
+            "no ai_newsletter emails found; is DATABASE_URL the app database?",
+            file=sys.stderr,
+        )
         return 1
 
     out.mkdir(parents=True, exist_ok=True)
     for newsletter in newsletters:
-        (out / f"{newsletter.key}.json").write_text(newsletter.model_dump_json(indent=2) + "\n")
+        (out / f"{newsletter.key}.json").write_text(
+            newsletter.model_dump_json(indent=2) + "\n"
+        )
 
     by_source: dict[str, int] = {}
     for newsletter in newsletters:
         by_source[newsletter.source] = by_source.get(newsletter.source, 0) + 1
     first, last = newsletters[0].sent_date, newsletters[-1].sent_date
-    print(f"exported {len(newsletters)} newsletters {by_source} from {first} to {last} into {out}")
+    print(
+        f"exported {len(newsletters)} newsletters {by_source} from {first} to {last} into {out}"
+    )
     return 0
 
 

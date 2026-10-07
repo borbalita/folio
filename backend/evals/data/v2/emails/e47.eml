@@ -1,0 +1,28 @@
+From: KiezMobile Accounts <accounts@kiezmobile.example>
+To: Anna Weber <anna@example.com>
+Date: Mon, 07 Sep 2026 06:45:00 +0200
+Subject: Mobile account: September payment summary
+Message-ID: <e47@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html>
+<body style=3D"margin:0;padding:24px;font-family:Arial,sans-serif;color:#3333=
+33;line-height:1.5;">
+<p>Dear Anna Weber,</p>
+<p>Your September mobile account invoice is ready. It includes your plan char=
+ges and roaming usage.</p>
+<p style=3D"padding:16px;background-color:#f4f4f4;">Invoice number: KM-69014<=
+br>Total amount charged: =E2=82=AC23.60<br>Scheduled direct debit collection:=
+ 16 September 2026</p>
+<p>We will collect the payment using your existing direct debit arrangement. =
+Please ensure sufficient funds are available in your linked account. No manua=
+l payment is needed.</p>
+<p>If you have any questions about these charges, please reply to this email =
+so our accounts team can help.</p>
+<p>Thank you for choosing KiezMobile.</p>
+<p>Kind regards,<br>KiezMobile Accounts</p>
+</body>
+</html>

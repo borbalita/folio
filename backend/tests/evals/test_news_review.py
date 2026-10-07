@@ -14,8 +14,7 @@ def _newsletter(key: str, source: str = "tldr") -> Newsletter:
         sent_date=date(2026, 9, 1),
         subject=f"Edition {key}",
         body=" ".join(
-            f"https://{name}.example/story"
-            for name in ("a", "ad", "b", "x", "m")
+            f"https://{name}.example/story" for name in ("a", "ad", "b", "x", "m")
         )
         + " https://b.example/right https://b.example/wrong",
         email_id="00000000-0000-0000-0000-000000000001",
@@ -84,7 +83,9 @@ def test_only_disputed_items_are_reviewed_outside_full_checks(monkeypatch) -> No
 def test_undecided_disputes_block_the_expected_items() -> None:
     decisions = Decisions(runs_hash="x")
 
-    items, undecided = news_review.expected_items(_newsletter("n01"), RUNS, decisions, full=False)
+    items, undecided = news_review.expected_items(
+        _newsletter("n01"), RUNS, decisions, full=False
+    )
 
     assert [item.title for item in items] == ["Agreed"]
     assert len(undecided) == 3
@@ -101,7 +102,9 @@ def test_decisions_become_expected_items_in_reading_order() -> None:
         missing={"n01": [MissingItem(title="Missed", url="https://m.example/story")]},
     )
 
-    items, undecided = news_review.expected_items(_newsletter("n01"), RUNS, decisions, full=False)
+    items, undecided = news_review.expected_items(
+        _newsletter("n01"), RUNS, decisions, full=False
+    )
 
     assert undecided == []
     assert [(item.title, item.url, item.sponsor) for item in items] == [
@@ -115,16 +118,24 @@ def test_decisions_become_expected_items_in_reading_order() -> None:
 def test_full_check_needs_a_decision_even_where_runs_agree() -> None:
     decisions = Decisions(runs_hash="x")
 
-    _, undecided = news_review.expected_items(_newsletter("n01"), RUNS, decisions, full=True)
+    _, undecided = news_review.expected_items(
+        _newsletter("n01"), RUNS, decisions, full=True
+    )
 
     assert "n01:0" in undecided
 
 
-def test_build_refuses_while_decisions_are_missing(monkeypatch, tmp_path, capsys) -> None:
-    monkeypatch.setattr(news_review, "load_newsletters", lambda version: [_newsletter("n01")])
+def test_build_refuses_while_decisions_are_missing(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    monkeypatch.setattr(
+        news_review, "load_newsletters", lambda version: [_newsletter("n01")]
+    )
     monkeypatch.setattr(news_review, "load_runs", lambda version: RUNS)
     monkeypatch.setattr(news_review, "runs_hash", lambda version: "x")
-    monkeypatch.setattr(news_review, "load_decisions", lambda version: Decisions(runs_hash="x"))
+    monkeypatch.setattr(
+        news_review, "load_decisions", lambda version: Decisions(runs_hash="x")
+    )
     monkeypatch.setattr(news_review, "review_dir", lambda version: tmp_path)
 
     assert news_review.build("news-test") == 1
@@ -133,17 +144,23 @@ def test_build_refuses_while_decisions_are_missing(monkeypatch, tmp_path, capsys
 
 
 def test_recurring_blocks_share_a_title_key_across_editions() -> None:
-    assert news_review.title_key("TLDR 2026-09-01 REACH 8 MILLION TECH PROFESSIONALS") == (
-        news_review.title_key("TLDR 2026-09-02 Reach 8 million tech professionals!")
+    assert news_review.title_key(
+        "TLDR 2026-09-01 REACH 8 MILLION TECH PROFESSIONALS"
+    ) == (news_review.title_key("TLDR 2026-09-02 Reach 8 million tech professionals!"))
+    assert news_review.title_key("Advertise") != news_review.title_key(
+        "Want to work at TLDR?"
     )
-    assert news_review.title_key("Advertise") != news_review.title_key("Want to work at TLDR?")
 
 
 def test_unanimous_sponsors_are_accepted_outside_full_checks(monkeypatch) -> None:
     monkeypatch.setattr(news_review, "full_check_keys", lambda newsletters: set())
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]),
-        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]),
+        REFERENCE_RUN: _run(
+            "gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]
+        ),
+        "cheap@none": _run(
+            "cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]
+        ),
     }
 
     review = news_review.build_review([_newsletter("n01")], runs)
@@ -158,8 +175,12 @@ def test_unanimous_sponsors_are_accepted_outside_full_checks(monkeypatch) -> Non
 
 def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]),
-        "cheap@none": _run("cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]),
+        REFERENCE_RUN: _run(
+            "gpt-5.5", [_item("Ad", "https://ad.example/story", sponsor=True)]
+        ),
+        "cheap@none": _run(
+            "cheap", [_item("Ad", "https://ad.example/story", sponsor=True)]
+        ),
     }
 
     _, undecided = news_review.expected_items(
@@ -171,37 +192,52 @@ def test_unanimous_sponsors_are_still_shown_in_full_checks() -> None:
 
 def test_unusable_urls_become_no_link_in_the_answer_key() -> None:
     newsletter = _newsletter("n01").model_copy(
-        update={"body": "Story https://a.example/story Footer https://app.alphasignal.ai READ MORE"}
+        update={
+            "body": "Story https://a.example/story Footer https://app.alphasignal.ai READ MORE"
+        }
     )
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [
-            _item("Story", "https://a.example/story"),
-            _item("Homepage", "https://app.alphasignal.ai"),
-            _item("Button", "READ MORE"),
-        ]),
+        REFERENCE_RUN: _run(
+            "gpt-5.5",
+            [
+                _item("Story", "https://a.example/story"),
+                _item("Homepage", "https://app.alphasignal.ai"),
+                _item("Button", "READ MORE"),
+            ],
+        ),
     }
 
-    items, _ = news_review.expected_items(newsletter, runs, Decisions(runs_hash="x"), full=False)
+    items, _ = news_review.expected_items(
+        newsletter, runs, Decisions(runs_hash="x"), full=False
+    )
 
     assert [item.url for item in items] == ["https://a.example/story", "", ""]
 
 
 def test_reference_answers_take_the_reference_run_with_usable_links_only() -> None:
     newsletter = _newsletter("n01").model_copy(
-        update={"body": "Story https://a.example/story Footer https://app.alphasignal.ai"}
+        update={
+            "body": "Story https://a.example/story Footer https://app.alphasignal.ai"
+        }
     )
     runs = {
-        REFERENCE_RUN: _run("gpt-5.5", [
-            _item("Story", "https://a.example/story"),
-            _item("Ad", "https://app.alphasignal.ai", sponsor=True),
-        ]),
+        REFERENCE_RUN: _run(
+            "gpt-5.5",
+            [
+                _item("Story", "https://a.example/story"),
+                _item("Ad", "https://app.alphasignal.ai", sponsor=True),
+            ],
+        ),
         "cheap@none": _run("cheap", [_item("Only cheap", "https://c.example/story")]),
     }
 
     expected = news_review.reference_answers([newsletter], runs)
 
     assert expected["n01"]["review"] == "reference"
-    assert [(item["title"], item["url"], item["sponsor"]) for item in expected["n01"]["items"]] == [
+    assert [
+        (item["title"], item["url"], item["sponsor"])
+        for item in expected["n01"]["items"]
+    ] == [
         ("Story", "https://a.example/story", False),
         ("Ad", "", True),
     ]

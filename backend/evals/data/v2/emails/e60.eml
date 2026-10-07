@@ -1,0 +1,27 @@
+From: SwiftParcel <tracking@swiftparcel.example>
+To: Anna Weber <anna@example.com>
+Date: Mon, 05 Oct 2026 16:20:00 +0200
+Subject: Your Stride & Stone parcel is ready for collection
+Message-ID: <e60@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html>
+<body style=3D"font-family: Arial, sans-serif; color: #333;">
+<p>Hi Anna Weber,</p>
+<p>Your Stride &amp; Stone parcel is ready for collection. We=E2=80=99ve plac=
+ed your shipment in a locker so you can pick it up when it suits you, before =
+the collection deadline.</p>
+<p>Tracking number: <strong>SP-100532</strong><br>
+Collection location: <strong>Parcel Locker 28</strong><br>
+Pickup code: <strong>817204</strong></p>
+<p>Please collect your parcel before <strong>8 October 2026</strong>. Enter y=
+our pickup code at the locker terminal and follow the on-screen instructions =
+to open the compartment.</p>
+<p>Keep your pickup code private until you=E2=80=99re ready to collect.</p>
+<p>Thanks for choosing SwiftParcel.<br>
+The SwiftParcel Team</p>
+</body>
+</html>

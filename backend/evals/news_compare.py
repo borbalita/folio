@@ -31,7 +31,9 @@ def normalize_url(url: str) -> str:
 
 
 def title_similarity(left: str, right: str) -> float:
-    return SequenceMatcher(None, left.casefold().strip(), right.casefold().strip()).ratio()
+    return SequenceMatcher(
+        None, left.casefold().strip(), right.casefold().strip()
+    ).ratio()
 
 
 def match_items(
@@ -87,7 +89,8 @@ def is_front_page(url: str) -> bool:
     """No path and no query beyond tracking parameters: `blog.example/?p=10062` is an article."""
     parts = urlsplit(url.strip())
     query = [
-        key for key, _ in parse_qsl(parts.query, keep_blank_values=True)
+        key
+        for key, _ in parse_qsl(parts.query, keep_blank_values=True)
         if not key.lower().startswith("utm_")
     ]
     return parts.path in ("", "/") and not query
@@ -125,7 +128,11 @@ def url_in_text(url: str, body: str) -> bool:
     if (parts.netloc + parts.path).rstrip("/") in body:
         return True
     repo = parts.path.strip("/")
-    return parts.hostname in ("github.com", "www.github.com") and repo.count("/") == 1 and repo in body
+    return (
+        parts.hostname in ("github.com", "www.github.com")
+        and repo.count("/") == 1
+        and repo in body
+    )
 
 
 def grounded_choice(versions: dict[str, ExtractedItem], body: str) -> str | None:
@@ -141,7 +148,9 @@ def grounded_choice(versions: dict[str, ExtractedItem], body: str) -> str | None
     if len(grounded) == 1:
         return next(iter(grounded.values()))
     if not grounded:
-        return next((run for run, item in versions.items() if not item.url.strip()), None)
+        return next(
+            (run for run, item in versions.items() if not item.url.strip()), None
+        )
     return None
 
 
@@ -174,7 +183,9 @@ class ItemGroup:
         return reasons
 
 
-def group_items(runs: dict[str, list[ExtractedItem]], reference: str) -> list[ItemGroup]:
+def group_items(
+    runs: dict[str, list[ExtractedItem]], reference: str
+) -> list[ItemGroup]:
     """Line up every run's items for one newsletter, starting from the reference run."""
     groups = [
         ItemGroup(versions={reference: item}, position=index)
@@ -194,7 +205,11 @@ def group_items(runs: dict[str, list[ExtractedItem]], reference: str) -> list[It
                 continue
             # Not in any run so far: place it between its neighbours in this run's order.
             following = next(
-                (groups[matched[i]].position for i in range(index + 1, len(items)) if i in matched),
+                (
+                    groups[matched[i]].position
+                    for i in range(index + 1, len(items))
+                    if i in matched
+                ),
                 previous + 1.0,
             )
             previous = (previous + following) / 2

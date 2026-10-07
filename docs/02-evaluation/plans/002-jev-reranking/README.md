@@ -1,8 +1,8 @@
 # 002 — Harder retrieval data and Jev evidence reranking
 
 - Created: 2026-10-06
-- Status: In progress
-- Current stage: Implementation, starting with 002/01.
+- Status: Done (2026-10-06)
+- Current stage: Complete. Answer and end-to-end comparisons with reranking off and on are part of plan 001 (001/09 onward).
 
 ## Approval state
 
@@ -39,9 +39,44 @@ Written in the repo, reusing the TypeSafe provider from labelling: it is about 4
 
 ## Tasks
 
-- [ ] 002/01 — v2 data: story lines, filler, planned questions; `prepare` and `sync` for v2; retrieval baseline on v2.
-- [ ] 002/02 — Jev evidence reranker in `EmailRetriever` with settings, fail-open, tracing, and unit tests.
-- [ ] 002/03 — Retrieval test with reranking off vs on (quality and latency per search); later the answer and end-to-end tests from plan 001 compare both.
+- [x] 002/01 — v2 data: story lines, filler, planned questions; `prepare` and `sync` for v2; retrieval baseline on v2.
+- [x] 002/02 — Jev evidence reranker in `EmailRetriever` with settings, fail-open, tracing, and unit tests.
+- [x] 002/03 — Retrieval test with reranking off vs on (quality and latency per search); later the answer and end-to-end tests from plan 001 compare both.
+
+## v2 baseline (2026-10-06)
+
+v2 has 115 emails and 49 cases (v1's 31 plus 5 multi_email, 5 superseded, 5 vague, 3 unanswerable), synced as `email-rag-v2` and `email-labels-v2`. Retrieval without reranking, concurrency 4:
+
+| kind | recall@10 | recall@1 | recall@3 | MRR |
+| --- | --- | --- | --- | --- |
+| overall (36 answerable) | 1.000 | | | 0.972 |
+| multi_email | 1.000 | 0.43 | 0.93 | 1.000 |
+| superseded | 1.000 | 0.80 | 1.00 | 0.900 |
+| vague | 1.000 | 0.90 | 1.00 | 1.000 |
+| near_duplicate | 1.000 | 0.75 | 1.00 | 0.875 |
+
+Recall@10 is still saturated. What the new cases do show: every superseded and multi_email search returns its planned distractors (outdated values, look-alikes) at ranks 2–6, and every unanswerable search returns 10 emails, with a look-alike in the top 3 for 12 of 13. Reorder-and-drop targets exactly that, so it shows up in precision, distractors returned, and empty results on unanswerable cases rather than in recall, which mainly guards against wrong drops.
+
+### Measuring it
+
+Decided 2026-10-06: keep v2 rather than make a harder v3. Recall@10 stays saturated on ~100 emails however the questions are worded; the failures reranking targets are distractors in the context and non-empty results for unanswerable questions. The retrieval test now also scores recall@3, distractor rate (planned distractors returned / planned distractors), and `empty` for unanswerable cases, and records seconds per search. `--rerank on|off` is required.
+
+## Reranking on v2 (2026-10-06)
+
+Means over complete runs at concurrency 4: 2 runs off, 4 runs on. Run-to-run spread on the overall numbers was within ±0.04.
+
+| | recall@10 | recall@3 | precision | MRR | distractor rate | empty (unanswerable) | seconds per search (mean / p95) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| off | 1.00 | 0.99 | 0.12 | 0.95 | 0.95 | 0.00 | 2.75 / 4.03 |
+| on | 1.00 | 1.00 | 0.49 | 0.96 | 0.46 | 0.29 | 4.42 / 5.67 |
+
+- No expected email was dropped in any run.
+- Unanswerable searches return 0–4 emails (mostly 1) instead of 10.
+- Superseded cases keep 60% of their distractors: the older email in the same thread is about the same matter, so Jev keeps it. That's intended; the agent picks the latest value by date, which the answer test checks.
+- Multi_email MRR fell from 0.90 to 0.80: in some runs a look-alike judged `full` now outranks the first answer email. Recall@3 is unaffected.
+- Cost: about +1.7 s per search on average, with 20 Jev calls per search.
+
+Open: one of five reranked runs aborted in native code (`realloc(): invalid next size`) before finishing any case; four reruns, including three with `PYTHONFAULTHANDLER=1`, did not reproduce it. Each search runs `asyncio.run` in a worker thread, so several event loops with TLS connections run at once in the eval (and when the agent searches in parallel). If it recurs, capture the faulthandler output before changing the design.
 
 ## Risks
 

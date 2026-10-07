@@ -91,7 +91,9 @@ def load_runs(version: str) -> dict[str, RunFile]:
         for path in sorted(runs_dir(version).glob("*.json"))
     }
     if REFERENCE_RUN not in runs:
-        raise SystemExit(f"missing reference run {REFERENCE_RUN} in {runs_dir(version)}")
+        raise SystemExit(
+            f"missing reference run {REFERENCE_RUN} in {runs_dir(version)}"
+        )
     return runs
 
 
@@ -116,7 +118,9 @@ def full_check_keys(newsletters: list[Newsletter]) -> set[str]:
     return keys
 
 
-def newsletter_groups(newsletter: Newsletter, runs: dict[str, RunFile]) -> list[ItemGroup]:
+def newsletter_groups(
+    newsletter: Newsletter, runs: dict[str, RunFile]
+) -> list[ItemGroup]:
     by_run = {
         name: next(r.items for r in run.results if r.key == newsletter.key) or []
         for name, run in runs.items()
@@ -134,14 +138,20 @@ def open_reasons(group: ItemGroup, names: list[str], body: str) -> list[str]:
     """Disagreements a person must settle. An item every run flags as a sponsor, with
     nothing else in question, is accepted as a sponsor (approved 2026-10-06); a sponsor
     passed off as news still shows up, as a differing sponsor flag."""
-    return [reason for reason in group.disagreement(names, body) if reason != "flagged sponsor"]
+    return [
+        reason
+        for reason in group.disagreement(names, body)
+        if reason != "flagged sponsor"
+    ]
 
 
 def suggested_run(group: ItemGroup, body: str) -> str:
     choice = grounded_choice(group.versions, body)
     if choice is not None:
         return choice
-    return REFERENCE_RUN if REFERENCE_RUN in group.versions else next(iter(group.versions))
+    return (
+        REFERENCE_RUN if REFERENCE_RUN in group.versions else next(iter(group.versions))
+    )
 
 
 def build_review(
@@ -210,10 +220,18 @@ def expected_items(
             continue
         if decision.verdict == "skip":
             continue
-        chosen = group.versions.get(decision.run or suggested) or group.versions[suggested]
-        items.append(as_expected(chosen, newsletter.body, decision.verdict == "sponsor"))
+        chosen = (
+            group.versions.get(decision.run or suggested) or group.versions[suggested]
+        )
+        items.append(
+            as_expected(chosen, newsletter.body, decision.verdict == "sponsor")
+        )
     for missing in decisions.missing.get(newsletter.key, []):
-        items.append(ExtractedItem(title=missing.title, blurb="", url=missing.url, sponsor=missing.sponsor))
+        items.append(
+            ExtractedItem(
+                title=missing.title, blurb="", url=missing.url, sponsor=missing.sponsor
+            )
+        )
     return items, undecided
 
 
@@ -224,7 +242,9 @@ def load_decisions(version: str) -> Decisions:
     return Decisions.model_validate_json(path.read_text())
 
 
-def _page(review: list[ReviewNewsletter], decisions: Decisions, run_names: list[str]) -> str:
+def _page(
+    review: list[ReviewNewsletter], decisions: Decisions, run_names: list[str]
+) -> str:
     data = json.dumps(
         {
             "newsletters": [item.model_dump() for item in review],
@@ -233,7 +253,11 @@ def _page(review: list[ReviewNewsletter], decisions: Decisions, run_names: list[
             "reference": REFERENCE_RUN,
         }
     ).replace("</", "<\\/")
-    return (Path(__file__).parent / "news_review.html").read_text().replace("__DATA__", data)
+    return (
+        (Path(__file__).parent / "news_review.html")
+        .read_text()
+        .replace("__DATA__", data)
+    )
 
 
 def serve(version: str) -> int:
@@ -274,7 +298,9 @@ def serve(version: str) -> int:
             return
 
     disputed = sum(len(item.groups) for item in review)
-    print(f"{len(review)} newsletters, {disputed} items to decide; http://127.0.0.1:{PORT}")
+    print(
+        f"{len(review)} newsletters, {disputed} items to decide; http://127.0.0.1:{PORT}"
+    )
     ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
     return 0
 
@@ -290,14 +316,19 @@ def build(version: str) -> int:
     reviewed: dict[str, dict[str, object]] = {}
     waiting: list[str] = []
     for newsletter in newsletters:
-        items, undecided = expected_items(newsletter, runs, decisions, newsletter.key in full)
+        items, undecided = expected_items(
+            newsletter, runs, decisions, newsletter.key in full
+        )
         waiting.extend(undecided)
         reviewed[newsletter.key] = {
             "review": "full" if newsletter.key in full else "disputes",
             "items": [item.model_dump() for item in items],
         }
     if waiting:
-        print(f"{len(waiting)} items still need a decision, e.g. {waiting[:5]}", file=sys.stderr)
+        print(
+            f"{len(waiting)} items still need a decision, e.g. {waiting[:5]}",
+            file=sys.stderr,
+        )
         return 1
     _write_expected(version, reviewed)
     return 0
@@ -324,7 +355,9 @@ def reference_answers(
 
 
 def reference(version: str) -> int:
-    _write_expected(version, reference_answers(load_newsletters(version), load_runs(version)))
+    _write_expected(
+        version, reference_answers(load_newsletters(version), load_runs(version))
+    )
     return 0
 
 

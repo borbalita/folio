@@ -32,7 +32,11 @@ def _cases(**overrides: object) -> list[tuple[Grounder, GroundedAnswer | EmailAn
     values: dict[str, object] = {
         "answer": "Services revenue increased.",
         "citations": [
-            {"chunk_id": A, "citation_index": 1, "excerpt": "Services revenue increased."}
+            {
+                "chunk_id": A,
+                "citation_index": 1,
+                "excerpt": "Services revenue increased.",
+            }
         ],
         "insufficient_evidence": False,
     }
@@ -44,7 +48,9 @@ def _cases(**overrides: object) -> list[tuple[Grounder, GroundedAnswer | EmailAn
 
 
 @pytest.mark.parametrize(("grounder", "answer"), _cases())
-def test_valid_citations_pass(grounder: Grounder, answer: GroundedAnswer | EmailAnswer) -> None:
+def test_valid_citations_pass(
+    grounder: Grounder, answer: GroundedAnswer | EmailAnswer
+) -> None:
     grounder.validate(answer, {A, B})
 
 

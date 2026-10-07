@@ -1,7 +1,11 @@
 """Run one evaluation mode over a data version as a Langfuse experiment, with a local report.
 
-Run: uv run --env-file .env.eval python -m evals.run --mode retrieval [--version v1] [--concurrency N]
-     uv run python -m evals.run --mode extraction --model M [--effort E] [--replay] [--version news-v1]
+Run: uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank on|off
+     [--version v1] [--concurrency N]
+     uv run --env-file .env.eval python -m evals.run --mode answer --model gpt-6-luna
+     [--version v1] [--concurrency N]
+     uv run python -m evals.run --mode extraction --model gpt-5.6-luna [--effort none]
+     [--replay] [--version news-v1] [--concurrency N]
 """
 
 from __future__ import annotations
@@ -15,17 +19,14 @@ from pathlib import Path
 from app.config import settings
 from evals.dataset import DEFAULT_VERSION, OUT_ROOT
 from evals.guard import NotLocalDatabaseError, require_local_database
-from evals.modes import extraction, retrieval
+from evals.modes import answer, extraction, retrieval
 from evals.news_data import DEFAULT_NEWS_VERSION
 from evals.news_runs import EFFORTS
 from evals.tracing import LangfuseNotConfiguredError, eval_tracing
 
 
-def _write_report(
-    report: dict[str, object], started: datetime, mode: str, version: str, subject: str = ""
-) -> Path:
-    suffix = f"-{subject}" if subject else ""
-    path = OUT_ROOT / "reports" / f"{started:%Y%m%dT%H%M%S}-{mode}-{version}{suffix}.json"
+def _write_report(report: dict[str, object], started: datetime, name: str) -> Path:
+    path = OUT_ROOT / "reports" / f"{started:%Y%m%dT%H%M%S}-{name}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report, indent=2) + "\n")
     return path
@@ -33,14 +34,42 @@ def _write_report(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=["retrieval", "extraction"], required=True)
-    parser.add_argument("--version", default=None, help="Data version (v1, or news-v1 for extraction)")
-    parser.add_argument("--model", help="Extraction: the model under test")
-    parser.add_argument("--effort", choices=EFFORTS, default=None, help="Extraction: reasoning effort; unset sends none")
+    parser.add_argument(
+        "--mode", choices=["retrieval", "answer", "extraction"], required=True
+    )
+    parser.add_argument(
+        "--version",
+        default=None,
+        help=f"Data version (default {DEFAULT_VERSION}; {DEFAULT_NEWS_VERSION} for extraction)",
+    )
+    parser.add_argument(
+        "--rerank",
+        choices=["on", "off"],
+        help=(
+            "Retrieval mode, required: Jev evidence reranking in email search; "
+            "explicit so every run says which."
+        ),
+    )
+    parser.add_argument(
+        "--model",
+        help=(
+            "Answer mode, required: the agent's OpenAI chat model. "
+            "Extraction mode, required: the extraction model under test."
+        ),
+    )
+    parser.add_argument(
+        "--effort",
+        choices=EFFORTS,
+        default=None,
+        help="Extraction mode: reasoning effort; unset sends none.",
+    )
     parser.add_argument(
         "--replay",
         action="store_true",
-        help="Extraction: score the saved local run for this model and effort instead of calling it",
+        help=(
+            "Extraction mode: score the saved local run for this model and effort "
+            "instead of calling it."
+        ),
     )
     parser.add_argument(
         "--concurrency",
@@ -49,9 +78,11 @@ def main() -> int:
         help="Cases in flight at once. Start at 1; raise to 4-5 once a mode is stable.",
     )
     args = parser.parse_args()
+    if args.mode == "retrieval" and args.rerank is None:
+        parser.error("--mode retrieval needs --rerank on|off")
+    if args.mode in ("answer", "extraction") and args.model is None:
+        parser.error(f"--mode {args.mode} needs --model")
     if args.mode == "extraction":
-        if not args.model:
-            parser.error("--mode extraction needs --model")
         return _run_extraction(args)
     args.version = args.version or DEFAULT_VERSION
     try:
@@ -63,7 +94,16 @@ def main() -> int:
     started = datetime.now(UTC)
     try:
         with eval_tracing() as client:
-            outcome = retrieval.run(client, args.version, args.concurrency)
+            if args.mode == "retrieval":
+                outcome = retrieval.run(
+                    client, args.version, args.concurrency, rerank=args.rerank == "on"
+                )
+                name = f"retrieval-{args.version}-rerank-{args.rerank}"
+            else:
+                outcome = answer.run(
+                    client, args.version, args.concurrency, model=args.model
+                )
+                name = f"answer-{args.version}-{args.model}"
     except LangfuseNotConfiguredError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -73,18 +113,11 @@ def main() -> int:
         "started_at": started.isoformat(),
         **outcome,
     }
-    path = _write_report(report, started, args.mode, args.version)
+    path = _write_report(report, started, name)
 
-    retrieval.print_summary(outcome["summary"])
-    publication = outcome["publication"]
-    if publication["published"]:
-        print(f"langfuse: {publication['url']}")
-    else:
-        print(
-            f"langfuse publication incomplete: {publication['errors']}", file=sys.stderr
-        )
-    print(f"report: {path}")
-    return 0 if publication["published"] else 1
+    mode = retrieval if args.mode == "retrieval" else answer
+    mode.print_summary(outcome["summary"])
+    return _print_publication(outcome, path)
 
 
 def _run_extraction(args: argparse.Namespace) -> int:
@@ -101,18 +134,35 @@ def _run_extraction(args: argparse.Namespace) -> int:
                 effort=args.effort,
                 replay=args.replay,
             )
-    except (LangfuseNotConfiguredError, extraction.DatasetMissingError, FileNotFoundError) as exc:
+    except (
+        LangfuseNotConfiguredError,
+        extraction.DatasetMissingError,
+        FileNotFoundError,
+    ) as exc:
         print(exc, file=sys.stderr)
         return 1
-    report = {"mode": "extraction", "version": version, "started_at": started.isoformat(), **outcome}
-    subject = f"{args.model}@{args.effort or 'default'}{'-replay' if args.replay else ''}"
-    path = _write_report(report, started, "extraction", version, subject)
+    report = {
+        "mode": "extraction",
+        "version": version,
+        "started_at": started.isoformat(),
+        **outcome,
+    }
+    subject = f"{args.model}@{args.effort or 'default'}"
+    replay = "-replay" if args.replay else ""
+    path = _write_report(report, started, f"extraction-{version}-{subject}{replay}")
     extraction.print_summary(outcome["summary"])
+    return _print_publication(outcome, path)
+
+
+def _print_publication(outcome: dict[str, object], path: Path) -> int:
     publication = outcome["publication"]
+    assert isinstance(publication, dict)
     if publication["published"]:
         print(f"langfuse: {publication['url']}")
     else:
-        print(f"langfuse publication incomplete: {publication['errors']}", file=sys.stderr)
+        print(
+            f"langfuse publication incomplete: {publication['errors']}", file=sys.stderr
+        )
     print(f"report: {path}")
     return 0 if publication["published"] else 1
 

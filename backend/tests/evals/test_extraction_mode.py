@@ -20,9 +20,16 @@ PAYLOAD = {
 }
 
 
-def _extracted(items: list[ExtractedItem] | None, error: str | None = None) -> NewsletterResult:
+def _extracted(
+    items: list[ExtractedItem] | None, error: str | None = None
+) -> NewsletterResult:
     return NewsletterResult(
-        key="n01", items=items, error=error, input_tokens=1000, output_tokens=200, seconds=2.0
+        key="n01",
+        items=items,
+        error=error,
+        input_tokens=1000,
+        output_tokens=200,
+        seconds=2.0,
     )
 
 
@@ -35,14 +42,29 @@ def test_a_correct_extraction_scores_and_prices_the_newsletter() -> None:
     result = extraction.evaluate(PAYLOAD, _extracted(items), "gpt-5.4-nano")
 
     assert result.scores is not None
-    assert (result.scores.recall, result.scores.url_exact, result.scores.sponsor_leaks) == (1, 1, 0)
+    assert (
+        result.scores.recall,
+        result.scores.url_exact,
+        result.scores.sponsor_leaks,
+    ) == (1, 1, 0)
     assert result.cost_usd == (1000 * 0.20 + 200 * 1.25) / 1_000_000
-    names = {evaluation.name for evaluation in extraction.extraction_evaluations(result)}
-    assert {"recall", "url_exact", "sponsor_leaks", "invented_urls", "cost_usd", "seconds"} <= names
+    names = {
+        evaluation.name for evaluation in extraction.extraction_evaluations(result)
+    }
+    assert {
+        "recall",
+        "url_exact",
+        "sponsor_leaks",
+        "invented_urls",
+        "cost_usd",
+        "seconds",
+    } <= names
 
 
 def test_a_failed_call_is_a_failure_not_a_zero_score() -> None:
-    result = extraction.evaluate(PAYLOAD, _extracted(None, "APIConnectionError: boom"), "gpt-5.4-nano")
+    result = extraction.evaluate(
+        PAYLOAD, _extracted(None, "APIConnectionError: boom"), "gpt-5.4-nano"
+    )
 
     assert result.scores is None
     (evaluation,) = extraction.extraction_evaluations(result)
@@ -61,18 +83,22 @@ def test_a_failed_call_is_a_failure_not_a_zero_score() -> None:
 def test_summary_passes_only_when_the_bar_holds() -> None:
     good = extraction.evaluate(
         PAYLOAD,
-        _extracted([
-            ExtractedItem(title="Story", blurb="", url="https://a.example/story"),
-            ExtractedItem(title="Ad", blurb="", url="", sponsor=True),
-        ]),
+        _extracted(
+            [
+                ExtractedItem(title="Story", blurb="", url="https://a.example/story"),
+                ExtractedItem(title="Ad", blurb="", url="", sponsor=True),
+            ]
+        ),
         "gpt-5.4-nano",
     )
     leak = extraction.evaluate(
         PAYLOAD,
-        _extracted([
-            ExtractedItem(title="Story", blurb="", url="https://a.example/story"),
-            ExtractedItem(title="Ad", blurb="", url=""),
-        ]),
+        _extracted(
+            [
+                ExtractedItem(title="Story", blurb="", url="https://a.example/story"),
+                ExtractedItem(title="Ad", blurb="", url=""),
+            ]
+        ),
         "gpt-5.4-nano",
     )
 

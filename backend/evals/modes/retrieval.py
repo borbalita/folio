@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import time
 from collections import defaultdict
 from datetime import UTC, datetime
 from uuid import UUID
@@ -12,6 +14,7 @@ from pydantic import BaseModel
 
 from app.config import settings
 from app.retrieval.email.queries import EmailSearchFilters
+from app.retrieval.email.rerank import EvidenceJudgement
 from app.retrieval.email.retriever import EmailRetriever
 from evals.cases import RagCase
 from evals.dataset import IdMap, load_id_map, load_rag_cases
@@ -34,6 +37,8 @@ class RetrievalResult(BaseModel):
     retrieved_email_keys: list[str]
     distractors_retrieved: list[str]
     scores: RetrievalScores
+    seconds: float
+    """Wall time of the search, including reranking when on."""
 
 
 def chunk_owners(id_map: IdMap) -> dict[UUID, str]:
@@ -44,13 +49,18 @@ def chunk_owners(id_map: IdMap) -> dict[UUID, str]:
     }
 
 
-def run_case(case: RagCase, owners: dict[UUID, str]) -> RetrievalResult:
+def run_case(
+    case: RagCase, owners: dict[UUID, str], *, rerank: bool
+) -> RetrievalResult:
     filters = EmailSearchFilters(
         user_id=case.user_id,
         mailbox_ids=[case.mailbox_id],
         **case.probe_filters.model_dump(),
     )
-    passages = EmailRetriever().search(case.probe_query, filters=filters)
+    started = time.perf_counter()
+    # The probe query is the question itself, so there is no separate user message.
+    passages = EmailRetriever(rerank=rerank).search(case.probe_query, filters=filters)
+    seconds = time.perf_counter() - started
     ranked = emails_in_rank_order((p.chunk_id for p in passages), owners)
     return RetrievalResult(
         case_id=case.case_id,
@@ -61,16 +71,20 @@ def run_case(case: RagCase, owners: dict[UUID, str]) -> RetrievalResult:
         retrieved_email_keys=ranked,
         distractors_retrieved=[key for key in ranked if key in case.distractor_keys],
         scores=retrieval_scores(
-            ranked, case.expected_email_keys, k=settings.retrieval_top_k
+            ranked,
+            case.expected_email_keys,
+            case.distractor_keys,
+            k=settings.retrieval_top_k,
         ),
+        seconds=seconds,
     )
 
 
-METRICS = ("recall", "precision", "mrr")
+METRICS = ("recall", "recall_at_3", "precision", "mrr", "distractor_rate", "empty")
 
 
 def summarize(results: list[RetrievalResult]) -> dict[str, object]:
-    """Averages overall and per case kind; unanswerable cases are only counted."""
+    """Averages overall and per case kind; each metric over the cases it applies to."""
 
     def averages(group: list[RetrievalResult]) -> dict[str, float | None]:
         return {m: mean(getattr(r.scores, m) for r in group) for m in METRICS}
@@ -78,20 +92,29 @@ def summarize(results: list[RetrievalResult]) -> dict[str, object]:
     by_kind: dict[str, list[RetrievalResult]] = defaultdict(list)
     for result in results:
         by_kind[result.kind].append(result)
-    answerable = [r for r in results if r.answerable]
     return {
         "cases": len(results),
-        "unanswerable_cases": len(results) - len(answerable),
-        "overall": averages(answerable),
+        "unanswerable_cases": sum(1 for r in results if not r.answerable),
+        "overall": averages(results),
         "by_kind": {kind: averages(group) for kind, group in sorted(by_kind.items())},
         "distractor_retrieved_cases": sum(
             1 for r in results if r.distractors_retrieved
         ),
+        "seconds": _latency([r.seconds for r in results]),
+    }
+
+
+def _latency(seconds: list[float]) -> dict[str, float]:
+    ordered = sorted(seconds)
+    return {
+        "mean": sum(ordered) / len(ordered),
+        "p95": ordered[min(len(ordered) - 1, round(0.95 * (len(ordered) - 1)))],
+        "max": ordered[-1],
     }
 
 
 def retrieval_evaluations(result: RetrievalResult) -> list[Evaluation]:
-    """One score per applicable metric; unanswerable cases get none rather than a fake 1.0."""
+    """One score per applicable metric; nothing for a metric that doesn't apply, never a fake 1.0."""
     comment = f"retrieved {result.retrieved_email_keys}, expected {result.expected_email_keys}"
     return [
         Evaluation(name=metric, value=value, comment=comment)
@@ -100,23 +123,38 @@ def retrieval_evaluations(result: RetrievalResult) -> list[Evaluation]:
     ]
 
 
-def run(client: Langfuse, version: str, concurrency: int) -> dict[str, object]:
+def run(
+    client: Langfuse, version: str, concurrency: int, *, rerank: bool
+) -> dict[str, object]:
     cases = load_rag_cases(version)
     dataset_name = rag_dataset_name(version)
     by_item = {item_id(dataset_name, case.case_id): case for case in cases}
     owners = chunk_owners(load_id_map(version))
 
     async def task(key: str) -> RetrievalResult:
-        result = await asyncio.to_thread(run_case, by_item[key], owners)
+        result = await asyncio.to_thread(run_case, by_item[key], owners, rerank=rerank)
         print(f"  {result.case_id} {result.kind:14} {_scores_line(result)}")
         return result
 
+    prompts = {"keyword_prompt": EmailRetriever.keyword_prompt}
+    variant = "no rerank"
+    if rerank:
+        variant = (
+            f"rerank {settings.typesafe_label_model}, "
+            f"{settings.email_rerank_candidates} candidates"
+        )
+        prompts["rerank_schema"] = json.dumps(
+            EvidenceJudgement.model_json_schema(), sort_keys=True
+        )
     config = RunConfig(
         mode="retrieval",
         version=version,
-        subject=f"email-search ({settings.openai_embedding_model}, keywords {settings.openai_chat_model})",
+        subject=(
+            f"email-search ({settings.openai_embedding_model}, "
+            f"keywords {settings.openai_chat_model}, {variant})"
+        ),
         today=cases[0].today,
-        prompts={"keyword_prompt": EmailRetriever.keyword_prompt},
+        prompts=prompts,
         concurrency=concurrency,
     )
     experiment = run_experiment(
@@ -124,12 +162,17 @@ def run(client: Langfuse, version: str, concurrency: int) -> dict[str, object]:
         dataset_name=dataset_name,
         local=local_rag_payloads(version),
         config=config,
-        run_name=f"retrieval {version} {datetime.now(UTC):%Y-%m-%d %H:%M:%S}",
+        run_name=(
+            f"retrieval {version} rerank-{'on' if rerank else 'off'} "
+            f"{datetime.now(UTC):%Y-%m-%d %H:%M:%S}"
+        ),
         task=task,
         scores=retrieval_evaluations,
     )
     ordered = [experiment.results[key] for key in by_item if key in experiment.results]
     return {
+        "rerank": rerank,
+        "subject": config.subject,
         "top_k": settings.retrieval_top_k,
         "summary": summarize(ordered),
         "publication": publication(experiment),
@@ -138,15 +181,22 @@ def run(client: Langfuse, version: str, concurrency: int) -> dict[str, object]:
 
 
 def _scores_line(result: RetrievalResult) -> str:
-    if not result.answerable:
-        return f"n/a (unanswerable, {len(result.retrieved_email_keys)} emails returned)"
     s = result.scores
-    return f"recall {s.recall:.2f}  precision {s.precision:.2f}  mrr {s.mrr:.2f}"
+    distractors = f"distractors {_format(s.distractor_rate)}  {result.seconds:.1f}s"
+    if not result.answerable:
+        return f"unanswerable, {len(result.retrieved_email_keys)} emails returned  {distractors}"
+    return (
+        f"recall {s.recall:.2f}  recall@3 {s.recall_at_3:.2f}  precision {s.precision:.2f}  "
+        f"mrr {s.mrr:.2f}  {distractors}"
+    )
 
 
 def print_summary(summary: dict[str, object]) -> None:
+    print(f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable")
+    seconds = summary["seconds"]
     print(
-        f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable (recall n/a)"
+        f"  search seconds  mean {seconds['mean']:.2f}  p95 {seconds['p95']:.2f}  "
+        f"max {seconds['max']:.2f}"
     )
     for name, averages in [
         ("overall", summary["overall"]),

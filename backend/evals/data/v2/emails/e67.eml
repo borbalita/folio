@@ -1,0 +1,29 @@
+From: HavelCurrent Billing <billing@havelcurrent.example>
+To: Anna Weber <anna@example.com>
+Date: Sun, 06 Sep 2026 09:25:00 +0200
+Subject: Re: August studio electricity invoice =?utf-8?b?4oCU?= corrected
+ balance
+Message-ID: <e67@folio-eval.example>
+In-Reply-To: <e66@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Corrected electricity invoice</title></h=
+ead>
+<body style=3D"font-family: Arial, sans-serif; color: #222; line-height: 1.5;=
+ padding: 20px;">
+<p>Dear Anna Weber,</p>
+<p>We have applied a meter credit to your August studio electricity invoice. =
+This reduces the corrected amount due to <strong>=E2=82=AC49.15</strong>.</p>
+<p>Please use payment reference <strong>HC-CREDIT-419</strong> when transferr=
+ing the corrected balance so we can allocate your payment to the invoice.</p>
+<p>Please disregard the previous balance and use the corrected amount above. =
+If you have already arranged payment, please reply to this email so we can re=
+view your account.</p>
+<p>Thank you for your patience while we made this correction.</p>
+<p>Kind regards,<br>HavelCurrent Billing</p>
+</body>
+</html>

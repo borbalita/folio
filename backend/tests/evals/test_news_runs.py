@@ -39,17 +39,35 @@ def test_extract_one_keeps_items_sponsors_and_usage(
     ]
 
     def request(parsed: object, *, model: str, reasoning_effort: object) -> object:
-        calls.append({"subject": parsed.subject, "body": parsed.body, "model": model, "effort": reasoning_effort})
+        calls.append(
+            {
+                "subject": parsed.subject,
+                "body": parsed.body,
+                "model": model,
+                "effort": reasoning_effort,
+            }
+        )
         return _completion(items)
 
     monkeypatch.setattr(news_runs, "request_extraction", request)
 
     result = news_runs.extract_one(NEWSLETTER, "cheap-model", "none")
 
-    assert calls == [{"subject": "AI news", "body": "Story one", "model": "cheap-model", "effort": "none"}]
+    assert calls == [
+        {
+            "subject": "AI news",
+            "body": "Story one",
+            "model": "cheap-model",
+            "effort": "none",
+        }
+    ]
     assert result.items == items
     assert result.error is None
-    assert (result.input_tokens, result.output_tokens, result.reasoning_tokens) == (1000, 300, 100)
+    assert (result.input_tokens, result.output_tokens, result.reasoning_tokens) == (
+        1000,
+        300,
+        100,
+    )
 
 
 def test_extract_one_records_api_errors(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -75,7 +93,9 @@ def test_summary_prices_known_models_and_counts_sponsors() -> None:
                 key="n01",
                 items=[
                     ExtractedItem(title="A", blurb="a", url="https://a.example"),
-                    ExtractedItem(title="Ad", blurb="b", url="https://ad.example", sponsor=True),
+                    ExtractedItem(
+                        title="Ad", blurb="b", url="https://ad.example", sponsor=True
+                    ),
                 ],
                 input_tokens=1_000_000,
                 output_tokens=1_000_000,

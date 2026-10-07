@@ -73,7 +73,8 @@ def score_extraction(
             not expected[e].sponsor and actual[a].sponsor for e, a in pairs
         ),
         invented_urls=sum(
-            bool(item.url.strip()) and not url_in_text(item.url, body) for item in returned
+            bool(item.url.strip()) and not url_in_text(item.url, body)
+            for item in returned
         ),
     )
 

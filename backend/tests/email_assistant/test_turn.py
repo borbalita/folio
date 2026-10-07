@@ -52,7 +52,7 @@ def _patch(monkeypatch: pytest.MonkeyPatch, agent: _Agent) -> list[dict]:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
     monkeypatch.setattr(
         "app.retrieval.email.retriever.EmailRetriever.search",
-        lambda self, query, *, filters, session=None: [
+        lambda self, query, *, filters, session=None, question=None: [
             EmailPassage(
                 chunk_id=SEEN,
                 email_id=uuid.uuid4(),

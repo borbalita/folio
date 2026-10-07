@@ -10,9 +10,7 @@ from app.retrieval.documents.queries import DocumentSearchFilters
 from app.retrieval.documents.retriever import DocumentPassage
 
 
-def register_passages(
-    deps: DocumentAgentDeps, passages: list[DocumentPassage]
-) -> None:
+def register_passages(deps: DocumentAgentDeps, passages: list[DocumentPassage]) -> None:
     for passage in passages:
         deps.seen_ids.add(passage.chunk_id)
         deps.seen_passages[passage.chunk_id] = passage

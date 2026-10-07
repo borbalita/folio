@@ -38,7 +38,9 @@ class _Storage:
     def list_buckets(self) -> list[SimpleNamespace]:
         return [SimpleNamespace(id=name) for name in self.buckets]
 
-    def create_bucket(self, id: str, name: str | None = None, options: object = None) -> None:
+    def create_bucket(
+        self, id: str, name: str | None = None, options: object = None
+    ) -> None:
         self.buckets[id] = (_Bucket(), options)  # type: ignore[assignment]
 
     def from_(self, id: str) -> _Bucket:
@@ -53,7 +55,12 @@ def test_payload_holds_the_newsletter_and_the_expected_items() -> None:
     expected = {
         "review": "reference",
         "items": [
-            {"title": "Story", "blurb": "b", "url": "https://a.example/story", "sponsor": False}
+            {
+                "title": "Story",
+                "blurb": "b",
+                "url": "https://a.example/story",
+                "sponsor": False,
+            }
         ],
     }
 
@@ -62,7 +69,9 @@ def test_payload_holds_the_newsletter_and_the_expected_items() -> None:
     assert payload["input"]["body"] == NEWSLETTER.body
     assert payload["input"]["sent_date"] == "2026-09-01"
     assert payload["expected_output"] == {
-        "items": [{"title": "Story", "url": "https://a.example/story", "sponsor": False}]
+        "items": [
+            {"title": "Story", "url": "https://a.example/story", "sponsor": False}
+        ]
     }
     assert payload["metadata"]["review"] == "reference"
     assert payload["metadata"]["answer_key_run"] == "gpt-5.5@default"
