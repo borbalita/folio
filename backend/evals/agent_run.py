@@ -13,7 +13,10 @@ from pydantic_ai.messages import (
     ToolReturnPart,
 )
 from pydantic_ai.models import Model
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.models.openai import (
+    OpenAIResponsesModel,
+    OpenAIResponsesModelSettings,
+)
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from app.config import settings
@@ -38,17 +41,35 @@ class AgentRecord(BaseModel):
     usage: dict[str, int]
 
 
-def chat_model(name: str) -> Model:
-    return OpenAIChatModel(
+def candidate_model(name: str) -> Model:
+    """Through the Responses API: GPT-6.1 Sol only calls tools there.
+
+    The app uses Chat Completions with its configured model; switching is one line in agent.py.
+    """
+    return OpenAIResponsesModel(
         name, provider=OpenAIProvider(api_key=settings.openai_api_key)
     )
 
 
+def effort_settings(effort: str | None) -> OpenAIResponsesModelSettings | None:
+    """None sends no effort, so the model's default applies."""
+    if effort is None:
+        return None
+    return OpenAIResponsesModelSettings(openai_reasoning_effort=effort)  # type: ignore[typeddict-item]
+
+
 async def run_agent(
-    question: str, today: date, deps: EmailAgentDeps, model: Model
+    question: str,
+    today: date,
+    deps: EmailAgentDeps,
+    model: Model,
+    model_settings: OpenAIResponsesModelSettings | None = None,
 ) -> AgentRecord:
     run = await get_agent().run(
-        email_prompt(question, today=today), deps=deps, model=model
+        email_prompt(question, today=today),
+        deps=deps,
+        model=model,
+        model_settings=model_settings,
     )
     usage = run.usage
     return AgentRecord(

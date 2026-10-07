@@ -3,7 +3,7 @@
 Run: uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank on|off
      [--version v1] [--concurrency N]
      uv run --env-file .env.eval python -m evals.run --mode answer --model gpt-6-luna
-     [--version v1] [--concurrency N]
+     [--effort none] [--version v1] [--concurrency N]
      uv run python -m evals.run --mode extraction --model gpt-5.6-luna [--effort none]
      [--replay] [--version news-v1] [--concurrency N]
 """
@@ -61,7 +61,10 @@ def main() -> int:
         "--effort",
         choices=EFFORTS,
         default=None,
-        help="Extraction mode: reasoning effort; unset sends none.",
+        help=(
+            "Answer and extraction modes: reasoning effort; unset sends none, so the "
+            "model's default applies."
+        ),
     )
     parser.add_argument(
         "--replay",
@@ -101,9 +104,13 @@ def main() -> int:
                 name = f"retrieval-{args.version}-rerank-{args.rerank}"
             else:
                 outcome = answer.run(
-                    client, args.version, args.concurrency, model=args.model
+                    client,
+                    args.version,
+                    args.concurrency,
+                    model=args.model,
+                    effort=args.effort,
                 )
-                name = f"answer-{args.version}-{args.model}"
+                name = f"answer-{args.version}-{args.model}-effort-{args.effort or 'default'}"
     except LangfuseNotConfiguredError as exc:
         print(exc, file=sys.stderr)
         return 1
