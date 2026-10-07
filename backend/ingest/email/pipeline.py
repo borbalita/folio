@@ -23,8 +23,8 @@ from ingest.email.labels import label_message
 from ingest.email.news import edition_date, embed_text, extract_news_items
 from ingest.email.parse import ParsedMessage, content_hash
 from ingest.email.stories import rebuild_stories
-from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS
 from ingest.embeddings import embed_texts
+from ingest.tokens import CHUNK_MAX_TOKENS, EMBEDDING_MAX_TOKENS
 
 log = structlog.get_logger(__name__)
 

@@ -22,6 +22,7 @@ class _Query:
         self.filters: dict[str, str] = {}
         self.pending: dict | None = None
         self.count_messages = False
+        self.deleting = False
 
     def upsert(self, row: dict, on_conflict: str | None = None) -> _Query:
         self.store.setdefault(self.table, []).append(dict(row))
@@ -42,6 +43,13 @@ class _Query:
     def order(self, *_args: object, **_kwargs: object) -> _Query:
         return self
 
+    def limit(self, _count: int) -> _Query:
+        return self
+
+    def delete(self) -> _Query:
+        self.deleting = True
+        return self
+
     def execute(self) -> _Result:
         rows = self.store.setdefault(self.table, [])
         if self.pending is not None:
@@ -54,6 +62,9 @@ class _Query:
             for row in rows
             if all(row.get(key) == value for key, value in self.filters.items())
         ]
+        if self.deleting:
+            self.store[self.table] = [row for row in rows if row not in matched]
+            return _Result(matched)
         if self.count_messages:
             messages = self.store.get("chat_messages", [])
             matched = [
@@ -133,6 +144,47 @@ def test_titled_thread_is_always_new(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert titled["id"] != empty["id"]
     assert titled["title"] == "Invoices"
+
+
+def test_delete_removes_an_empty_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+
+    thread = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+
+    assert chats.delete_thread_if_empty(uuid.UUID(thread["id"]), USER_ID) is True
+    assert client.store["chat_threads"] == []
+
+
+def test_delete_keeps_a_thread_with_messages(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+
+    thread = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="email")
+    client.store["chat_messages"] = [{"id": "m1", "thread_id": thread["id"]}]
+
+    assert chats.delete_thread_if_empty(uuid.UUID(thread["id"]), USER_ID) is False
+    assert len(client.store["chat_threads"]) == 1
+
+
+def test_delete_route_reports_the_outcome(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    thread_id = uuid.uuid4()
+    calls: list[tuple[uuid.UUID, uuid.UUID]] = []
+
+    def delete(tid: uuid.UUID, uid: uuid.UUID) -> bool:
+        calls.append((tid, uid))
+        return True
+
+    monkeypatch.setattr(chats, "delete_thread_if_empty", delete)
+
+    response = authed_client.delete(f"/threads/{thread_id}")
+
+    assert response.status_code == 200
+    assert response.json() == {"deleted": True}
+    assert calls == [(thread_id, USER_ID)]
 
 
 def test_routes_default_to_documents_and_pass_email(
