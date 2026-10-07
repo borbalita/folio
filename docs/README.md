@@ -1,6 +1,6 @@
 # Docs
 
-Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next agent takes `04-`.
+Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `05-`.
 
 ## Platform
 
@@ -34,3 +34,10 @@ The mailbox agent: Yahoo ingest, labels, newsletter stories, and chat over that 
 - [Spec](03-email/spec.md)
 - `03-email/todo.md` is the build guide. It is gitignored.
 - `03-email/overview.md` is written when that build is done.
+
+## 04-memory
+
+Shared by both agents: thread history sent to the model, and long-term memories the user can see and delete.
+
+- [Spec](04-memory/spec.md)
+- `04-memory/overview.md` is written when that build is done.
