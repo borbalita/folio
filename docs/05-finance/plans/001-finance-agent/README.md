@@ -10,6 +10,8 @@ Settled in chat on 2026-10-06: Finance is its own agent with its own threads; ba
 
 Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal, transfer linking, categorization and the spending view move to a separate plan 002, not yet started.
 
+Decided on 2026-10-07: invoices move from the Email agent to Finance (see Decisions).
+
 Awaiting: agreement on the decisions to settle in Stage 3.
 
 [../../spec.md](../../spec.md) is an earlier draft written before discovery. It is input for later stages and will be folded into this file and deleted.
@@ -56,6 +58,10 @@ Non-goals (this plan):
 - **EPC QR code (GiroCode).** A European standard QR code holding a SEPA transfer: name, IBAN, optional BIC, amount, reference. The N26 and ING apps both scan it, or import it from a photo, and pre-fill a transfer that the user confirms.
 - **Payment initiation.** Enable Banking also has `POST /payments`: the app sends the transfer and the user confirms it at the bank. It removes the scanning step but adds a second integration.
 - **Railway cron.** A cron service runs a command on a UTC schedule at least 5 minutes apart and must exit when done. Railway skips a run while the previous one is still active.
+
+## Decisions
+
+- **Invoices live in Finance.** The invoice list and page that PR #1 adds to the Email agent move to Finance, which adds payment status, extracted fields and payment actions. Rejected: keeping them in Email and linking across agents, which would split one invoice over two agents. Reversible: it is a matter of routes and sidebar links.
 
 ## Open questions
 
