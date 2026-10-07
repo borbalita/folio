@@ -6,7 +6,9 @@ import asyncio
 import time
 import uuid
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from datetime import UTC, datetime
+from typing import Protocol
 from uuid import UUID
 
 from langfuse import Evaluation, Langfuse
@@ -40,6 +42,17 @@ class AnswerResult(BaseModel):
     answer: EmailAnswer
     cited_email_keys: list[str]
     steps: list[ToolStep]
+    usage: dict[str, int]
+    seconds: float
+    scores: AnswerScores
+
+
+class ScoredAnswer(Protocol):
+    """What the answer and end-to-end results share, so they summarize and score alike."""
+
+    kind: str
+    answerable: bool
+    cited_email_keys: list[str]
     usage: dict[str, int]
     seconds: float
     scores: AnswerScores
@@ -96,13 +109,13 @@ async def run_case(
     )
 
 
-def summarize(results: list[AnswerResult]) -> dict[str, object]:
+def summarize(results: Sequence[ScoredAnswer]) -> dict[str, object]:
     """Averages overall and per case kind; each metric over the cases it applies to."""
 
-    def averages(group: list[AnswerResult]) -> dict[str, float | None]:
+    def averages(group: Sequence[ScoredAnswer]) -> dict[str, float | None]:
         return {m: mean(getattr(r.scores, m) for r in group) for m in METRICS}
 
-    by_kind: dict[str, list[AnswerResult]] = defaultdict(list)
+    by_kind: dict[str, list[ScoredAnswer]] = defaultdict(list)
     for result in results:
         by_kind[result.kind].append(result)
     return {
@@ -124,7 +137,7 @@ def summarize(results: list[AnswerResult]) -> dict[str, object]:
     }
 
 
-def answer_evaluations(result: AnswerResult) -> list[Evaluation]:
+def answer_evaluations(result: ScoredAnswer) -> list[Evaluation]:
     """One score per applicable metric; nothing for a metric that doesn't apply."""
     comments = {
         "refusal_correct": result.scores.refusal_outcome,
@@ -158,7 +171,7 @@ def run(
 
     async def task(key: str) -> AnswerResult:
         result = await run_case(by_item[key], id_map, owners, chat, model_settings)
-        print(f"  {result.case_id} {result.kind:14} {_scores_line(result)}")
+        print(f"  {result.case_id} {result.kind:14} {scores_line(result)}")
         return result
 
     config = RunConfig(
@@ -191,7 +204,7 @@ def run(
     }
 
 
-def _scores_line(result: AnswerResult) -> str:
+def scores_line(result: ScoredAnswer) -> str:
     s = result.scores
     parts = [s.refusal_outcome]
     if s.evidence_cited is not None:

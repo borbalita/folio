@@ -77,6 +77,17 @@ def retrieval_scores(
     )
 
 
+def search_recall(calls: list[list[str]], expected_keys: list[str]) -> float | None:
+    """Share of expected emails returned by at least one of the agent's searches.
+
+    Pooled over every call, so it isn't recall@k: more searches can reach more emails.
+    """
+    if not expected_keys:
+        return None
+    found = {key for call in calls for key in call}
+    return len(found & set(expected_keys)) / len(set(expected_keys))
+
+
 def mean(values: Iterable[float | None]) -> float | None:
     """Average of the applicable values; None when nothing applies."""
     present = [value for value in values if value is not None]
@@ -96,7 +107,7 @@ class AnswerScores(BaseModel):
     distractor_cited: float | None
     """Diagnostic, when distractors were in the evidence and the model answered: cites one."""
     grounding_pass: float | None
-    """EmailGrounder's citation checks; None for an unanswerable case with no evidence."""
+    """EmailGrounder's citation checks; None when the model saw no evidence and none was planned."""
     grounding_error: str | None
 
 
@@ -117,7 +128,8 @@ def answer_scores(
     refused = answer.insufficient_evidence
     outcome = refusal_outcome(refused, answerable)
     cited = {citation.chunk_id for citation in answer.citations}
-    had_evidence = bool(expected_chunk_ids or distractor_chunk_ids)
+    # End-to-end searches can return emails for a case that planned none.
+    had_evidence = bool(expected_chunk_ids or distractor_chunk_ids or seen_ids)
     grounding_error = _grounding_error(answer, seen_ids) if had_evidence else None
     return AnswerScores(
         refusal_correct=1.0 if outcome == "correct" else 0.0,

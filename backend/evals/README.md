@@ -122,6 +122,20 @@ Scores, each only where it applies:
 
 The report keeps each case's answer, cited emails, tool calls with their results, token usage, and seconds. Whether stated facts are right needs the judge (001/11).
 
+### End-to-end run
+
+The normal agent path: the model chooses its own searches and filters over the real email index, so search decisions and answering are tested together. Reranking is explicit, as in the retrieval test.
+
+```bash
+uv run --env-file .env.eval python -m evals.run --mode e2e --model gpt-6-luna --rerank off --version v2 [--effort none] [--concurrency 4]
+```
+
+Scores are the answer test's, with two differences: `distractor_cited` counts only distractors the agent's searches actually returned, and `grounding_pass` applies whenever the agent saw any email. Added:
+
+- **search_recall**: answerable cases; the share of expected emails returned by at least one of the agent's searches. It pools every call, so it isn't recall@10.
+
+Each search is kept with its query, filters (`since`, `until`, `label`, `sender`, `mailbox`), and the emails returned, so a failure from a wrong filter is visible; the `search_recall` comment in Langfuse lists them. The summary adds searches per case and cases with no search.
+
 ## Scoping integration test
 
 Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run (with or without ingested data); it rolls back everything it writes and makes no network calls.
