@@ -85,15 +85,13 @@ def decisions_path(version: str) -> Path:
     return review_dir(version) / "decisions.json"
 
 
-def load_runs(version: str) -> dict[str, RunFile]:
+def load_runs(version: str, reference: str = REFERENCE_RUN) -> dict[str, RunFile]:
     runs = {
         path.stem: RunFile.model_validate_json(path.read_text())
         for path in sorted(runs_dir(version).glob("*.json"))
     }
-    if REFERENCE_RUN not in runs:
-        raise SystemExit(
-            f"missing reference run {REFERENCE_RUN} in {runs_dir(version)}"
-        )
+    if reference not in runs:
+        raise SystemExit(f"missing reference run {reference} in {runs_dir(version)}")
     return runs
 
 
@@ -335,17 +333,20 @@ def build(version: str) -> int:
 
 
 def reference_answers(
-    newsletters: list[Newsletter], runs: dict[str, RunFile]
+    newsletters: list[Newsletter],
+    runs: dict[str, RunFile],
+    reference_run: str = REFERENCE_RUN,
 ) -> dict[str, dict[str, object]]:
-    """The reference run as the answer key, without a person checking it.
+    """One run's output as the answer key, without a person checking it.
 
-    Scores then measure agreement with GPT-5.5, not correctness; see plan 003.
+    Scores then measure agreement with that run, not correctness; see plan 003.
     """
     expected: dict[str, dict[str, object]] = {}
     for newsletter in newsletters:
-        result = next(r for r in runs[REFERENCE_RUN].results if r.key == newsletter.key)
+        result = next(r for r in runs[reference_run].results if r.key == newsletter.key)
         expected[newsletter.key] = {
             "review": "reference",
+            "answer_key_run": reference_run,
             "items": [
                 as_expected(item, newsletter.body, item.sponsor).model_dump()
                 for item in result.items or []
@@ -354,10 +355,9 @@ def reference_answers(
     return expected
 
 
-def reference(version: str) -> int:
-    _write_expected(
-        version, reference_answers(load_newsletters(version), load_runs(version))
-    )
+def reference(version: str, run: str = REFERENCE_RUN) -> int:
+    runs = load_runs(version, reference=run)
+    _write_expected(version, reference_answers(load_newsletters(version), runs, run))
     return 0
 
 
@@ -373,7 +373,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["serve", "build", "reference"])
     parser.add_argument("--version", default=DEFAULT_NEWS_VERSION)
+    parser.add_argument(
+        "--run",
+        default=REFERENCE_RUN,
+        help="reference: the run whose output becomes the answer key, e.g. gpt-6-astra@low",
+    )
     args = parser.parse_args()
+    if args.command == "reference":
+        return reference(args.version, args.run)
     commands = {"serve": serve, "build": build, "reference": reference}
     return commands[args.command](args.version)
 

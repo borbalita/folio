@@ -2,7 +2,8 @@
 
 - Created: 2026-10-06
 - Status: Done
-- Current stage: Complete. Follow-ups: count sponsor drops in the bar; hand-label a sample for a v2.
+- Current stage: Complete, with news-extraction-v2 (GPT-6 Astra as the answer key). Follow-ups: count sponsor drops in the bar; hand-label a sample.
+- Production decision: newsletter extraction runs on `gpt-6-luna` at effort `none` (see "Decision: `gpt-6-luna` in production").
 
 ## Approval state
 
@@ -122,6 +123,43 @@ Two prompt changes were tried on Luna (one live run each, about $0.12):
 
 Decision (owner, 2026-10-07): switch extraction to `gpt-5.6-luna` at effort `none` with the job-ad sentence. The bar doesn't count hidden news (sponsor drops); a later version should add it. The prompt is shared, so GPT-5.5 would also get the job-ad sentence if production went back to it.
 
+## news-extraction-v2: GPT-6 Astra as the answer key (2026-10-07)
+
+The owner asked to benchmark `gpt-6-astra`, `gpt-6.1-sol`, and `gpt-6-luna`, and then to use Astra's output as the ground truth instead of GPT-5.5's. v1 is frozen, so this is a new version:
+
+- `news-extraction-v2` holds the same 64 newsletters (re-exported read-only and checked identical to v1) with Astra's output at effort `low` as the answer key, under the same link rule. Langfuse metadata records `answer_key_run: gpt-6-astra@low`. Backup: `eval-datasets/news-extraction-v2.json`. The local copy is deleted.
+- Astra's answer key has 684 news items and 262 sponsor or boilerplate blocks (GPT-5.5 listed 148; those don't count toward news scores).
+- Astra's paid run on v1 was reused through its report (`news_runs --from-report`), and every other model was replayed from its saved run, so v2 cost no extra model calls.
+- GPT-5.5, nano, and mini were run with the earlier prompt (without the job-ad sentence); the GPT-6 models and `gpt-5.6-luna` with the current one.
+
+Scores against Astra (64 newsletters, 684 news items):
+
+| Model (effort) | Recall | Precision | URL exact | Sponsor leaks | Sponsor drops | Invented URLs | Cost (64) | Bar |
+|---|---|---|---|---|---|---|---|---|
+| `gpt-6-astra` (low), answer key | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 | $5.12 | passes (answer key) |
+| `gpt-6.1-sol` (low) | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 | $1.03 | passes |
+| `gpt-6-luna` (none) | 1.000 | 0.999 | 0.994 | 0 | 0 | 1 | $0.05 | fails: 1 invented URL |
+| `gpt-5.6-luna` (none), production | 0.996 | 0.993 | 0.999 | 0 | 3 | 0 | $0.12 | passes |
+| `gpt-5.5` (default) | 1.000 | 0.990 | 0.999 | 7 | 0 | 0 | $3.44 | fails: sponsor leaks |
+| `gpt-5.5` (low) | 1.000 | 0.988 | 0.927 | 8 | 0 | 49 | $2.86 | fails |
+| `gpt-5.4-nano` (none) | 0.988 | 0.951 | 0.848 | 19 | 0 | 105 | $0.12 | fails |
+| `gpt-5.4-mini` (none) | 0.950 | 0.982 | 0.846 | 9 | 0 | 98 | $0.42 | fails |
+
+- **`gpt-6.1-sol` agrees with Astra on every item, link, and sponsor flag** (separate runs; only the blurb wording differs), at a fifth of Astra's cost. Same model family, so shared blind spots wouldn't show.
+- **`gpt-6-luna` is nearly identical at $0.05**: no missed or hidden stories, one useless link (`https://github.com/` for a story whose text has no link).
+- **GPT-5.5's 7 leaks are TLDR's job ad**, which it called news; the 3 drops of the production `gpt-5.6-luna` are the vendor stories found on v1.
+### Decision: `gpt-6-luna` in production (owner, 2026-10-07)
+
+Newsletter extraction runs on **`gpt-6-luna` at reasoning effort `none`**, with the job-ad sentence in the prompt (`NEWS_EXTRACTION_MODEL=gpt-6-luna`, `NEWS_EXTRACTION_REASONING_EFFORT=none`). It replaces `gpt-5.6-luna`, which replaced GPT-5.5 a day earlier.
+
+Why:
+
+- Against Astra it finds every news item, hides none, and leaks no sponsors; the production `gpt-5.6-luna` hides 3 vendor stories.
+- It is the cheapest model tested: $0.05 for the 64 September newsletters, against $0.12 for `gpt-5.6-luna`, $1.03 for `gpt-6.1-sol`, $3.44 for GPT-5.5, and $5.12 for Astra. That puts extraction under $0.10 a month and a three-year backfill around $2.
+- It strictly fails the bar on one invented URL (`https://github.com/`, a site front page, for a story whose text has no link). The owner accepted that: one useless link in 684 items.
+
+`gpt-6.1-sol` was the alternative with zero differences from Astra, at about 20 times Luna's cost. Rerun this benchmark (`evals.run --mode extraction --version news-v2 --model M`) before switching models again.
+
 ## Tasks
 
 - [x] 003/01 — `news_extraction_model` and `news_extraction_reasoning_effort` settings; `extract_with_model` takes model and effort; unit tests. No behavior change.
@@ -130,7 +168,7 @@ Decision (owner, 2026-10-07): switch extraction to `gpt-5.6-luna` at effort `non
 - [x] 003/04 — ~~Review file: full check of 6 newsletters, plus every disputed item across all 64; the owner's decisions become the expected output.~~ Changed: the GPT-5.5 reference run is the answer key (`evals.news_review reference`). The review page is built and kept for later hand labelling.
 - [x] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
 - [x] 003/06 — `evals.run --mode extraction --model M [--effort E]` with the metrics above, a Langfuse experiment per model, and a local report; items are read from Langfuse.
-- [x] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes. Luna passes after the job-ad prompt sentence; set to `gpt-5.6-luna` (effort `none`).
+- [x] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes. Luna passes after the job-ad prompt sentence; set to `gpt-5.6-luna` (effort `none`), then on 2026-10-07 to `gpt-6-luna` (effort `none`) after the v2 benchmark.
 
 ## Cost
 
@@ -144,4 +182,4 @@ Actual local runs on 2026-10-06 (64 newsletters each): GPT-5.5 default $3.44 (20
 - **Many disputes**: hand review grew to 437 items with five runs. A later hand-labelled version should review fewer runs at once or label a fixed sample of newsletters fully.
 - **Reasoning effort support** differs by model; the run records the effort actually sent and fails clearly if a model rejects it.
 - **Price drift**: prices live in one dated table; reports store token counts, so cost can be recomputed.
-- **One month of data**: newsletter layouts change; a later export becomes `news-v2` and v1 stays as the baseline.
+- **One month of data**: newsletter layouts change; a later export of newer newsletters becomes `news-v3`, and v1 and v2 stay as baselines.

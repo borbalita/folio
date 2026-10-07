@@ -62,9 +62,10 @@ def news_payload(newsletter: Newsletter, expected: dict[str, Any]) -> Payload:
         "metadata": {
             "key": newsletter.key,
             "review": expected["review"],
-            "answer_key_run": REFERENCE_RUN
-            if expected["review"] == "reference"
-            else None,
+            "answer_key_run": expected.get(
+                "answer_key_run",
+                REFERENCE_RUN if expected["review"] == "reference" else None,
+            ),
             "email_id": newsletter.email_id,
         },
     }

@@ -5,16 +5,19 @@ outputs feed the review file; the GPT-5.5 reference outputs are also scored late
 being bought twice. Results go to the gitignored evals/out/news-runs/<version>/.
 
 Run: uv run python -m evals.news_runs --model gpt-5.4-nano --effort none [--concurrency 4]
+     uv run python -m evals.news_runs --from-report evals/out/reports/<report>.json --version news-v2
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from openai import APIError
 from openai.types.shared import ReasoningEffort
@@ -126,13 +129,63 @@ def summarize(run: RunFile) -> str:
     )
 
 
+def run_from_report(report: dict[str, Any], version: str) -> RunFile:
+    """A saved run rebuilt from an official extraction report, without calling the model.
+
+    Reports keep each newsletter's items, so a paid run can become an answer key or be
+    replayed against another dataset version holding the same newsletters.
+    """
+    missing = [r["key"] for r in report["results"] if "items" not in r]
+    if missing:
+        raise ValueError(
+            f"report has no items for {missing[:5]}; it predates item logging"
+        )
+    return RunFile(
+        version=version,
+        model=report["model"],
+        effort=report["effort"],
+        started_at=datetime.fromisoformat(report["started_at"]),
+        results=[
+            NewsletterResult(
+                key=r["key"],
+                items=r["items"],
+                error=r["error"],
+                input_tokens=r["input_tokens"],
+                output_tokens=r["output_tokens"],
+                reasoning_tokens=r["reasoning_tokens"],
+                seconds=r["seconds"],
+            )
+            for r in report["results"]
+        ],
+    )
+
+
+def _save(run: RunFile) -> Path:
+    path = runs_dir(run.version) / f"{run_name(run.model, run.effort)}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(run.model_dump_json(indent=2) + "\n")
+    return path
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", required=True)
+    parser.add_argument("--model")
     parser.add_argument("--effort", choices=EFFORTS, default=None)
     parser.add_argument("--version", default=DEFAULT_NEWS_VERSION)
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--from-report",
+        type=Path,
+        help="Save an official extraction report's items as a run for --version instead of calling a model",
+    )
     args = parser.parse_args()
+    if args.from_report:
+        run = run_from_report(json.loads(args.from_report.read_text()), args.version)
+        print(summarize(run))
+        print(f"saved {_save(run)}")
+        return 0
+    if not args.model:
+        parser.error("--model is required unless --from-report is given")
 
     newsletters = load_newsletters(args.version)
     if not newsletters:
@@ -156,9 +209,7 @@ def main() -> int:
         started_at=started,
         results=results,
     )
-    path = runs_dir(args.version) / f"{run_name(args.model, args.effort)}.json"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(run.model_dump_json(indent=2) + "\n")
+    path = _save(run)
     print(summarize(run))
     for result in results:
         if result.error:
