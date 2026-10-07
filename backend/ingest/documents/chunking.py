@@ -21,8 +21,8 @@ from docling_core.transforms.serializer.markdown import (
 )
 
 from app.database.documents import ChunkRecord
-from ingest.tokens import CHUNK_MAX_TOKENS, embedding_tokenizer
 from ingest.documents.sec_tables import ExtractedTable, TableRow, extract_sec_tables
+from ingest.tokens import CHUNK_MAX_TOKENS, embedding_tokenizer
 
 _ITEM_SECTION_RE = re.compile(r"\bItem\s+[\dA-Z.]+\b", re.IGNORECASE)
 

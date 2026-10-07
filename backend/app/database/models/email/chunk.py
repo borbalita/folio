@@ -16,7 +16,6 @@ from sqlalchemy.dialects.postgresql import TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.config import settings
-
 from app.database.models.base import Base
 
 
