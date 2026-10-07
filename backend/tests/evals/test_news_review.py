@@ -241,3 +241,20 @@ def test_reference_answers_take_the_reference_run_with_usable_links_only() -> No
         ("Story", "https://a.example/story", False),
         ("Ad", "", True),
     ]
+
+
+def test_any_run_can_be_the_answer_key_and_says_so() -> None:
+    newsletter = _newsletter("n01").model_copy(
+        update={"body": "Story https://a.example/story"}
+    )
+    runs = {
+        REFERENCE_RUN: _run("gpt-5.5", [_item("Old", "https://a.example/story")]),
+        "gpt-6-astra@low": _run(
+            "gpt-6-astra", [_item("Story", "https://a.example/story")]
+        ),
+    }
+
+    expected = news_review.reference_answers([newsletter], runs, "gpt-6-astra@low")
+
+    assert expected["n01"]["answer_key_run"] == "gpt-6-astra@low"
+    assert [item["title"] for item in expected["n01"]["items"]] == ["Story"]

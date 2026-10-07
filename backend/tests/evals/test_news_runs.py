@@ -109,3 +109,48 @@ def test_summary_prices_known_models_and_counts_sponsors() -> None:
     assert "gpt-5.4-nano@none: 1/2 ok" in summary
     assert "2 items (1 flagged sponsor)" in summary
     assert "$1.45" in summary
+
+
+def test_a_report_with_items_becomes_a_saved_run() -> None:
+    report = {
+        "model": "gpt-6-astra",
+        "effort": "low",
+        "started_at": "2026-10-07T12:00:00+00:00",
+        "results": [
+            {
+                "key": "n01",
+                "items": [
+                    {
+                        "title": "A",
+                        "blurb": "a",
+                        "url": "https://a.example/1",
+                        "sponsor": False,
+                    }
+                ],
+                "error": None,
+                "input_tokens": 10,
+                "output_tokens": 5,
+                "reasoning_tokens": 1,
+                "seconds": 1.5,
+            }
+        ],
+    }
+
+    run = news_runs.run_from_report(report, "news-v2")
+
+    assert (run.version, run.model, run.effort) == ("news-v2", "gpt-6-astra", "low")
+    assert news_runs.run_name(run.model, run.effort) == "gpt-6-astra@low"
+    assert run.results[0].items[0].url == "https://a.example/1"
+    assert run.results[0].reasoning_tokens == 1
+
+
+def test_a_report_without_items_is_refused() -> None:
+    report = {
+        "model": "m",
+        "effort": None,
+        "started_at": "2026-10-07T12:00:00+00:00",
+        "results": [{"key": "n01", "error": None}],
+    }
+
+    with pytest.raises(ValueError, match="predates item logging"):
+        news_runs.run_from_report(report, "news-v2")
