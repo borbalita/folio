@@ -73,6 +73,10 @@ Decisions for Stage 3 (proposed order):
 4. **How chat shows results:** cards that show current data, or text only for now.
 5. **Schedules:** email ingest every 30 minutes; bank sync 3 times a day.
 
+Follow-ups:
+
+- **Enable Banking privacy and terms URLs are placeholders.** The application was registered on 2026-10-07 with `https://github.com/borbalita/folio` as both URLs. Next action: write `docs/legal/privacy.md` (single-user project; data read from N26, ING and PayPal through Enable Banking; stored in Supabase, never shared; consent expires after 180 days and can be revoked; contact email) and `docs/legal/terms.md` (personal, non-commercial, no warranty), merge them, and replace both URLs in the Enable Banking control panel with their `blob/main` links. This becomes a task in Stage 5.
+
 Unknowns:
 
 - What do real N26 and ING transactions contain: stable ids, counterparty IBAN on transfers, readable remittance text, how far back the first sync reaches? Settled by a data check against the user's own accounts before Stage 4.
