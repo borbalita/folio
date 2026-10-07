@@ -104,6 +104,24 @@ Retrieval metrics are per email, not per chunk; each email takes the rank of its
 
 Unanswerable cases have no recall, precision, or MRR; Langfuse gets no score for a metric that doesn't apply. The report also lists which distractors were retrieved.
 
+### Answer test
+
+The real email agent answers each case, but search is replaced by `ReplayRetriever`: every `search_emails` call returns the case's expected and distractor emails (in an order fixed per case), or nothing for an unanswerable case without distractors. Search quality doesn't affect the result, so this measures answering only.
+
+```bash
+# One run per model; candidates go through the Responses API at their default effort
+uv run --env-file .env.eval python -m evals.run --mode answer --model gpt-6-luna --version v2 [--effort none] [--concurrency 2]
+```
+
+Scores, each only where it applies:
+
+- **refusal_correct**: `insufficient_evidence` matches whether the case is answerable; the comment says `wrong_refusal` or `missing_refusal`.
+- **evidence_cited**: answerable cases; the answer cites at least one chunk of an expected email.
+- **distractor_cited**: when distractors were in the evidence and the model answered. Diagnostic: citing the older email next to the current one is often right.
+- **grounding_pass**: `EmailGrounder`'s citation checks on the model's own answer; not scored for unanswerable cases with no evidence.
+
+The report keeps each case's answer, cited emails, tool calls with their results, token usage, and seconds. Whether stated facts are right needs the judge (001/11).
+
 ## Scoping integration test
 
 Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run (with or without ingested data); it rolls back everything it writes and makes no network calls.

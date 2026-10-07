@@ -12,6 +12,7 @@ from uuid import UUID
 from langfuse import Evaluation, Langfuse
 from pydantic import BaseModel
 from pydantic_ai.models import Model
+from pydantic_ai.models.openai import OpenAIResponsesModelSettings
 
 from app.database.engine import get_session
 from app.email_assistant.agent import INSTRUCTIONS_PATH
@@ -19,7 +20,7 @@ from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer
 from app.retrieval.email.retriever import EmailPassage
 from app.retrieval.news.retriever import NewsRetriever
-from evals.agent_run import ToolStep, chat_model, run_agent
+from evals.agent_run import ToolStep, candidate_model, effort_settings, run_agent
 from evals.cases import RagCase
 from evals.dataset import IdMap, load_id_map, load_rag_cases
 from evals.experiment import RunConfig, publication, run_experiment
@@ -57,7 +58,11 @@ def _load_evidence(case: RagCase, id_map: IdMap) -> list[EmailPassage]:
 
 
 async def run_case(
-    case: RagCase, id_map: IdMap, owners: dict[UUID, str], model: Model
+    case: RagCase,
+    id_map: IdMap,
+    owners: dict[UUID, str],
+    model: Model,
+    model_settings: OpenAIResponsesModelSettings | None,
 ) -> AnswerResult:
     passages = await asyncio.to_thread(_load_evidence, case, id_map)
     deps = EmailAgentDeps(
@@ -67,7 +72,7 @@ async def run_case(
         news=NewsRetriever(),
     )
     started = time.perf_counter()
-    record = await run_agent(case.question, case.today, deps, model)
+    record = await run_agent(case.question, case.today, deps, model, model_settings)
     seconds = time.perf_counter() - started
     cited = [c.chunk_id for c in record.answer.citations]
     return AnswerResult(
@@ -135,24 +140,31 @@ def answer_evaluations(result: AnswerResult) -> list[Evaluation]:
 
 
 def run(
-    client: Langfuse, version: str, concurrency: int, *, model: str
+    client: Langfuse,
+    version: str,
+    concurrency: int,
+    *,
+    model: str,
+    effort: str | None,
 ) -> dict[str, object]:
     cases = load_rag_cases(version)
     dataset_name = rag_dataset_name(version)
     by_item = {item_id(dataset_name, case.case_id): case for case in cases}
     id_map = load_id_map(version)
     owners = chunk_owners(id_map)
-    chat = chat_model(model)
+    chat = candidate_model(model)
+    model_settings = effort_settings(effort)
+    subject = f"{model} (effort {effort or 'default'}, Responses API)"
 
     async def task(key: str) -> AnswerResult:
-        result = await run_case(by_item[key], id_map, owners, chat)
+        result = await run_case(by_item[key], id_map, owners, chat, model_settings)
         print(f"  {result.case_id} {result.kind:14} {_scores_line(result)}")
         return result
 
     config = RunConfig(
         mode="answer",
         version=version,
-        subject=model,
+        subject=subject,
         today=cases[0].today,
         prompts={"instructions": INSTRUCTIONS_PATH.read_text(encoding="utf-8")},
         concurrency=concurrency,
@@ -162,13 +174,17 @@ def run(
         dataset_name=dataset_name,
         local=local_rag_payloads(version),
         config=config,
-        run_name=f"answer {version} {model} {datetime.now(UTC):%Y-%m-%d %H:%M:%S}",
+        run_name=(
+            f"answer {version} {model} effort-{effort or 'default'} "
+            f"{datetime.now(UTC):%Y-%m-%d %H:%M:%S}"
+        ),
         task=task,
         scores=answer_evaluations,
     )
     ordered = [experiment.results[key] for key in by_item if key in experiment.results]
     return {
         "model": model,
+        "effort": effort,
         "summary": summarize(ordered) if ordered else {"cases": 0},
         "publication": publication(experiment),
         "results": [result.model_dump(mode="json") for result in ordered],

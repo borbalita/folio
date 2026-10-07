@@ -16,6 +16,7 @@ from pydantic_ai.messages import (
     UserPromptPart,
 )
 from pydantic_ai.models.function import AgentInfo, FunctionModel
+from pydantic_ai.models.openai import OpenAIResponsesModel
 
 from app.database import mailboxes
 from app.email_assistant.deps import EmailAgentDeps
@@ -23,7 +24,13 @@ from app.email_assistant.outputs import EmailAnswer, EmailCitationRef
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.retriever import EmailPassage
 from app.retrieval.news.retriever import NewsRetriever
-from evals.agent_run import OUTPUT_TOOL, run_agent, tool_steps
+from evals.agent_run import (
+    OUTPUT_TOOL,
+    candidate_model,
+    effort_settings,
+    run_agent,
+    tool_steps,
+)
 from evals.cases import ProbeFilters, RagCase
 from evals.dataset import IdMap, StoredEmailIds
 from evals.replay import ReplayRetriever, evidence_chunk_ids, evidence_email_keys
@@ -337,3 +344,12 @@ def test_agent_run_searches_the_replay_and_records_its_answer(
     assert record.answer.citations[0].chunk_id == _chunk(1)
     assert deps.seen_ids == {_chunk(1)}
     assert record.usage["requests"] == 2
+
+
+def test_candidates_run_through_the_responses_api() -> None:
+    assert isinstance(candidate_model("gpt-6.1-sol"), OpenAIResponsesModel)
+
+
+def test_effort_is_sent_only_when_given() -> None:
+    assert effort_settings(None) is None
+    assert effort_settings("none") == {"openai_reasoning_effort": "none"}
