@@ -42,6 +42,15 @@ async def list_threads(
     return await asyncio.to_thread(chats.list_threads, user.id, agent)
 
 
+@router.delete("/threads/{thread_id}")
+async def delete_empty_thread(
+    thread_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, bool]:
+    deleted = await asyncio.to_thread(chats.delete_thread_if_empty, thread_id, user.id)
+    return {"deleted": deleted}
+
+
 @router.get("/threads/{thread_id}/messages")
 async def get_thread_messages(
     thread_id: uuid.UUID,

@@ -124,6 +124,25 @@ def get_thread_for_user(thread_id: uuid.UUID, user_id: uuid.UUID) -> dict[str, A
     return _thread_row_to_api(row)
 
 
+def delete_thread_if_empty(thread_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    """Delete the user's thread only when it has no stored messages."""
+    get_thread_for_user(thread_id, user_id)
+    has_messages = (
+        get_admin_client()
+        .table("chat_messages")
+        .select("id")
+        .eq("thread_id", str(thread_id))
+        .limit(1)
+        .execute()
+    )
+    if has_messages.data:
+        return False
+    get_admin_client().table("chat_threads").delete().eq("id", str(thread_id)).eq(
+        "user_id", str(user_id)
+    ).execute()
+    return True
+
+
 def list_messages(thread_id: uuid.UUID) -> list[dict[str, Any]]:
     result = (
         get_admin_client()
