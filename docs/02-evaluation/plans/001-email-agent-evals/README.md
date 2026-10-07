@@ -162,8 +162,8 @@ Facts use the judge because the agent formats dates and amounts in many ways; th
 
 ### Models, sizes, and cost
 
-- **Candidates**: `gpt-6-luna` and `gpt-6.1-sol`. The app's current `gpt-5.5` and `gpt-6-astra` are left out for now; each is a one-line addition.
-- **API (changed 2026-10-07)**: candidates run through the Responses API at their default reasoning effort (`--effort` overrides). GPT-6.1 Sol and Astra call tools only there; on Chat Completions, GPT-6 models accept tools only with reasoning off, which 6.1 Sol and Astra don't allow. The app still uses Chat Completions with `gpt-5.5`, so the agent modes differ from production in this one call; switching the app is one line in `agent.py`.
+- **Candidates**: `gpt-6-luna`, with `gpt-6.1-sol` as the baseline (decided 2026-10-07: a strong reference at near-Astra quality and a fraction of Astra's cost). `gpt-6-astra` is added only if the judge shows fact errors Sol can't avoid; it's a one-line addition.
+- **API (changed 2026-10-07)**: candidates run through the Responses API at their default reasoning effort (`--effort` overrides). GPT-6.1 Sol and Astra call tools only there; on Chat Completions, GPT-6 models accept tools only with reasoning off, which 6.1 Sol and Astra don't allow. The app still uses Chat Completions with its configured model, so the agent modes differ from production in this one call; switching the app is one line in `agent.py`.
 - **Judge**: Claude Sonnet 5.5, with an optional `anthropic_api_key` setting used only by evals.
 - **Sizes**: about 60 emails (about 12 per model-assigned label) and about 30 RAG cases, roughly 8 unanswerable, shared by all RAG modes.
 - **Runs**: a normal run is one pass per model and mode; a final benchmark repeats each three times.
