@@ -5,7 +5,7 @@ Run: uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank o
      uv run --env-file .env.eval python -m evals.run --mode answer --model gpt-6-luna
      [--effort none] [--version v1] [--concurrency N]
      uv run python -m evals.run --mode extraction --model gpt-5.6-luna [--effort none]
-     [--replay] [--version news-v1] [--concurrency N]
+     [--replay] [--version news-v2] [--concurrency N]
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from app.config import settings
 from evals.dataset import DEFAULT_VERSION, OUT_ROOT
 from evals.guard import NotLocalDatabaseError, require_local_database
 from evals.modes import answer, extraction, retrieval
-from evals.news_data import DEFAULT_NEWS_VERSION
+from evals.news_data import SCORING_NEWS_VERSION
 from evals.news_runs import EFFORTS
 from evals.tracing import LangfuseNotConfiguredError, eval_tracing
 
@@ -40,7 +40,7 @@ def main() -> int:
     parser.add_argument(
         "--version",
         default=None,
-        help=f"Data version (default {DEFAULT_VERSION}; {DEFAULT_NEWS_VERSION} for extraction)",
+        help=f"Data version (default {DEFAULT_VERSION}; {SCORING_NEWS_VERSION} for extraction)",
     )
     parser.add_argument(
         "--rerank",
@@ -129,7 +129,7 @@ def main() -> int:
 
 def _run_extraction(args: argparse.Namespace) -> int:
     """Extraction reads only the Langfuse dataset and calls the model; no database is used."""
-    version = args.version or DEFAULT_NEWS_VERSION
+    version = args.version or SCORING_NEWS_VERSION
     started = datetime.now(UTC)
     try:
         with eval_tracing() as client:

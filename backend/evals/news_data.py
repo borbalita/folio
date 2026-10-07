@@ -10,6 +10,10 @@ from pydantic import BaseModel
 from evals.dataset import DATA_ROOT
 
 DEFAULT_NEWS_VERSION = "news-v1"
+"""Default for the working-copy commands (export, local runs, review, sync)."""
+
+SCORING_NEWS_VERSION = "news-v2"
+"""Default dataset for `evals.run --mode extraction`: the current answer key (GPT-6 Astra)."""
 
 
 class Newsletter(BaseModel):
