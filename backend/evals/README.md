@@ -146,8 +146,17 @@ Metrics per newsletter and pooled over all of them: recall and precision of news
 
 A URL counts only when it is an http(s) link that appears verbatim in the newsletter text and isn't the newsletter's own front page (the footer link in every edition); button labels copied into the URL field don't count either. A third-party front page can be an item's real link. The answer key stores no link otherwise, and a run's link that isn't in the text counts as invented.
 
-### Ground truth: GPT-5.5, not hand labels
+### Ground truth: a model's output, not hand labels
 
-news-v1's answer key is the GPT-5.5 default-effort output, not human-checked answers, so scores measure agreement with GPT-5.5 rather than correctness: GPT-5.5's own mistakes count as right, and a cheaper model that fixes one is marked down. That is enough to answer "can a cheaper model replace today's extraction without changing what gets stored".
+| Dataset | Answer key | Build it with |
+|---|---|---|
+| `news-extraction-v1` | GPT-5.5, default effort | `news_review reference` |
+| `news-extraction-v2` | GPT-6 Astra, effort low | `news_review reference --run gpt-6-astra@low` |
+
+Score against v2 with `--version news-v2`. An official run's report keeps every extracted item, so `uv run python -m evals.news_runs --from-report <report> --version news-v2` saves it as a run for replays or for a later answer key, without calling the model again.
+
+The note below was written for v1 and applies to v2 the same way.
+
+Each version's answer key is one model's output, not human-checked answers, so scores measure agreement with that model rather than correctness: its mistakes count as right, and a model that fixes one is marked down. That is enough to answer "can a cheaper model replace today's extraction without changing what gets stored".
 
 In a real project we would hand-label at least part of the data before switching models on these numbers: a few fully checked newsletters per source, to catch mistakes every model shares, plus the items where models disagree, which is where a cheaper model's errors show up. `news_review serve` and `build` are built for exactly that.

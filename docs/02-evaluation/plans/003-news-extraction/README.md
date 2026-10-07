@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: Done
-- Current stage: Complete. Follow-ups: count sponsor drops in the bar; hand-label a sample for a v2.
+- Current stage: Complete, with news-extraction-v2 (GPT-6 Astra as the answer key). Follow-ups: count sponsor drops in the bar; hand-label a sample.
 
 ## Approval state
 
@@ -121,6 +121,33 @@ Two prompt changes were tried on Luna (one live run each, about $0.12):
 - **Only "the newsletter's own job listings and advertising offers" as sponsors** (kept): recall 0.986, precision 0.993, URL exact 0.990, 0 sponsor leaks, 0 invented URLs, 10 sponsor drops; **passes the bar**. 7 of the drops are TLDR's own job ad, which GPT-5.5 inconsistently called news, so Luna is right there and the answer key is wrong. 3 are real mistakes: vendor-announcement stories hidden as sponsors (about 0.4% of news items). Luna also flags the unlabelled Alpha Signal brand entries as sponsors now, matching GPT-5.5.
 
 Decision (owner, 2026-10-07): switch extraction to `gpt-5.6-luna` at effort `none` with the job-ad sentence. The bar doesn't count hidden news (sponsor drops); a later version should add it. The prompt is shared, so GPT-5.5 would also get the job-ad sentence if production went back to it.
+
+## news-extraction-v2: GPT-6 Astra as the answer key (2026-10-07)
+
+The owner asked to benchmark `gpt-6-astra`, `gpt-6.1-sol`, and `gpt-6-luna`, and then to use Astra's output as the ground truth instead of GPT-5.5's. v1 is frozen, so this is a new version:
+
+- `news-extraction-v2` holds the same 64 newsletters (re-exported read-only and checked identical to v1) with Astra's output at effort `low` as the answer key, under the same link rule. Langfuse metadata records `answer_key_run: gpt-6-astra@low`. Backup: `eval-datasets/news-extraction-v2.json`. The local copy is deleted.
+- Astra's answer key has 684 news items and 262 sponsor or boilerplate blocks (GPT-5.5 listed 148; those don't count toward news scores).
+- Astra's paid run on v1 was reused through its report (`news_runs --from-report`), and every other model was replayed from its saved run, so v2 cost no extra model calls.
+- GPT-5.5, nano, and mini were run with the earlier prompt (without the job-ad sentence); the GPT-6 models and `gpt-5.6-luna` with the current one.
+
+Scores against Astra (64 newsletters, 684 news items):
+
+| Model (effort) | Recall | Precision | URL exact | Sponsor leaks | Sponsor drops | Invented URLs | Cost (64) | Bar |
+|---|---|---|---|---|---|---|---|---|
+| `gpt-6-astra` (low), answer key | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 | $5.12 | passes (answer key) |
+| `gpt-6.1-sol` (low) | 1.000 | 1.000 | 1.000 | 0 | 0 | 0 | $1.03 | passes |
+| `gpt-6-luna` (none) | 1.000 | 0.999 | 0.994 | 0 | 0 | 1 | $0.05 | fails: 1 invented URL |
+| `gpt-5.6-luna` (none), production | 0.996 | 0.993 | 0.999 | 0 | 3 | 0 | $0.12 | passes |
+| `gpt-5.5` (default) | 1.000 | 0.990 | 0.999 | 7 | 0 | 0 | $3.44 | fails: sponsor leaks |
+| `gpt-5.5` (low) | 1.000 | 0.988 | 0.927 | 8 | 0 | 49 | $2.86 | fails |
+| `gpt-5.4-nano` (none) | 0.988 | 0.951 | 0.848 | 19 | 0 | 105 | $0.12 | fails |
+| `gpt-5.4-mini` (none) | 0.950 | 0.982 | 0.846 | 9 | 0 | 98 | $0.42 | fails |
+
+- **`gpt-6.1-sol` agrees with Astra on every item, link, and sponsor flag** (separate runs; only the blurb wording differs), at a fifth of Astra's cost. Same model family, so shared blind spots wouldn't show.
+- **`gpt-6-luna` is nearly identical at $0.05**: no missed or hidden stories, one useless link (`https://github.com/` for a story whose text has no link).
+- **GPT-5.5's 7 leaks are TLDR's job ad**, which it called news; the 3 drops of the production `gpt-5.6-luna` are the vendor stories found on v1.
+- Production stays on `gpt-5.6-luna` until the owner decides.
 
 ## Tasks
 
