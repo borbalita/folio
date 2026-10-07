@@ -1,8 +1,8 @@
 # 003 — Newsletter extraction benchmark and a cheaper extraction model
 
 - Created: 2026-10-06
-- Status: In progress
-- Current stage: Implementation, 003/07.
+- Status: Done
+- Current stage: Complete. Follow-ups: count sponsor drops in the bar; hand-label a sample for a v2.
 
 ## Approval state
 
@@ -111,7 +111,16 @@ Official Langfuse experiments on news-extraction-v1 (64 newsletters, 691 expecte
 - **GPT-5.5 at low effort invents links too** (49), unlike at default effort. Lowering effort isn't a safe saving.
 - The `url_exact` ceiling is 0.993 for everyone: the frozen answer key has no link for 3 TLDR items from an earlier link rule, plus GPT-5.5's own deviations.
 
-No candidate passes the bar as written, so `news_extraction_model` stays unset until the owner decides.
+No candidate passed the bar with the original prompt.
+
+### Prompt follow-up and decision (2026-10-07)
+
+Two prompt changes were tried on Luna (one live run each, about $0.12):
+
+- **"Brand:" entries and own job ads as sponsors**: 0 leaks, but Luna then hid real TLDR IT stories about vendor products as sponsors. Dropped.
+- **Only "the newsletter's own job listings and advertising offers" as sponsors** (kept): recall 0.986, precision 0.993, URL exact 0.990, 0 sponsor leaks, 0 invented URLs, 10 sponsor drops; **passes the bar**. 7 of the drops are TLDR's own job ad, which GPT-5.5 inconsistently called news, so Luna is right there and the answer key is wrong. 3 are real mistakes: vendor-announcement stories hidden as sponsors (about 0.4% of news items). Luna also flags the unlabelled Alpha Signal brand entries as sponsors now, matching GPT-5.5.
+
+Decision (owner, 2026-10-07): switch extraction to `gpt-5.6-luna` at effort `none` with the job-ad sentence. The bar doesn't count hidden news (sponsor drops); a later version should add it. The prompt is shared, so GPT-5.5 would also get the job-ad sentence if production went back to it.
 
 ## Tasks
 
@@ -121,7 +130,7 @@ No candidate passes the bar as written, so `news_extraction_model` stays unset u
 - [x] 003/04 — ~~Review file: full check of 6 newsletters, plus every disputed item across all 64; the owner's decisions become the expected output.~~ Changed: the GPT-5.5 reference run is the answer key (`evals.news_review reference`). The review page is built and kept for later hand labelling.
 - [x] 003/05 — Sync newsletters, expected items, and review marks to the Langfuse dataset `news-extraction-v1`; write the backup JSON to the private `eval-datasets` bucket; delete the working folder.
 - [x] 003/06 — `evals.run --mode extraction --model M [--effort E]` with the metrics above, a Langfuse experiment per model, and a local report; items are read from Langfuse.
-- [ ] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes. Runs done (see Results); none passes the bar as written, decision pending.
+- [x] 003/07 — Official runs, compare, and set `news_extraction_model` if one passes. Luna passes after the job-ad prompt sentence; set to `gpt-5.6-luna` (effort `none`).
 
 ## Cost
 

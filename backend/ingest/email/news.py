@@ -22,6 +22,7 @@ SYSTEM_PROMPT = (
     "Extract the news items from this newsletter in the order they appear. "
     "Each item has a title, a one-sentence blurb, and the story url. "
     "Mark sponsor as true for a paid sponsor, an ad, or a 'together with' placement. "
+    "Also mark as sponsor the newsletter's own job listings and advertising offers. "
     "Leave those blocks in the list so they stay in order."
 )
 
