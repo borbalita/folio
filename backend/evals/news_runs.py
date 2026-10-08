@@ -72,6 +72,7 @@ def _as_parsed(newsletter: Newsletter) -> ParsedMessage:
         folder="INBOX",
         subject=newsletter.subject,
         from_address="",
+        from_name="",
         to_addresses=[],
         sent_at=datetime.combine(newsletter.sent_date, datetime.min.time(), UTC),
         body=newsletter.body,
