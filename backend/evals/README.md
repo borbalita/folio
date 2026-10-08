@@ -168,7 +168,8 @@ uv run python -m evals.news_review build
 # eval-datasets bucket, then delete the local newsletters (--keep-local to keep them)
 uv run python -m evals.news_sync
 
-# Score a model against the frozen dataset as a Langfuse experiment (no database involved)
+# Score a model against a frozen dataset as a Langfuse experiment (no database involved).
+# Defaults to news-v2 (GPT-6 Astra as the answer key); --version news-v1 for the GPT-5.5 key.
 uv run python -m evals.run --mode extraction --model gpt-5.4-nano --effort none --concurrency 4
 # Score a saved local run instead of calling the model again (used for GPT-5.5)
 uv run python -m evals.run --mode extraction --model gpt-5.5 --replay
@@ -185,7 +186,7 @@ A URL counts only when it is an http(s) link that appears verbatim in the newsle
 | `news-extraction-v1` | GPT-5.5, default effort | `news_review reference` |
 | `news-extraction-v2` | GPT-6 Astra, effort low | `news_review reference --run gpt-6-astra@low` |
 
-Score against v2 with `--version news-v2`. An official run's report keeps every extracted item, so `uv run python -m evals.news_runs --from-report <report> --version news-v2` saves it as a run for replays or for a later answer key, without calling the model again.
+`evals.run --mode extraction` scores against v2 unless `--version` says otherwise; the working-copy commands (`news_export`, `news_runs`, `news_review`, `news_sync`) still default to `news-v1`, so a new export never reuses a frozen version's name by accident. An official run's report keeps every extracted item, so `uv run python -m evals.news_runs --from-report <report> --version news-v2` saves it as a run for replays or for a later answer key, without calling the model again.
 
 The note below was written for v1 and applies to v2 the same way.
 

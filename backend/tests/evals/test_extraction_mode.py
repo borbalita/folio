@@ -106,3 +106,30 @@ def test_summary_passes_only_when_the_bar_holds() -> None:
     leaky = extraction.summarize([good, leak])
     assert leaky["passes_bar"] is False
     assert leaky["bar_failures"] == ["sponsor_leaks 1 > 0"]
+
+
+def test_extraction_scores_against_the_astra_dataset_by_default(monkeypatch) -> None:
+    from contextlib import contextmanager
+
+    from evals import run
+
+    seen: dict[str, object] = {}
+
+    @contextmanager
+    def tracing():
+        yield object()
+
+    def fake_run(
+        client: object, version: str, concurrency: int, **kwargs: object
+    ) -> dict:
+        seen["version"] = version
+        raise extraction.DatasetMissingError("stop here")
+
+    monkeypatch.setattr(run, "eval_tracing", tracing)
+    monkeypatch.setattr(run.extraction, "run", fake_run)
+    monkeypatch.setattr(
+        "sys.argv", ["run", "--mode", "extraction", "--model", "gpt-6-luna"]
+    )
+
+    assert run.main() == 1
+    assert seen["version"] == "news-v2"
