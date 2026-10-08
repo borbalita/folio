@@ -55,3 +55,7 @@ A throwaway script outside the repo pulled 90 days from the user's own accounts 
 - **PayPal has only `transaction_date`** (no booking or value date).
 - **ING reports pending entries dated in the future** (3 scheduled payments). Only booked entries should be stored.
 - **Consent:** each bank needs its own approval; one ING attempt returned `invalid_grant` and a fresh link worked.
+
+## Payment initiation test (2026-10-08)
+
+- A €0.01 transfer from the N26 main account to the user's own ING account was prepared by a throwaway script and confirmed by the user in the terminal. `POST /payments` returned `403 ACCESS_DENIED` ("Check services available for your application"). `GET /application` lists `services: ["AIS"]` only. No payment was created.

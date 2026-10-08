@@ -10,7 +10,7 @@ Settled in chat on 2026-10-06: Finance is its own agent with its own threads; ba
 
 Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal, transfer linking, categorization and the spending view move to a separate plan 002, not yet started.
 
-Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan (see Decisions).
+Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan; payments leave through a GiroCode QR after an explicit check against the invoice (see Decisions).
 
 Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions listed in Open questions. The data-check consent sessions were closed the same day.
 
@@ -65,16 +65,16 @@ Non-goals (this plan):
 
 - **Invoices live in Finance.** The invoice list and page that PR #1 adds to the Email agent move to Finance, which adds payment status, extracted fields and payment actions. Rejected: keeping them in Email and linking across agents, which would split one invoice over two agents. Reversible: it is a matter of routes and sidebar links.
 - **Only the N26 main account is synced in this plan.** Invoices are paid by transfer from it, and the 9 Spaces have no IBAN and no payments of their own. Rejected: syncing Spaces now, which only matters for spending (plan 002). Reversible: the Spaces are already in the N26 consent; syncing them is a configuration change.
+- **Payments leave through an EPC QR code (GiroCode).** Approving a payment shows a QR code that the user scans in the N26 or ING app and confirms there; copy buttons for IBAN, amount and reference are the fallback. Approve is enabled only after the user ticks that payee, IBAN, amount and reference match the invoice, which is shown beside the payment. Rejected for now: payment initiation through Enable Banking, which the application cannot use (only the `AIS` service is enabled; a test request on 2026-10-08 returned `403 ACCESS_DENIED`). Reversible: payment initiation can replace the QR step later if Enable Banking enables `PIS`.
 
 ## Open questions
 
 Decisions for Stage 3 (proposed order):
 
-1. **How payments leave:** EPC QR code first, payment initiation later; or payment initiation now.
-2. **How invoices are read:** send the PDF to the model directly, or extract text first.
-3. **When an invoice counts as paid:** auto-mark on a strong match, or always ask the user to confirm.
-4. **How chat shows results:** cards that show current data, or text only for now.
-5. **Schedules:** email ingest every 30 minutes; bank sync 3 times a day.
+1. **How invoices are read:** send the PDF to the model directly, or extract text first.
+2. **When an invoice counts as paid:** auto-mark on a strong match, or always ask the user to confirm.
+3. **How chat shows results:** cards that show current data, or text only for now.
+4. **Schedules:** email ingest every 30 minutes; bank sync 3 times a day.
 
 Follow-ups:
 
