@@ -14,7 +14,7 @@ Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on
 
 Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions listed in Open questions. The data-check consent sessions were closed the same day.
 
-Awaiting: the Stage 3 decisions.
+Awaiting: approval of the full set of decisions to close Stage 3.
 
 [../../spec.md](../../spec.md) is an earlier draft written before discovery. It is input for later stages and will be folded into this file and deleted.
 
