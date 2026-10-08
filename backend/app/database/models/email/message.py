@@ -55,6 +55,7 @@ class EmailMessage(Base):
     folder: Mapped[str] = mapped_column(Text, nullable=False)
     subject: Mapped[str] = mapped_column(Text, nullable=False)
     from_address: Mapped[str] = mapped_column(Text, nullable=False)
+    from_name: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     to_addresses: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, default=list
     )
