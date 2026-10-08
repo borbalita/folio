@@ -44,7 +44,9 @@ def test_sender_without_a_display_name_has_an_empty_name() -> None:
 
 
 def test_html_only_body_strips_tags() -> None:
-    raw = _message(message_id="<id@example.com>", plain=None, html="<p>Hello <b>there</b></p>")
+    raw = _message(
+        message_id="<id@example.com>", plain=None, html="<p>Hello <b>there</b></p>"
+    )
     parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
     assert parsed.body == "Hello there"
 
@@ -78,7 +80,9 @@ def test_only_pdf_bytes_are_kept(
     message["Date"] = "Fri, 02 Jan 2026 03:04:05 +0000"
     message["Message-ID"] = "<id@example.com>"
     message.set_content("See attached.")
-    message.add_attachment(payload, maintype=maintype, subtype=subtype, filename=filename)
+    message.add_attachment(
+        payload, maintype=maintype, subtype=subtype, filename=filename
+    )
     parsed = parse_rfc822(message.as_bytes(), provider_message_id="1", folder="INBOX")
     assert parsed.attachment_filenames == (filename,)
     if kept:
@@ -152,3 +156,17 @@ def test_unknown_charset_keeps_the_raw_header() -> None:
     parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
 
     assert parsed.subject.startswith("=?x-bogus?Q?")
+
+
+def test_encoded_sender_name_is_decoded() -> None:
+    raw = _ENCODED_RAW.replace(
+        b"From: billing@example.com",
+        b"From: =?UTF-8?Q?J=C3=B6rg_Sz=C5=91ke?= <billing@example.com>",
+    )
+
+    parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
+
+    assert (parsed.from_name, parsed.from_address) == (
+        "Jörg Szőke",
+        "billing@example.com",
+    )

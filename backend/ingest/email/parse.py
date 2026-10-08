@@ -70,9 +70,7 @@ def html_to_text(html: str) -> str:
     return normalize_whitespace(" ".join(parser.parts))
 
 
-def parse_rfc822(
-    raw: bytes, *, provider_message_id: str, folder: str
-) -> ParsedMessage:
+def parse_rfc822(raw: bytes, *, provider_message_id: str, folder: str) -> ParsedMessage:
     message = message_from_bytes(raw)
     subject = normalize_whitespace(decode_header_text(message.get("Subject", "")))
     from_values = getaddresses(message.get_all("From", []))
@@ -85,7 +83,7 @@ def parse_rfc822(
         folder=folder,
         subject=subject,
         from_address=from_address,
-        from_name=normalize_whitespace(from_name),
+        from_name=normalize_whitespace(decode_header_text(from_name)),
         to_addresses=to_addresses,
         sent_at=sent_at,
         body=_body(message),
@@ -120,7 +118,10 @@ def _part_text(message: Message, content_type: str) -> str | None:
     if not message.is_multipart():
         return None
     for part in message.walk():
-        if part.get_content_type() == content_type and part.get_content_disposition() != "attachment":
+        if (
+            part.get_content_type() == content_type
+            and part.get_content_disposition() != "attachment"
+        ):
             text = _decode(part)
             if text is not None:
                 return text
