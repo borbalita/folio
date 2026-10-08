@@ -27,6 +27,7 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
         folder="INBOX",
         subject="Invoice",
         from_address="billing@example.com",
+        from_name="",
         to_addresses=["you@yahoo.com"],
         sent_at=datetime(2026, 1, 1, tzinfo=UTC),
         body="Please pay.",

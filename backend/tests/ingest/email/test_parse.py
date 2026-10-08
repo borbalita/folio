@@ -30,8 +30,17 @@ def test_plain_body_is_preferred_over_html() -> None:
     assert parsed.provider_message_id == "15"
     assert parsed.subject == "Subject line"
     assert parsed.from_address == "from@example.com"
+    assert parsed.from_name == "Sender"
     assert parsed.to_addresses == ["to@example.com"]
     assert parsed.sent_at == datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+
+
+def test_sender_without_a_display_name_has_an_empty_name() -> None:
+    message = EmailMessage()
+    message["From"] = "from@example.com"
+    message.set_content("Hello")
+    parsed = parse_rfc822(bytes(message), provider_message_id="2", folder="INBOX")
+    assert (parsed.from_name, parsed.from_address) == ("", "from@example.com")
 
 
 def test_html_only_body_strips_tags() -> None:
@@ -105,3 +114,45 @@ def _message(*, message_id: str | None, plain: str | None, html: str | None) -> 
     else:
         message.set_content(plain or "")
     return message.as_bytes()
+
+
+_ENCODED_RAW = b"""\
+Subject: =?UTF-8?Q?=C3=89rtes=C3=ADt=C3=A9s?= =?utf-8?Q?_sz=C3=A1mla?=
+From: billing@example.com
+To: you@yahoo.com
+Date: Fri, 02 Jan 2026 03:04:05 +0000
+Message-ID: <encoded@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b"
+
+--b
+Content-Type: text/plain; charset=utf-8
+
+See attached.
+--b
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="=?utf-8?Q?Neue_Rechnung_M=C3=A4rz.pdf?="
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQ=
+--b--
+"""
+
+
+def test_encoded_subject_and_filename_are_decoded() -> None:
+    parsed = parse_rfc822(_ENCODED_RAW, provider_message_id="1", folder="INBOX")
+
+    assert parsed.subject == "Értesítés számla"
+    assert parsed.attachment_filenames == ("Neue Rechnung März.pdf",)
+    # Only recognizable as a PDF once the filename is decoded.
+    assert [(item.filename, item.content) for item in parsed.attachments] == [
+        ("Neue Rechnung März.pdf", b"%PDF-1.4")
+    ]
+
+
+def test_unknown_charset_keeps_the_raw_header() -> None:
+    raw = _ENCODED_RAW.replace(b"=?UTF-8?Q?=C3=89rtes", b"=?x-bogus?Q?=C3=89rtes")
+
+    parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
+
+    assert parsed.subject.startswith("=?x-bogus?Q?")
