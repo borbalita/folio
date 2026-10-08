@@ -23,3 +23,4 @@ None.
 
 ## Notes
 - Railway skips a run while the previous one is active, so no lock is needed.
+- Implementation plan: [02-scheduled-email-ingest.plan.md](02-scheduled-email-ingest.plan.md).
