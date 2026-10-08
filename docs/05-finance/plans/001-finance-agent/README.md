@@ -10,7 +10,7 @@ Settled in chat on 2026-10-06: Finance is its own agent with its own threads; ba
 
 Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal, transfer linking, categorization and the spending view move to a separate plan 002, not yet started.
 
-Decided on 2026-10-07: invoices move from the Email agent to Finance (see Decisions).
+Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan (see Decisions).
 
 Awaiting: agreement on the decisions to settle in Stage 3.
 
@@ -62,6 +62,7 @@ Non-goals (this plan):
 ## Decisions
 
 - **Invoices live in Finance.** The invoice list and page that PR #1 adds to the Email agent move to Finance, which adds payment status, extracted fields and payment actions. Rejected: keeping them in Email and linking across agents, which would split one invoice over two agents. Reversible: it is a matter of routes and sidebar links.
+- **Only the N26 main account is synced in this plan.** Invoices are paid by transfer from it, and the 9 Spaces have no IBAN and no payments of their own. Rejected: syncing Spaces now, which only matters for spending (plan 002). Reversible: the Spaces are already in the N26 consent; syncing them is a configuration change.
 
 ## Open questions
 
@@ -84,6 +85,6 @@ Answered by the real data check (2026-10-08, details in [research.md](research.m
 - N26 returns 9 Spaces next to the main account; they have no IBAN and almost no activity.
 - PayPal ↔ N26 linking on amount and a 0–5 day window finds a single candidate in 31 of 32 cases (plan 002).
 
-Newly found:
+For plan 002:
 
-- **N26 Spaces:** sync the main account only, or Spaces too? Proposed: main account only. (Stage 3)
+- **N26 Spaces as a category hint.** Paying "from a Space" is a move from the Space to the main account, then a payment from the main account; no payment is made directly from a Space. The moves are visible on both sides (same day and amount, no counterparty name) and are transfers. Plan 002 chooses between Spaces as budgets (money moved out vs. money spent per category) and suggesting the Space's category for the next matching payment, confirmed by the user.
