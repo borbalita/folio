@@ -25,3 +25,4 @@ The owner connects N26, ING and PayPal from the Finance accounts page and sees e
 ## Notes
 - Most uncertain task: whether the localhost redirect must be https. Record the answer in the spec.
 - Secrets: the private key only on the laptop and in Railway's variables.
+- Implementation plan: [07-bank-connection.plan.md](07-bank-connection.plan.md).
