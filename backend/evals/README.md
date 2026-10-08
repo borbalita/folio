@@ -139,7 +139,7 @@ Each search is kept with its query, filters (`since`, `until`, `label`, `sender`
 
 ### Judge
 
-Answer and end-to-end runs also call a Claude Sonnet 5.5 judge (`evals/judge.py`), twice per answer, with the rubrics in `evals/rubrics/`. It needs `ANTHROPIC_API_KEY` in `.env.eval`; without it the command stops, and `--no-judge` runs the code checks only. This is the stack's one Anthropic use, eval-only: the `anthropic` SDK already comes with `pydantic-ai`.
+Answer and end-to-end runs also call a Claude Sonnet 5.5 judge (`evals/judge.py`), twice per answer, with the rubrics in `evals/rubrics/`. It needs `ANTHROPIC_API_KEY` in `backend/.env` (listed in `.env.example`); without it the command stops, and `--no-judge` runs the code checks only. This is the stack's one Anthropic use, eval-only: the `anthropic` SDK already comes with `pydantic-ai`.
 
 - **faithfulness**: the answer's claims judged against the full text of the passages it cites; supported claims / claims. A simple, correct inference counts as supported.
 - **fact_recall**: answerable cases; the case's expected facts stated correctly / expected facts. Each fact is `correct`, `wrong` (another value, e.g. an outdated date), or `missing`.
