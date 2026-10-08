@@ -73,6 +73,30 @@ Non-goals (this plan):
 - **Email ingest runs every 30 minutes; bank sync three times a day.** Both are Railway cron schedules (UTC, so local times shift by an hour with daylight saving). Three bank syncs stay under the PSD2 limit of about four unattended reads per account per day; a manual Sync now covers the rest. Reversible: a schedule setting.
 - **The Finance chat answers with cards.** A reply can carry invoice lists and payment cards built from the same components as the invoices page, including the QR code and the check against the invoice. Cards reference invoices and payments by id and show their current state. Chat tools can prepare payments but never approve them. Built after the invoices page and payment cards, so the chat reuses them. Rejected: text-only answers with links, which would send "pay them all" off to another page.
 
+## Design
+
+### Components and data flow
+
+```text
+Email ingest (cron, 30 min)
+  └─ label invoice ─► invoice extraction (PDFs to the model) ─► invoices ─┐
+                                                                         ├─► matching ─► paid / suggestion
+Bank sync (cron, 3 a day, or Sync now)                                   │
+  └─ Enable Banking: N26 main, ING, PayPal ─► transactions ──────────────┘
+
+Dashboard or chat ─► payment draft ─► user ticks "checked" ─► Approve ─► GiroCode QR ─► bank app
+                                       (the debit arrives with a later sync and is matched)
+```
+
+- **Bank sync:** an Enable Banking client (signed requests, consent flow, paginated transactions) and a sync command for the cron service and Sync now. Stores booked entries only, deduplicated by the bank's id where present and otherwise by date, amount, counterparty, text and an ordinal.
+- **Invoice extraction:** one step in email ingest after labelling, plus a backfill command for invoices already stored. One email can hold several invoices; each invoice links to its email and, when it has one, its PDF.
+- **Matching:** runs after email ingest, bank sync, and an edit of an invoice's fields.
+- **Finance API:** invoices, transactions, accounts and the consent flow, payment drafts and approval. PR #1's invoice routes and attachment endpoint move here; old `/email/invoices/...` links redirect.
+- **Finance chat agent:** a sibling of the email agent, with tools that list and prepare but never approve, and cards stored per message.
+- **Access:** a `finance_owner_user_id` setting names the single owner. Every Finance route returns 403 to anyone else, and Finance is off for everyone when the setting is missing. Invoices come only from mailboxes that user owns.
+- **Data model:** bank connections, accounts, transactions, invoices, invoice–transaction matches, payment drafts, chat cards, and a job-run log. Every table gets RLS in its migration.
+- **Frontend:** `/finance` with the invoices list, an invoice page with the payment panel, accounts with connect and reconnect, a plain transactions list, and the chat.
+
 ## Open questions
 
 Answered by the real data check (2026-10-08, details in [research.md](research.md#real-data-check-2026-10-08)):
