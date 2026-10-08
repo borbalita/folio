@@ -1,8 +1,8 @@
 """add job runs
 
-Revision ID: 6ff2800e0dc1
+Revision ID: 9c8e4850a3a6
 Revises: ba98a3ea5b4f
-Create Date: 2026-10-08 18:00:00.000000
+Create Date: 2026-10-08 17:43:16.471470
 
 """
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '6ff2800e0dc1'
+revision: str = '9c8e4850a3a6'
 down_revision: str | Sequence[str] | None = 'ba98a3ea5b4f'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
