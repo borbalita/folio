@@ -2,7 +2,7 @@
 
 - Created: 2026-10-02
 - Status: In progress
-- Current stage: Implementation; 001/01–10 done. [Plan 002](../002-jev-reranking/README.md) is done; 001/09 onward runs on data v2. 001/09 replays fixed evidence, so search and reranking don't run in it; 001/10 compares reranking off and on.
+- Current stage: Implementation; 001/01–11 done. [Plan 002](../002-jev-reranking/README.md) is done; 001/09 onward runs on data v2. 001/09 replays fixed evidence, so search and reranking don't run in it; 001/10 compares reranking off and on.
 
 ## Approval state
 
@@ -206,7 +206,7 @@ Jev labelling is about 100 times cheaper than regular chat models, so labelling 
 - [x] [001/08 — Optional reference date in the email prompt](tasks/08-prompt-reference-date.md)
 - [x] [001/09 — Answer test with fixed evidence](tasks/09-answer-test.md)
 - [x] [001/10 — End-to-end run](tasks/10-end-to-end-run.md)
-- [ ] [001/11 — LLM judge](tasks/11-judge.md)
+- [x] [001/11 — LLM judge](tasks/11-judge.md)
 - [ ] [001/12 — Judge calibration](tasks/12-judge-calibration.md)
 - [ ] [001/13 — Labelling test](tasks/13-labelling-test.md)
 - [ ] [001/14 — First benchmark](tasks/14-first-benchmark.md)

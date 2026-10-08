@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import date
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -79,6 +80,7 @@ def rubric_prompts() -> dict[str, str]:
 
 async def judge_answer(
     question: str,
+    today: date,
     answer: EmailAnswer,
     passages: dict[UUID, EmailPassage | NewsPassage],
     expected_facts: list[Fact],
@@ -92,14 +94,14 @@ async def judge_answer(
     support_call = _ask(
         model,
         SUPPORT_RUBRIC,
-        support_prompt(question, answer, passages),
+        support_prompt(question, today, answer, passages),
         SupportJudgement,
     )
     facts_call = (
         _ask(
             model,
             FACTS_RUBRIC,
-            facts_prompt(question, answer, expected_facts),
+            facts_prompt(question, today, answer, expected_facts),
             FactsJudgement,
         )
         if answerable and expected_facts
@@ -154,6 +156,7 @@ async def _nothing() -> None:
 
 def support_prompt(
     question: str,
+    today: date,
     answer: EmailAnswer,
     passages: dict[UUID, EmailPassage | NewsPassage],
 ) -> str:
@@ -163,7 +166,8 @@ def support_prompt(
         if c.chunk_id in passages
     ]
     return (
-        _block("question", question)
+        f"<today>{today.isoformat()}</today>\n"
+        + _block("question", question)
         + "\n"
         + _block("answer", answer.answer)
         + "\n<cited_passages>\n"
@@ -172,12 +176,15 @@ def support_prompt(
     )
 
 
-def facts_prompt(question: str, answer: EmailAnswer, expected_facts: list[Fact]) -> str:
+def facts_prompt(
+    question: str, today: date, answer: EmailAnswer, expected_facts: list[Fact]
+) -> str:
     facts = [
         f'<fact name="{_data(f.name)}">{_data(f.value)}</fact>' for f in expected_facts
     ]
     return (
-        _block("question", question)
+        f"<today>{today.isoformat()}</today>\n"
+        + _block("question", question)
         + "\n"
         + _block("answer", answer.answer)
         + "\n<expected_facts>\n"

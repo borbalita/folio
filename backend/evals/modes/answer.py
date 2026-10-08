@@ -79,6 +79,7 @@ async def judged(
         return None
     return await judge_answer(
         case.question,
+        case.today,
         answer,
         deps.seen_passages,
         case.expected_facts,
