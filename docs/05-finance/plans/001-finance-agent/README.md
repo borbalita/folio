@@ -1,8 +1,8 @@
 # 001 — Finance agent: invoices, bank sync, and payments
 
 - Created: 2026-10-06
-- Status: Discovery
-- Current stage: 5, Decompose and validate
+- Status: Ready
+- Current stage: Discovery complete; implementation starts per task
 
 ## Approval state
 
@@ -10,7 +10,7 @@
 - 2026-10-07: invoices move from the Email agent to Finance.
 - 2026-10-08: Stage 2 complete; the data-check consent sessions closed. Changed at the owner's request: syncing PayPal moves into this plan.
 - 2026-10-08: Stage 3 decisions approved. Stage 4 design, success criteria and risks approved; expiry emails and Reconnect all added at the owner's request.
-- Awaiting: approval of the task breakdown (Stage 5).
+- 2026-10-08: Stage 5 task breakdown approved; the plan is Ready.
 
 ## Problem
 
