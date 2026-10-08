@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: Discovery
-- Current stage: 4, Design
+- Current stage: 5, Decompose and validate
 
 ## Approval state
 
@@ -16,9 +16,9 @@ Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions list
 
 Approved on 2026-10-08: the full set of decisions below (Stage 3).
 
-Awaiting: the design (Stage 4).
+Approved on 2026-10-08: the design, success criteria and risks below (Stage 4).
 
-[../../spec.md](../../spec.md) is an earlier draft written before discovery. It is input for later stages and will be folded into this file and deleted.
+Awaiting: the task breakdown (Stage 5).
 
 ## Problem
 
@@ -105,6 +105,30 @@ Dashboard or chat ─► payment draft ─► user ticks "checked" ─► Approv
 - **Unclear payment state:** at most one open payment draft per invoice. Approve re-checks the invoice before showing the QR. An invoice turns paid only through a match or the user's click, never because a QR was shown.
 - **Tracing:** no content reaches Langfuse. Finance agents are instrumented without content or binary content, so traces keep models, tool names, token counts, timings and errors, but no prompts, messages, tool data or PDFs; other parties' data (payees, senders, references) never leaves the app. For debugging, a local-only setting writes full content to a local trace output; the API refuses to start with it in production. Rejected: masking by pattern (names and free text have no pattern) and a debug switch that sends full content to Langfuse. The same rule for the email agent, and deleting its existing content traces, is a separate change done before this plan's work.
 - **Secrets:** the Enable Banking private key lives only on the user's laptop and in Railway's variables, never in the repository or the database.
+
+### Configuration and deployment
+
+- **Settings** in `backend/app/config.py`: Enable Banking app id, private key (PEM contents) and redirect URL; `finance_owner_user_id`; the invoice extraction model and effort; the local-only trace setting. The API starts without the Enable Banking and extraction settings; the sync and extraction commands stop with a clear error when one is missing.
+- **Enable Banking redirect URLs:** the deployed frontend's `/finance/accounts/callback` is registered, and `http://localhost:5173/finance/accounts/callback` for local work (only the `https` localhost address is registered today). If Enable Banking accepts only https, the consent flow is tested on the deployed app.
+- **Railway:** two cron services from the same code, email ingest every 30 minutes and bank sync three times a day, plus the new variables on the backend service. Railway skips a run while the previous one is still active.
+- **Dependencies:** `pyjwt` and `cryptography` pinned directly to sign Enable Banking requests (both already installed through `supabase`); `segno` to render QR codes (pure Python, no further dependencies).
+
+## Success criteria
+
+1. A real invoice email appears in Finance within 30 minutes with payee, IBAN, amount and reference, or as `needs_info` when the invoice has no IBAN.
+2. An invoice paid through its QR code turns paid on its own after the next bank sync.
+3. For the last 90 days, a spot check shows every invoice as matched, suggested, or genuinely open.
+4. An expiring connection shows a warning, and Reconnect restores it without losing history.
+5. In chat, "what do I still need to pay?" and "pay them all from N26" show invoice and payment cards, and nothing can be approved from the chat.
+6. Nobody but the owner can reach any Finance route or see the Finance card.
+7. The owner's hand test of real invoices finds the extracted values correct.
+
+## Risks
+
+- **Wrong extracted values,** above all the amount, which only the user's tick guards. Hand testing decides whether a second extraction is needed.
+- **Enable Banking's free restricted mode changes** or ends; the sync would need another provider or a paid plan.
+- **Duplicate transactions** where banks give no id; the fallback key with an ordinal relies on banks returning rows in a stable order.
+- **Consent friction:** three bank approvals every 180 days, and one ING attempt already failed once with `invalid_grant`.
 
 ## Open questions
 
