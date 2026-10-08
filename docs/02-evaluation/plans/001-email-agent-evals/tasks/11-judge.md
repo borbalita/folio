@@ -42,6 +42,6 @@
   - c07, c14: "valid through 5 August" where the email says "use before 5 August".
   - c38: an original date stated without citing the email that has it.
 - Answer run with the judge: faithfulness 0.986, fact_recall 1.000; judge cost about $0.008 per case.
-- PR: see below.
+- PR: [borbalita/folio#10](https://github.com/borbalita/folio/pull/10).
 
 Trusted only after calibration (001/12).
