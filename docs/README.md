@@ -34,7 +34,7 @@ The mailbox agent: Yahoo ingest, labels, newsletter stories, and chat over that 
 
 - [Spec](03-email/spec.md)
 - `03-email/todo.md` is the build guide. It is gitignored.
-- `03-email/overview.md` is written when that build is done.
+- [Overview](03-email/overview.md)
 
 ## 04-memory
 

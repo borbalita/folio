@@ -164,7 +164,38 @@ export function describeApiError(error: unknown): string {
   return UNEXPECTED_ERROR
 }
 
+/** Fetches a binary response (e.g. a PDF) with the same auth and error rules as JSON calls. */
+async function getBlob(path: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Blob> {
+  const headers: Record<string, string> = {}
+  const token = await getAccessToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  let response: Response
+  try {
+    response = await fetch(`${env.apiBaseUrl}${path}`, {
+      headers,
+      signal: AbortSignal.timeout(timeoutMs),
+    })
+  } catch {
+    throw new ApiError(`Network error: GET ${path}`, 0, true, null)
+  }
+
+  if (!response.ok) {
+    const responseBody: unknown = await response.json().catch(() => null)
+    throw new ApiError(
+      `API error ${response.status}: GET ${path}`,
+      response.status,
+      false,
+      responseBody,
+    )
+  }
+  return response.blob()
+}
+
 export const http = {
+  getBlob,
   get: <T>(path: string, options?: RequestOptions) => request<T>('GET', path, options),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>('POST', path, { ...options, body }),
