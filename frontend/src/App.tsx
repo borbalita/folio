@@ -10,6 +10,7 @@ import { ChatThreadPage } from '@/pages/chat/ChatThreadPage'
 import { LegacyChatRedirect } from '@/pages/chat/LegacyChatRedirect'
 import { LegacyInvoiceRedirect } from '@/pages/email/LegacyInvoiceRedirect'
 import { AccountsPage } from '@/pages/finance/AccountsPage'
+import { BankCallbackPage } from '@/pages/finance/BankCallbackPage'
 import { FinanceLayout } from '@/pages/finance/FinanceLayout'
 import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
@@ -48,6 +49,7 @@ export default function App() {
                   <Route path="invoices/:emailId" element={<InvoicePage />} />
                   <Route path="transactions" element={<TransactionsPage />} />
                   <Route path="accounts" element={<AccountsPage />} />
+                  <Route path="accounts/callback" element={<BankCallbackPage />} />
                 </Route>
               </Route>
               <Route path="/chat" element={<LegacyChatRedirect />} />
