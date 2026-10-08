@@ -15,6 +15,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.chat import router as chat_router
 from app.api.email import router as email_router
+from app.api.finance import router as finance_router
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import agents_for
 from app.config import settings
@@ -49,6 +50,7 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(email_router)
+app.include_router(finance_router)
 
 
 @app.on_event("startup")

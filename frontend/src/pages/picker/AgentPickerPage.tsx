@@ -17,6 +17,10 @@ export function AgentPickerPage() {
   const available = Object.values(AGENTS).filter((agent) => agents.includes(agent.name))
 
   async function startChat(agent: AgentInfo) {
+    if (!agent.hasThreads) {
+      void navigate(agent.path)
+      return
+    }
     setStarting(true)
     try {
       const thread = await api.createThread(agent.name)

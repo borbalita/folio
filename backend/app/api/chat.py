@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
+from app.auth.finance_access import require_finance_owner
 from app.chat.messages import AgentName, CreateThreadRequest, StreamChatRequest
 from app.chat.orchestrator import run_turn
 from app.database import chats
@@ -27,6 +28,8 @@ async def create_thread(
     agent = body.agent if body else "documents"
     if agent == "email":
         await require_email_access(user)
+    if agent == "finance":
+        require_finance_owner(user)
     return await asyncio.to_thread(
         chats.create_thread_for_user, user.id, user.email, title, agent
     )
@@ -39,6 +42,8 @@ async def list_threads(
 ) -> list[dict[str, Any]]:
     if agent == "email":
         await require_email_access(user)
+    if agent == "finance":
+        require_finance_owner(user)
     return await asyncio.to_thread(chats.list_threads, user.id, agent)
 
 
@@ -68,6 +73,8 @@ async def chat_stream(
     thread = await asyncio.to_thread(chats.get_thread_for_user, body.thread_id, user.id)
     if thread.get("agent") == "email":
         await require_email_access(user)
+    if thread.get("agent") == "finance":
+        require_finance_owner(user)
     return StreamingResponse(
         run_turn(user, body.thread_id, body.messages, thread=thread),
         media_type="text/event-stream",

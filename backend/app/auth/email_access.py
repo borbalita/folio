@@ -8,6 +8,7 @@ import uuid
 from fastapi import HTTPException, status
 
 from app.auth.dependencies import CurrentUser
+from app.auth.finance_access import is_finance_owner
 from app.database import mailboxes
 
 
@@ -27,4 +28,6 @@ async def agents_for(user: CurrentUser) -> list[str]:
     ids = await asyncio.to_thread(mailboxes.active_mailbox_ids, user.id)
     if ids:
         agents.append("email")
+    if is_finance_owner(user):
+        agents.append("finance")
     return agents

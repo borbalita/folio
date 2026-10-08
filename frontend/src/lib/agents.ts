@@ -8,6 +8,8 @@ export interface AgentInfo {
   emptyTitle: string
   emptyHint: string
   placeholder: string
+  /** False for agents that open a workspace instead of a chat thread. */
+  hasThreads: boolean
 }
 
 export const AGENTS: Record<AgentName, AgentInfo> = {
@@ -19,6 +21,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     emptyTitle: 'Select a thread',
     emptyHint: 'Pick a conversation from the sidebar, or start a new chat.',
     placeholder: 'Ask about a filing…',
+    hasThreads: true,
   },
   email: {
     name: 'email',
@@ -29,5 +32,16 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     emptyHint:
       'Start a new chat to search messages, check invoices, or see the big AI news of the week.',
     placeholder: 'Ask about your mail or AI news…',
+    hasThreads: true,
+  },
+  finance: {
+    name: 'finance',
+    title: 'Finance',
+    description: 'Invoices, transactions and accounts in one place.',
+    path: '/finance',
+    emptyTitle: 'Nothing here yet',
+    emptyHint: 'Finance is just getting started.',
+    placeholder: 'Ask about your finances…',
+    hasThreads: false,
   },
 }
