@@ -4,6 +4,8 @@ Run: uv run --env-file .env.eval python -m evals.run --mode retrieval --rerank o
      [--version v1] [--concurrency N]
      uv run --env-file .env.eval python -m evals.run --mode answer --model gpt-6-luna
      [--effort none] [--version v1] [--concurrency N]
+     uv run --env-file .env.eval python -m evals.run --mode e2e --model gpt-6-luna
+     --rerank on|off [--effort none] [--version v1] [--concurrency N]
      uv run python -m evals.run --mode extraction --model gpt-5.6-luna [--effort none]
      [--replay] [--version news-v2] [--concurrency N]
 """
@@ -19,7 +21,7 @@ from pathlib import Path
 from app.config import settings
 from evals.dataset import DEFAULT_VERSION, OUT_ROOT
 from evals.guard import NotLocalDatabaseError, require_local_database
-from evals.modes import answer, extraction, retrieval
+from evals.modes import answer, e2e, extraction, retrieval
 from evals.news_data import SCORING_NEWS_VERSION
 from evals.news_runs import EFFORTS
 from evals.tracing import LangfuseNotConfiguredError, eval_tracing
@@ -35,7 +37,7 @@ def _write_report(report: dict[str, object], started: datetime, name: str) -> Pa
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--mode", choices=["retrieval", "answer", "extraction"], required=True
+        "--mode", choices=["retrieval", "answer", "e2e", "extraction"], required=True
     )
     parser.add_argument(
         "--version",
@@ -46,14 +48,14 @@ def main() -> int:
         "--rerank",
         choices=["on", "off"],
         help=(
-            "Retrieval mode, required: Jev evidence reranking in email search; "
+            "Retrieval and e2e modes, required: Jev evidence reranking in email search; "
             "explicit so every run says which."
         ),
     )
     parser.add_argument(
         "--model",
         help=(
-            "Answer mode, required: the agent's OpenAI chat model. "
+            "Answer and e2e modes, required: the agent's OpenAI chat model. "
             "Extraction mode, required: the extraction model under test."
         ),
     )
@@ -62,7 +64,7 @@ def main() -> int:
         choices=EFFORTS,
         default=None,
         help=(
-            "Answer and extraction modes: reasoning effort; unset sends none, so the "
+            "Answer, e2e, and extraction modes: reasoning effort; unset sends none, so the "
             "model's default applies."
         ),
     )
@@ -81,9 +83,9 @@ def main() -> int:
         help="Cases in flight at once. Start at 1; raise to 4-5 once a mode is stable.",
     )
     args = parser.parse_args()
-    if args.mode == "retrieval" and args.rerank is None:
-        parser.error("--mode retrieval needs --rerank on|off")
-    if args.mode in ("answer", "extraction") and args.model is None:
+    if args.mode in ("retrieval", "e2e") and args.rerank is None:
+        parser.error(f"--mode {args.mode} needs --rerank on|off")
+    if args.mode in ("answer", "e2e", "extraction") and args.model is None:
         parser.error(f"--mode {args.mode} needs --model")
     if args.mode == "extraction":
         return _run_extraction(args)
@@ -102,6 +104,19 @@ def main() -> int:
                     client, args.version, args.concurrency, rerank=args.rerank == "on"
                 )
                 name = f"retrieval-{args.version}-rerank-{args.rerank}"
+            elif args.mode == "e2e":
+                outcome = e2e.run(
+                    client,
+                    args.version,
+                    args.concurrency,
+                    model=args.model,
+                    effort=args.effort,
+                    rerank=args.rerank == "on",
+                )
+                name = (
+                    f"e2e-{args.version}-{args.model}-effort-{args.effort or 'default'}"
+                    f"-rerank-{args.rerank}"
+                )
             else:
                 outcome = answer.run(
                     client,
@@ -122,7 +137,7 @@ def main() -> int:
     }
     path = _write_report(report, started, name)
 
-    mode = retrieval if args.mode == "retrieval" else answer
+    mode = {"retrieval": retrieval, "answer": answer, "e2e": e2e}[args.mode]
     mode.print_summary(outcome["summary"])
     return _print_publication(outcome, path)
 
