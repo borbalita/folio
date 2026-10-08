@@ -29,6 +29,8 @@ class ParsedMessage:
     folder: str
     subject: str
     from_address: str
+    from_name: str
+    """Display name from the From header; empty when there is none."""
     to_addresses: list[str]
     sent_at: datetime
     body: str
@@ -74,7 +76,7 @@ def parse_rfc822(
     message = message_from_bytes(raw)
     subject = normalize_whitespace(decode_header_text(message.get("Subject", "")))
     from_values = getaddresses(message.get_all("From", []))
-    from_address = from_values[0][1] if from_values else ""
+    from_name, from_address = from_values[0] if from_values else ("", "")
     to_addresses = [addr for _, addr in getaddresses(message.get_all("To", [])) if addr]
     sent_at = _sent_at(message)
     return ParsedMessage(
@@ -83,6 +85,7 @@ def parse_rfc822(
         folder=folder,
         subject=subject,
         from_address=from_address,
+        from_name=normalize_whitespace(from_name),
         to_addresses=to_addresses,
         sent_at=sent_at,
         body=_body(message),

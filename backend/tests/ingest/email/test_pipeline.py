@@ -1,6 +1,8 @@
 import uuid
 from datetime import UTC, datetime
 
+import pytest
+
 from app.config import settings
 from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox
@@ -10,6 +12,7 @@ from ingest.email.parse import ParsedMessage, content_hash
 from ingest.email.pipeline import (
     IngestSummary,
     StoredEmail,
+    _store_one,
     ingest_action,
     ingest_fetched,
 )
@@ -22,6 +25,7 @@ def _parsed(**overrides: object) -> ParsedMessage:
         "folder": "INBOX",
         "subject": "Hello",
         "from_address": "from@example.com",
+        "from_name": "",
         "to_addresses": ["to@example.com"],
         "sent_at": datetime(2026, 1, 1, tzinfo=UTC),
         "body": "Body text",
@@ -87,17 +91,45 @@ def test_fake_fetch_feeds_the_pipeline(monkeypatch) -> None:
     assert any(isinstance(row, EmailChunk) for row in session.added)
 
 
+def test_skipped_message_gets_the_sender_name_without_reembedding() -> None:
+    parsed = _parsed(from_name="Lindenstrom Billing")
+    stored_row = EmailMessage(
+        mailbox_id=uuid.uuid4(),
+        message_id=parsed.message_id,
+        from_address=parsed.from_address,
+        from_name="",
+        content_hash=content_hash(parsed.body, parsed.subject),
+        embedding_model=settings.openai_embedding_model,
+        embedding_dimensions=settings.openai_embedding_dimensions,
+    )
+    session = _MemorySession(existing=stored_row)
+
+    action, *_ = _store_one(
+        session,  # type: ignore[arg-type]
+        stored_row.mailbox_id,
+        parsed,
+        embed=lambda _texts: pytest.fail("a skipped message is not embedded"),
+        classifier=lambda _prompt: "other",
+        extract=None,
+    )
+
+    assert action == "skip"
+    assert stored_row.from_name == "Lindenstrom Billing"
+    assert session.added == []
+
+
 class _MemorySession:
-    def __init__(self) -> None:
+    def __init__(self, existing: EmailMessage | None = None) -> None:
         self.added: list[object] = []
+        self.existing = existing
 
     def get(self, model: type, ident: uuid.UUID) -> User | None:
         if model is User:
             return User(id=ident, email="owner@example.com")
         return None
 
-    def scalar(self, _statement: object) -> None:
-        return None
+    def scalar(self, _statement: object) -> EmailMessage | None:
+        return self.existing
 
     def add(self, row: object) -> None:
         if getattr(row, "id", None) is None:

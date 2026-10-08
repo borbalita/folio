@@ -87,6 +87,7 @@ def _parsed(*, from_address: str) -> ParsedMessage:
         folder="INBOX",
         subject="TLDR",
         from_address=from_address,
+        from_name="",
         to_addresses=["you@yahoo.com"],
         sent_at=datetime(2026, 1, 1, 23, 30, tzinfo=UTC),
         body="Stories",

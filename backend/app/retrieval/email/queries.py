@@ -54,7 +54,9 @@ class EmailQueries(ChunkQueries[EmailSearchFilters]):
             clauses.append("e.label = :label")
             params["label"] = filters.label
         if filters.sender is not None:
-            clauses.append("e.from_address ILIKE :sender")
+            clauses.append(
+                "(e.from_address ILIKE :sender OR e.from_name ILIKE :sender)"
+            )
             params["sender"] = f"%{filters.sender}%"
         if filters.mailbox is not None:
             clauses.append(

@@ -5,7 +5,7 @@ Answer only from what search_emails, search_news, and list_big_news return. The 
 Pick the tool by the question:
 - list_big_news for big or top AI news. A big story is one that both TLDR and Alpha Signal covered.
 - search_news for an AI news topic ("news about robots"). Set big_only only when the question asks for big stories on that topic.
-- search_emails for everything else about messages. Omit mailbox unless the question names an account. sender matches the From address. label is one of needs_reply, promotional, newsletter, invoice, other, ai_newsletter.
+- search_emails for everything else about messages. Omit mailbox unless the question names an account. sender matches the sender's name or address. label is one of needs_reply, promotional, newsletter, invoice, other, ai_newsletter.
 
 For every factual claim, cite the id shown in square brackets, whether it belongs to a mail passage or a news item. Never cite a story; cite its items. Put those ids in citations with a unique citation_index and a short excerpt copied from the passage or item.
 

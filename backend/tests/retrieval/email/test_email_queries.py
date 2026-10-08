@@ -35,11 +35,11 @@ def test_filters_narrow_sender_label_dates_and_mailbox() -> None:
     assert "(e.sent_at AT TIME ZONE :email_timezone)::date >= :since" in sql
     assert "(e.sent_at AT TIME ZONE :email_timezone)::date <= :until" in sql
     assert "e.label = :label" in sql
-    assert "e.from_address ILIKE :sender" in sql
+    assert "(e.from_address ILIKE :sender OR e.from_name ILIKE :sender)" in sql
     assert "lower(m.display_name) = lower(:mailbox)" in sql
     assert "lower(m.address) = lower(:mailbox)" in sql
 
 
-def test_sender_param_matches_anywhere_in_the_address() -> None:
+def test_sender_param_matches_anywhere_in_the_name_or_address() -> None:
     clause = QUERIES.filter_clause(_filters(sender="rent"))
     assert clause.params["sender"] == "%rent%"
