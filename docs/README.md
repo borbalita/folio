@@ -1,6 +1,6 @@
 # Docs
 
-Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `05-`.
+Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `06-`.
 
 ## Platform
 
@@ -41,3 +41,9 @@ Shared by both agents: thread history sent to the model, and long-term memories 
 
 - [Spec](04-memory/spec.md)
 - `04-memory/overview.md` is written when that build is done.
+
+## 05-finance
+
+The finance agent: invoices from mail, bank and PayPal transactions, categories, and payments you approve.
+
+- [Plans](05-finance/plans/README.md)
