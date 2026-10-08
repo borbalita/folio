@@ -32,6 +32,17 @@ export function AccountsPage() {
     }
   }, [])
 
+  useEffect(() => {
+    // Back from the bank page can restore this page from bfcache with `starting` still set.
+    function onPageShow(event: PageTransitionEvent) {
+      if (event.persisted) {
+        setStarting(null)
+      }
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
+
   async function start(bank: BankName) {
     setStarting(bank)
     setStartError(null)

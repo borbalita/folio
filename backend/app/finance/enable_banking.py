@@ -10,6 +10,8 @@ BASE_URL = "https://api.enablebanking.com"
 TIMEOUT_SECONDS = 30
 JWT_LIFETIME = timedelta(hours=1)
 CONSENT_DAYS = 180
+# Request slightly under the 180-day maximum so clock skew can't push us over it.
+CONSENT_MARGIN = timedelta(minutes=5)
 COUNTRY = "DE"
 
 
@@ -71,22 +73,25 @@ def _auth_header() -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def _post(path: str, body: dict, client: httpx.AsyncClient | None) -> dict:
+async def _post(path: str, body: dict, client: httpx.AsyncClient | None) -> httpx.Response:
     headers = _auth_header()
-    if client is None:
-        async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as owned:
-            response = await owned.post(f"{BASE_URL}{path}", json=body, headers=headers)
-    else:
-        response = await client.post(f"{BASE_URL}{path}", json=body, headers=headers)
+    try:
+        if client is None:
+            async with httpx.AsyncClient(timeout=TIMEOUT_SECONDS) as owned:
+                response = await owned.post(f"{BASE_URL}{path}", json=body, headers=headers)
+        else:
+            response = await client.post(f"{BASE_URL}{path}", json=body, headers=headers)
+    except httpx.HTTPError as exc:
+        raise EnableBankingError(0, str(exc)) from exc
     if response.is_error:
         raise EnableBankingError(response.status_code, response.text)
-    return response.json()
+    return response
 
 
 async def start_authorization(
     bank: str, state: str, *, client: httpx.AsyncClient | None = None
 ) -> str:
-    valid_until = datetime.now(UTC) + timedelta(days=CONSENT_DAYS)
+    valid_until = datetime.now(UTC) + timedelta(days=CONSENT_DAYS) - CONSENT_MARGIN
     body = {
         "access": {"valid_until": valid_until.isoformat()},
         "aspsp": {"name": bank, "country": COUNTRY},
@@ -94,23 +99,31 @@ async def start_authorization(
         "redirect_url": settings.enable_banking_redirect_url,
         "psu_type": "personal",
     }
-    return (await _post("/auth", body, client))["url"]
+    response = await _post("/auth", body, client)
+    try:
+        return response.json()["url"]
+    except (KeyError, ValueError, TypeError) as exc:
+        raise EnableBankingError(response.status_code, "unexpected /auth response") from exc
 
 
 async def create_session(code: str, *, client: httpx.AsyncClient | None = None) -> EbSession:
-    data = await _post("/sessions", {"code": code}, client)
-    accounts = [
-        EbAccount(
-            uid=account["uid"],
-            identification_hash=account["identification_hash"],
-            iban=(account.get("account_id") or {}).get("iban"),
-            name=account.get("name"),
-            currency=account.get("currency"),
+    response = await _post("/sessions", {"code": code}, client)
+    try:
+        data = response.json()
+        accounts = [
+            EbAccount(
+                uid=account["uid"],
+                identification_hash=account["identification_hash"],
+                iban=(account.get("account_id") or {}).get("iban"),
+                name=account.get("name"),
+                currency=account.get("currency"),
+            )
+            for account in data["accounts"]
+        ]
+        return EbSession(
+            session_id=data["session_id"],
+            valid_until=datetime.fromisoformat(data["access"]["valid_until"]),
+            accounts=accounts,
         )
-        for account in data["accounts"]
-    ]
-    return EbSession(
-        session_id=data["session_id"],
-        valid_until=datetime.fromisoformat(data["access"]["valid_until"]),
-        accounts=accounts,
-    )
+    except (KeyError, ValueError, TypeError, AttributeError) as exc:
+        raise EnableBankingError(response.status_code, "unexpected /sessions response") from exc

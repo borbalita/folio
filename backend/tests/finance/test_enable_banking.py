@@ -127,7 +127,7 @@ def test_start_authorization_sends_bank_state_and_redirect(configured):
     assert body["redirect_url"] == REDIRECT_URL
     assert body["psu_type"] == "personal"
     valid_until = datetime.fromisoformat(body["access"]["valid_until"])
-    expected = datetime.now(UTC) + timedelta(days=180)
+    expected = datetime.now(UTC) + timedelta(days=180, minutes=-5)
     assert abs(valid_until - expected) < timedelta(minutes=1)
 
 
@@ -166,6 +166,45 @@ def test_create_session_parses_accounts(configured):
         enable_banking.EbAccount("uid-1", "hash-1", "DE89370400440532013000", "Main", "EUR"),
         enable_banking.EbAccount("uid-2", "hash-2", None, None, None),
     ]
+
+
+def test_network_failure_becomes_enable_banking_error(configured):
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("boom", request=request)
+
+    async def run() -> str:
+        async with mock_client(handler) as client:
+            return await start_authorization("N26", "state-1", client=client)
+
+    with pytest.raises(EnableBankingError) as caught:
+        asyncio.run(run())
+    assert caught.value.status == 0
+    assert "boom" in caught.value.body
+
+
+def test_unexpected_auth_payload_becomes_enable_banking_error(configured):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={})
+
+    async def run() -> str:
+        async with mock_client(handler) as client:
+            return await start_authorization("N26", "state-1", client=client)
+
+    with pytest.raises(EnableBankingError) as caught:
+        asyncio.run(run())
+    assert caught.value.status == 200
+
+
+def test_unexpected_sessions_payload_becomes_enable_banking_error(configured):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text="not json")
+
+    async def run() -> enable_banking.EbSession:
+        async with mock_client(handler) as client:
+            return await create_session("code-1", client=client)
+
+    with pytest.raises(EnableBankingError):
+        asyncio.run(run())
 
 
 def test_error_response_raises_enable_banking_error(configured):

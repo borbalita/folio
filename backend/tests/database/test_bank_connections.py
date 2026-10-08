@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy.dialects import postgresql
 
 from app.database import bank_connections
+from app.database.models.finance.bank_connection import BankConnection
 from app.finance.enable_banking import EbAccount, EbSession
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -51,6 +52,29 @@ def test_complete_connection_with_unknown_state_raises(
 
     with pytest.raises(bank_connections.UnknownState):
         bank_connections.complete_connection(USER_ID, "nope", eb_session)
+
+
+def test_complete_connection_stores_session_clears_state_and_commits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=USER_ID, bank="ING", pending_state="state-1"
+    )
+    session = MagicMock()
+    session.scalar.return_value = connection
+    _patch_session(monkeypatch, session)
+    valid_until = datetime(2027, 1, 1, tzinfo=UTC)
+    eb_session = EbSession("s1", valid_until, [_account("a", "DE89370400440532013000")])
+
+    bank_connections.complete_connection(USER_ID, "state-1", eb_session)
+
+    assert connection.session_id == "s1"
+    assert connection.valid_until == valid_until
+    assert connection.pending_state is None
+    session.execute.assert_called_once()
+    upsert_sql = str(session.execute.call_args.args[0].compile(dialect=postgresql.dialect()))
+    assert "ON CONFLICT" in upsert_sql
+    session.commit.assert_called_once()
 
 
 def test_account_upsert_conflicts_on_identification_hash() -> None:
