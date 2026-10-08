@@ -8,9 +8,9 @@
 
 Settled in chat on 2026-10-06: Finance is its own agent with its own threads; bank and PayPal data come from live APIs, not file exports; invoices are paid by SEPA bank transfer to an IBAN; every payment is confirmed by the user in the bank app.
 
-Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal, transfer linking, categorization and the spending view move to a separate plan 002, not yet started.
+Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal linking, transfer linking, categorization and the spending view move to a separate plan 002, not yet started. Changed on 2026-10-08 at the user's request: syncing PayPal transactions moved into this plan.
 
-Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan; payments leave through a GiroCode QR after an explicit check against the invoice; a strong match marks an invoice paid automatically; invoice PDFs go to the model as files; email ingest every 30 minutes and bank sync three times a day; the chat answers with cards (see Decisions).
+Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: the N26 main account, ING and PayPal are synced in this plan, N26 Spaces are not; payments leave through a GiroCode QR after an explicit check against the invoice; a strong match marks an invoice paid automatically; invoice PDFs go to the model as files; email ingest every 30 minutes and bank sync three times a day; the chat answers with cards (see Decisions).
 
 Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions listed in Open questions. The data-check consent sessions were closed the same day.
 
@@ -36,7 +36,7 @@ Invoices arrive by email and get the `invoice` label, but nothing tracks whether
 Goals:
 
 - Every invoice email has its payment data (payee, IBAN, amount, reference, due date) extracted, editable, and checked.
-- Transactions from N26 and ING arrive on a schedule without manual export.
+- Transactions from the N26 main account, ING and PayPal arrive on a schedule without manual export.
 - An invoice turns paid when a matching debit appears, or when the user marks it.
 - The user can select open invoices, pick an account, review the prepared payments beside the invoice, and approve; the money moves only after confirmation in the bank app.
 - The Finance chat answers "what do I still need to pay?" and prepares payments, but cannot approve them.
@@ -47,7 +47,7 @@ Non-goals (this plan):
 - Paying through a bank API without the user confirming in the bank app.
 - Partial payments, one transaction paying several invoices, and non-EUR invoices.
 - Budgets, alerts, and multi-user finance.
-- PayPal, transfer linking, categorization and spending (plan 002).
+- Linking PayPal payments to the bank debits that fund them, transfers between own accounts, N26 Spaces, categorization and spending (plan 002).
 
 ## Key concepts
 
@@ -64,7 +64,7 @@ Non-goals (this plan):
 ## Decisions
 
 - **Invoices live in Finance.** The invoice list and page that PR #1 adds to the Email agent move to Finance, which adds payment status, extracted fields and payment actions. Rejected: keeping them in Email and linking across agents, which would split one invoice over two agents. Reversible: it is a matter of routes and sidebar links.
-- **Only the N26 main account is synced in this plan.** Invoices are paid by transfer from it, and the 9 Spaces have no IBAN and no payments of their own. Rejected: syncing Spaces now, which only matters for spending (plan 002). Reversible: the Spaces are already in the N26 consent; syncing them is a configuration change.
+- **This plan syncs the N26 main account, ING and PayPal, all through Enable Banking.** One ledger of all three is the base for plan 002, and PayPal needs no separate API because Enable Banking covers it. PayPal entries carry only a transaction date, which the sync uses as the booking date. N26 Spaces are not synced: they have no IBAN and no payments of their own. Rejected: syncing Spaces now, which only matters for spending (plan 002). Reversible: the Spaces are already in the N26 consent.
 - **Payments leave through an EPC QR code (GiroCode).** Approving a payment shows a QR code that the user scans in the N26 or ING app and confirms there; copy buttons for IBAN, amount and reference are the fallback. Approve is enabled only after the user ticks that payee, IBAN, amount and reference match the invoice, which is shown beside the payment. Rejected for now: payment initiation through Enable Banking, which the application cannot use (only the `AIS` service is enabled; a test request on 2026-10-08 returned `403 ACCESS_DENIED`). Reversible: payment initiation can replace the QR step later if Enable Banking enables `PIS`.
 - **A strong match marks an invoice paid automatically.** A debit with the invoice's amount and either its IBAN or its reference links the invoice and marks it paid; a debit with the amount and a similar payee name is a suggestion the user confirms or rejects. Automatic links are labelled and undone with one click. Rejected: confirming every match, because outgoing transfers in the real data always carry IBAN and reference, so strong matches are reliable and confirming them is busywork.
 - **Invoice PDFs go to the model as files.** One structured call per invoice email receives the stored PDFs as file input, so scanned invoices work and no PDF library is added. The model is its own setting, like newsletter extraction, so a cheaper one can be benchmarked later. Rejected: extracting text locally first, which adds a dependency and fails on scans.
