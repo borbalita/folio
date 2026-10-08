@@ -57,7 +57,7 @@ export function LoginPage() {
       <ThemeToggle className="absolute top-4 right-4" />
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Document Copilot</CardTitle>
+          <CardTitle>Borbfolio</CardTitle>
           <CardDescription>
             {mode === 'sign-in'
               ? 'Sign in with your email to continue.'
