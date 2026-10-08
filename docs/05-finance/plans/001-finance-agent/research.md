@@ -35,3 +35,23 @@ Reference material from Stage 2 (2026-10-06). The spec ([README.md](README.md)) 
 ## Railway cron
 
 - <https://docs.railway.com/reference/cron-jobs>: UTC schedules, at least 5 minutes apart; a run is skipped while the previous one is `Active`; the service must exit when its task is done.
+
+## Real data check (2026-10-08)
+
+A throwaway script outside the repo pulled 90 days from the user's own accounts through Enable Banking (7-day consent). Raw data stays in `~/.config/folio/eb-spike/`; only counts were read.
+
+| Account | Transactions | Notes |
+|---|---|---|
+| N26 main account | 421 (391 debits) | 339 card payments, 36 direct debits, 23 transfers |
+| N26 Spaces (9) | 0–1 each | Spaces have no IBAN; no Space movements visible in the main account |
+| ING | 64 (50 debits, 3 pending) | 37 direct debits, 8 transfers, 4 fees |
+| PayPal | 48 (45 debits) | merchant as creditor name, no reference text |
+
+- **Ids are unreliable.** No account fills `transaction_id`. N26 fills `entry_reference` on 175 of 421 rows, and never on transfers; one value is shared by a debit and its later refund. ING and PayPal fill `entry_reference` on every row. Deduplication needs a fallback key, and that key needs an ordinal: two N26 rows share date, amount, name and text.
+- **Transfers carry what invoice matching needs.** All 40 N26 debits with a counterparty IBAN also have remittance text; ING transfers have an IBAN and long remittance text (47 of 64 rows contain an invoice-like token). Card payments have neither an IBAN nor text.
+- **Direct debits have no counterparty IBAN** on either bank, only name and text.
+- **No merchant category codes** anywhere. Categorization (plan 002) has merchant name and text only.
+- **PayPal linking works on amount and date.** 31 of 32 N26 debits to PayPal match exactly one PayPal debit with the same amount 0–5 days earlier; one has none. 14 PayPal debits are not funded from N26 (balance or another source).
+- **PayPal has only `transaction_date`** (no booking or value date).
+- **ING reports pending entries dated in the future** (3 scheduled payments). Only booked entries should be stored.
+- **Consent:** each bank needs its own approval; one ING attempt returned `invalid_grant` and a fresh link worked.

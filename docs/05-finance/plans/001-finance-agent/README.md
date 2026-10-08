@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: Discovery
-- Current stage: 2, Research and educate
+- Current stage: 2, Research and educate (data check done)
 
 ## Approval state
 
@@ -77,6 +77,13 @@ Follow-ups:
 
 - **Enable Banking privacy and terms URLs are placeholders.** The application was registered on 2026-10-07 with `https://github.com/borbalita/folio` as both URLs. Next action: write `docs/legal/privacy.md` (single-user project; data read from N26, ING and PayPal through Enable Banking; stored in Supabase, never shared; consent expires after 180 days and can be revoked; contact email) and `docs/legal/terms.md` (personal, non-commercial, no warranty), merge them, and replace both URLs in the Enable Banking control panel with their `blob/main` links. This becomes a task in Stage 5.
 
-Unknowns:
+Answered by the real data check (2026-10-08, details in [research.md](research.md#real-data-check-2026-10-08)):
 
-- What do real N26 and ING transactions contain: stable ids, counterparty IBAN on transfers, readable remittance text, how far back the first sync reaches? Settled by a data check against the user's own accounts before Stage 4.
+- Invoice payments are transfers, and transfers from both banks carry the counterparty IBAN and the remittance text, so matching on amount plus IBAN or reference is feasible. Card payments and direct debits carry neither.
+- Transaction ids are missing on N26 transfers and not unique on N26 refunds, so deduplication needs a fallback key with an ordinal.
+- N26 returns 9 Spaces next to the main account; they have no IBAN and almost no activity.
+- PayPal ↔ N26 linking on amount and a 0–5 day window finds a single candidate in 31 of 32 cases (plan 002).
+
+Newly found:
+
+- **N26 Spaces:** sync the main account only, or Spaces too? Proposed: main account only. (Stage 3)
