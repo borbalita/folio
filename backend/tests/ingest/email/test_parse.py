@@ -30,8 +30,17 @@ def test_plain_body_is_preferred_over_html() -> None:
     assert parsed.provider_message_id == "15"
     assert parsed.subject == "Subject line"
     assert parsed.from_address == "from@example.com"
+    assert parsed.from_name == "Sender"
     assert parsed.to_addresses == ["to@example.com"]
     assert parsed.sent_at == datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)
+
+
+def test_sender_without_a_display_name_has_an_empty_name() -> None:
+    message = EmailMessage()
+    message["From"] = "from@example.com"
+    message.set_content("Hello")
+    parsed = parse_rfc822(bytes(message), provider_message_id="2", folder="INBOX")
+    assert (parsed.from_name, parsed.from_address) == ("", "from@example.com")
 
 
 def test_html_only_body_strips_tags() -> None:

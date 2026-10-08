@@ -14,6 +14,7 @@ def _parsed(from_address: str = "person@example.com") -> ParsedMessage:
         folder="INBOX",
         subject="Hello",
         from_address=from_address,
+        from_name="",
         to_addresses=["you@yahoo.com"],
         sent_at=datetime(2026, 1, 1, tzinfo=UTC),
         body="Please see the note.",
