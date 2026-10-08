@@ -26,7 +26,7 @@ The invoice list and invoice page live in Finance; the Email agent no longer sho
 
 ## Verified
 
-2026-10-08, PR: PR_LINK
+2026-10-08, PR: [#14](https://github.com/borbalita/folio/pull/14)
 
 - `/finance/invoices` lists the same invoice emails the Email sidebar listed (browser): it listed 3 invoice emails as the owner. The list uses the same `invoices.list_invoices` query with the same mailbox ids as before. I didn't compare it side by side with the old Email sidebar. Passed.
 - An invoice's stored PDF shows (browser): "Ihre Rechnung vom 09.09.2026" rendered `7760_Borbala_Tasnadi.pdf`. Passed. The first load failed on a Supabase auth `ConnectTimeout` (in the shared login check, not this task) and worked on reload.

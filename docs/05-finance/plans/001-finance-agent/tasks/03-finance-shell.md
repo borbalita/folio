@@ -28,7 +28,7 @@ None.
 
 ## Verified
 
-2026-10-08, PR: PR_LINK
+2026-10-08, PR: [#14](https://github.com/borbalita/folio/pull/14)
 
 - Owner `/me` lists `finance` (test): `tests/api/test_finance_access.py` passes.
 - Another user gets 403 on `/finance` API routes (test): `test_finance_access.py` and `test_finance_invoices.py` pass. The thread messages, delete and stream routes also return 403 on a Finance thread.
