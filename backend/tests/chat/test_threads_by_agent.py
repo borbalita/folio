@@ -179,6 +179,11 @@ def test_delete_route_reports_the_outcome(
         return True
 
     monkeypatch.setattr(chats, "delete_thread_if_empty", delete)
+    monkeypatch.setattr(
+        chats,
+        "get_thread_for_user",
+        lambda tid, uid: {"id": str(tid), "agent": "documents"},
+    )
 
     response = authed_client.delete(f"/threads/{thread_id}")
 

@@ -70,6 +70,28 @@ def test_owner_lists_invoices_scoped_to_their_mailboxes(
     assert seen == [[OWN_MAILBOX]]
 
 
+def test_owner_gets_an_invoice_scoped_to_their_mailboxes(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    seen: list[tuple[uuid.UUID, list[uuid.UUID]]] = []
+
+    def get_invoice(
+        email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]
+    ) -> dict[str, str]:
+        seen.append((email_id, mailbox_ids))
+        return {"id": str(email_id), "subject": "Invoice 42"}
+
+    monkeypatch.setattr(invoices, "get_invoice", get_invoice)
+
+    response = authed_client.get(f"/finance/invoices/{EMAIL_ID}")
+
+    assert response.status_code == 200
+    assert response.json()["subject"] == "Invoice 42"
+    assert seen == [(EMAIL_ID, [OWN_MAILBOX])]
+
+
 def test_owner_downloads_a_stored_pdf_inline(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,

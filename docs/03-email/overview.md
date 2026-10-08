@@ -66,7 +66,7 @@ Relative dates ("last week") are resolved in `EMAIL_TIMEZONE`. Grounding rejects
 ## Owner-only access
 
 - A user has the Email agent when they own at least one active mailbox. `GET /me` returns `agents: ["documents"]` or `["documents", "email"]`.
-- Every email route returns 403 to a user without a mailbox: thread list and create for `agent=email`, posting to an email thread, invoice list and detail, and attachment download.
+- Every email route returns 403 to a user without a mailbox: thread list and create for `agent=email`, and posting to an email thread. Invoices and attachment downloads are Finance routes (`/finance/...`), owner-only.
 - Every email query is scoped to the caller's active mailboxes. An invoice or attachment in another user's mailbox returns 403.
 - Document routes don't depend on any of this.
 

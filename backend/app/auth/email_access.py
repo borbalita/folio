@@ -8,7 +8,7 @@ import uuid
 from fastapi import HTTPException, status
 
 from app.auth.dependencies import CurrentUser
-from app.auth.finance_access import is_finance_owner
+from app.auth.finance_access import is_finance_owner, require_finance_owner
 from app.database import mailboxes
 
 
@@ -31,3 +31,11 @@ async def agents_for(user: CurrentUser) -> list[str]:
     if is_finance_owner(user):
         agents.append("finance")
     return agents
+
+
+async def require_agent_access(user: CurrentUser, agent: str) -> None:
+    """The one access rule for an agent's threads and streams."""
+    if agent == "email":
+        await require_email_access(user)
+    elif agent == "finance":
+        require_finance_owner(user)

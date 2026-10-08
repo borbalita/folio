@@ -30,7 +30,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     path: '/email',
     emptyTitle: 'Ask about your mail',
     emptyHint:
-      'Start a new chat to search messages, check invoices, or see the big AI news of the week.',
+      'Start a new chat to search messages or see the big AI news of the week.',
     placeholder: 'Ask about your mail or AI news…',
     hasThreads: true,
   },
