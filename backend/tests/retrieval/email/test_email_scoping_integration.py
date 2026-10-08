@@ -35,6 +35,7 @@ def _message(mailbox_key: str) -> ParsedMessage:
         folder="INBOX",
         subject=f"Invoice {KEYWORD} {mailbox_key}",
         from_address="billing@example.com",
+        from_name="",
         to_addresses=["someone@example.com"],
         sent_at=datetime(2026, 9, 1, 9, 0, tzinfo=UTC),
         body=f"Your {KEYWORD} invoice for September is attached.",

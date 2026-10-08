@@ -8,6 +8,7 @@ import { ChatEmptyState } from '@/pages/chat/ChatEmptyState'
 import { ChatPage } from '@/pages/chat/ChatPage'
 import { ChatThreadPage } from '@/pages/chat/ChatThreadPage'
 import { LegacyChatRedirect } from '@/pages/chat/LegacyChatRedirect'
+import { InvoicePage } from '@/pages/email/InvoicePage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
 import { AgentPickerPage } from '@/pages/picker/AgentPickerPage'
@@ -32,6 +33,7 @@ export default function App() {
                 <Route path="/email" element={<ChatPage key="email" agentName="email" />}>
                   <Route index element={<ChatEmptyState />} />
                   <Route path=":threadId" element={<ChatThreadPage />} />
+                  <Route path="invoices/:emailId" element={<InvoicePage />} />
                 </Route>
               </Route>
               <Route path="/chat" element={<LegacyChatRedirect />} />

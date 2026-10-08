@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from email import message_from_bytes
+from email.header import decode_header, make_header
 from email.message import Message
 from email.utils import getaddresses, parsedate_to_datetime
 from html.parser import HTMLParser
@@ -28,6 +29,8 @@ class ParsedMessage:
     folder: str
     subject: str
     from_address: str
+    from_name: str
+    """Display name from the From header; empty when there is none."""
     to_addresses: list[str]
     sent_at: datetime
     body: str
@@ -37,6 +40,15 @@ class ParsedMessage:
 
 def normalize_whitespace(text: str) -> str:
     return _WHITESPACE.sub(" ", text).strip()
+
+
+def decode_header_text(value: str) -> str:
+    """Decode RFC 2047 encoded words (`=?UTF-8?Q?...?=`); the compat32 parser leaves them raw."""
+    try:
+        return str(make_header(decode_header(value)))
+    except (LookupError, UnicodeDecodeError, ValueError):
+        # Unknown charset or a malformed encoded word: keep the raw header.
+        return value
 
 
 def parse_message_id(header: str | None) -> str | None:
@@ -60,9 +72,9 @@ def html_to_text(html: str) -> str:
 
 def parse_rfc822(raw: bytes, *, provider_message_id: str, folder: str) -> ParsedMessage:
     message = message_from_bytes(raw)
-    subject = normalize_whitespace(message.get("Subject", ""))
+    subject = normalize_whitespace(decode_header_text(message.get("Subject", "")))
     from_values = getaddresses(message.get_all("From", []))
-    from_address = from_values[0][1] if from_values else ""
+    from_name, from_address = from_values[0] if from_values else ("", "")
     to_addresses = [addr for _, addr in getaddresses(message.get_all("To", [])) if addr]
     sent_at = _sent_at(message)
     return ParsedMessage(
@@ -71,6 +83,7 @@ def parse_rfc822(raw: bytes, *, provider_message_id: str, folder: str) -> Parsed
         folder=folder,
         subject=subject,
         from_address=from_address,
+        from_name=normalize_whitespace(from_name),
         to_addresses=to_addresses,
         sent_at=sent_at,
         body=_body(message),
@@ -128,7 +141,7 @@ def _attachment_filenames(message: Message) -> tuple[str, ...]:
     for part in message.walk():
         filename = part.get_filename()
         if filename:
-            names.append(filename)
+            names.append(decode_header_text(filename))
     return tuple(names)
 
 
@@ -137,7 +150,8 @@ def _pdf_attachments(message: Message) -> tuple[ParsedAttachment, ...]:
     for part in message.walk():
         if part.is_multipart():
             continue
-        filename = part.get_filename()
+        raw_filename = part.get_filename()
+        filename = decode_header_text(raw_filename) if raw_filename else None
         content_type = part.get_content_type()
         if not _is_pdf(filename, content_type):
             continue

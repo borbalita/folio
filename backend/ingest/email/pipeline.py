@@ -160,6 +160,9 @@ def _store_one(
         )
     action = ingest_action(stored, parsed)
     if action == "skip":
+        assert stored_row is not None
+        # Backfills names on mail stored before from_name existed; no re-embedding needed.
+        stored_row.from_name = parsed.from_name
         return action, "", 0, 0, 0, None
 
     label, source = label_message(parsed, classifier=classifier)
@@ -179,6 +182,7 @@ def _store_one(
             folder=parsed.folder,
             subject=parsed.subject,
             from_address=parsed.from_address,
+            from_name=parsed.from_name,
             to_addresses=parsed.to_addresses,
             sent_at=parsed.sent_at,
             body=parsed.body,
@@ -195,6 +199,7 @@ def _store_one(
         stored_row.folder = parsed.folder
         stored_row.subject = parsed.subject
         stored_row.from_address = parsed.from_address
+        stored_row.from_name = parsed.from_name
         stored_row.to_addresses = parsed.to_addresses
         stored_row.sent_at = parsed.sent_at
         stored_row.body = parsed.body
