@@ -16,7 +16,7 @@ Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions list
 
 Approved on 2026-10-08: the full set of decisions below (Stage 3).
 
-Approved on 2026-10-08: the design, success criteria and risks below (Stage 4).
+Approved on 2026-10-08: the design, success criteria and risks below (Stage 4). Added on 2026-10-08 at the owner's request: expiry emails and Reconnect all.
 
 Awaiting: the task breakdown (Stage 5).
 
@@ -100,7 +100,7 @@ Dashboard or chat ─► payment draft ─► user ticks "checked" ─► Approv
 
 ### Failure modes, privacy and secrets
 
-- **Consent expiry or revocation:** the account shows Reconnect, the scheduled sync skips it and keeps syncing the others, and Finance warns 14 days before `valid_until`.
+- **Consent expiry or revocation:** the account shows Reconnect, the scheduled sync skips it and keeps syncing the others, and Finance warns 14 days before `valid_until`. The bank sync also emails the owner at 14 days, 3 days and on expiry, once each, through the Yahoo account's SMTP server with the existing app password (stdlib `smtplib`, no new service). The email links to the accounts page, where **Reconnect all** runs the bank approvals one after another and keeps history. Approval itself cannot be automated: PSD2 requires the owner to confirm at each bank.
 - **Failed sync or extraction:** recorded in the job-run log; other accounts and emails continue. An invoice whose extraction failed or lacks a valid IBAN and amount is `needs_info`.
 - **Unclear payment state:** at most one open payment draft per invoice. Approve re-checks the invoice before showing the QR. An invoice turns paid only through a match or the user's click, never because a QR was shown.
 - **Tracing:** no content reaches Langfuse. Finance agents are instrumented without content or binary content, so traces keep models, tool names, token counts, timings and errors, but no prompts, messages, tool data or PDFs; other parties' data (payees, senders, references) never leaves the app. For debugging, a local-only setting writes full content to a local trace output; the API refuses to start with it in production. Rejected: masking by pattern (names and free text have no pattern) and a debug switch that sends full content to Langfuse. The same rule for the email agent, and deleting its existing content traces, is a separate change done before this plan's work.
@@ -118,7 +118,7 @@ Dashboard or chat ─► payment draft ─► user ticks "checked" ─► Approv
 1. A real invoice email appears in Finance within 30 minutes with payee, IBAN, amount and reference, or as `needs_info` when the invoice has no IBAN.
 2. An invoice paid through its QR code turns paid on its own after the next bank sync.
 3. For the last 90 days, a spot check shows every invoice as matched, suggested, or genuinely open.
-4. An expiring connection shows a warning, and Reconnect restores it without losing history.
+4. An expiring connection triggers emails at 14 and 3 days and a warning in Finance, and Reconnect all restores every connection without losing history.
 5. In chat, "what do I still need to pay?" and "pay them all from N26" show invoice and payment cards, and nothing can be approved from the chat.
 6. Nobody but the owner can reach any Finance route or see the Finance card.
 7. The owner's hand test of real invoices finds the extracted values correct.
