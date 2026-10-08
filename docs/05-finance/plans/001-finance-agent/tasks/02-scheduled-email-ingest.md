@@ -24,3 +24,19 @@ None.
 ## Notes
 - Railway skips a run while the previous one is active, so no lock is needed.
 - Implementation plan: [02-scheduled-email-ingest.plan.md](02-scheduled-email-ingest.plan.md).
+
+## Verified
+
+2026-10-08, branch `feat/finance-scheduled-ingest` (on top of the unmerged 001/07 branch).
+
+- Synced an hour ago → fetches from one day before `last_synced_at`: `test_scheduled_run_fetches_since_last_sync_with_no_cap`, `test_since_is_one_day_before_last_sync`, `test_since_uses_utc_date_near_midnight`. Pass.
+- Never synced → last 7 days: `test_scheduled_run_without_mailbox_fetches_seven_days`, `test_never_synced_fetches_last_seven_days`. Pass.
+- One job-run row with status and counts, or the error: `test_scheduled_run_records_counts`, `test_scheduled_run_failure_is_logged_and_raised`, `tests/database/test_job_runs.py`. Pass.
+- Railway cron, two `ok` rows and no duplicate email: **pending.** Needs the owner to approve `alembic upgrade head` and to create the cron service.
+- Suite: `uv run pytest -m "not integration"`: 231 passed. `ruff check` is clean. `alembic heads` shows the single head `6ff2800e0dc1`.
+
+Railway cron service settings:
+- Source: this repo, root directory `/backend`. Config as Code path: `/backend/railway.email-ingest.json`. That file sets the start command `python -m ingest.email --scheduled`, the cron schedule `*/30 * * * *` (UTC) and the restart policy `NEVER`.
+- Variables: reference the backend service's `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`, `OPENAI_EMBEDDING_MODEL`, `OPENAI_EMBEDDING_DIMENSIONS`, `ALLOWED_ORIGINS`, `ENVIRONMENT` and `LANGFUSE_*`. Also set `YAHOO_EMAIL`, `YAHOO_APP_PASSWORD`, `EMAIL_AGENT_OWNER_USER_ID` and `TYPESAFE_API_KEY`, plus `TYPESAFE_LABEL_MODEL`, `EMAIL_TIMEZONE` and `AI_NEWSLETTER_DOMAINS` if they are set locally.
+
+PR: not opened yet; it waits for 001/07 to merge.
