@@ -103,7 +103,7 @@ Dashboard or chat ─► payment draft ─► user ticks "checked" ─► Approv
 - **Consent expiry or revocation:** the account shows Reconnect, the scheduled sync skips it and keeps syncing the others, and Finance warns 14 days before `valid_until`.
 - **Failed sync or extraction:** recorded in the job-run log; other accounts and emails continue. An invoice whose extraction failed or lacks a valid IBAN and amount is `needs_info`.
 - **Unclear payment state:** at most one open payment draft per invoice. Approve re-checks the invoice before showing the QR. An invoice turns paid only through a match or the user's click, never because a QR was shown.
-- **Tracing:** Finance calls are traced to Langfuse with IBANs, amounts, names and PDF content masked, so traces keep tool calls, timings and errors. Rejected: no tracing (no debugging on live data) and unmasked tracing (bank data in a third-party service).
+- **Tracing:** no content reaches Langfuse. Finance agents are instrumented without content or binary content, so traces keep models, tool names, token counts, timings and errors, but no prompts, messages, tool data or PDFs; other parties' data (payees, senders, references) never leaves the app. For debugging, a local-only setting writes full content to a local trace output; the API refuses to start with it in production. Rejected: masking by pattern (names and free text have no pattern) and a debug switch that sends full content to Langfuse. The same rule for the email agent, and deleting its existing content traces, is a separate change done before this plan's work.
 - **Secrets:** the Enable Banking private key lives only on the user's laptop and in Railway's variables, never in the repository or the database.
 
 ## Open questions
