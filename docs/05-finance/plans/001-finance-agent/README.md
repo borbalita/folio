@@ -10,7 +10,7 @@ Settled in chat on 2026-10-06: Finance is its own agent with its own threads; ba
 
 Confirmed on 2026-10-06: the problem, goals and non-goals below (Stage 1). PayPal, transfer linking, categorization and the spending view move to a separate plan 002, not yet started.
 
-Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan; payments leave through a GiroCode QR after an explicit check against the invoice; a strong match marks an invoice paid automatically; invoice PDFs go to the model as files; email ingest every 30 minutes and bank sync three times a day (see Decisions).
+Decided on 2026-10-07: invoices move from the Email agent to Finance. Decided on 2026-10-08: only the N26 main account is synced in this plan; payments leave through a GiroCode QR after an explicit check against the invoice; a strong match marks an invoice paid automatically; invoice PDFs go to the model as files; email ingest every 30 minutes and bank sync three times a day; the chat answers with cards (see Decisions).
 
 Confirmed on 2026-10-08: Stage 2 is complete; Stage 3 settles the decisions listed in Open questions. The data-check consent sessions were closed the same day.
 
@@ -69,16 +69,9 @@ Non-goals (this plan):
 - **A strong match marks an invoice paid automatically.** A debit with the invoice's amount and either its IBAN or its reference links the invoice and marks it paid; a debit with the amount and a similar payee name is a suggestion the user confirms or rejects. Automatic links are labelled and undone with one click. Rejected: confirming every match, because outgoing transfers in the real data always carry IBAN and reference, so strong matches are reliable and confirming them is busywork.
 - **Invoice PDFs go to the model as files.** One structured call per invoice email receives the stored PDFs as file input, so scanned invoices work and no PDF library is added. The model is its own setting, like newsletter extraction, so a cheaper one can be benchmarked later. Rejected: extracting text locally first, which adds a dependency and fails on scans.
 - **Email ingest runs every 30 minutes; bank sync three times a day.** Both are Railway cron schedules (UTC, so local times shift by an hour with daylight saving). Three bank syncs stay under the PSD2 limit of about four unattended reads per account per day; a manual Sync now covers the rest. Reversible: a schedule setting.
+- **The Finance chat answers with cards.** A reply can carry invoice lists and payment cards built from the same components as the invoices page, including the QR code and the check against the invoice. Cards reference invoices and payments by id and show their current state. Chat tools can prepare payments but never approve them. Built after the invoices page and payment cards, so the chat reuses them. Rejected: text-only answers with links, which would send "pay them all" off to another page.
 
 ## Open questions
-
-Decisions for Stage 3 (proposed order):
-
-1. **How chat shows results:** cards that show current data, or text only for now.
-
-Follow-ups:
-
-- **Enable Banking privacy and terms URLs are placeholders.** The application was registered on 2026-10-07 with `https://github.com/borbalita/folio` as both URLs. Next action: write `docs/legal/privacy.md` (single-user project; data read from N26, ING and PayPal through Enable Banking; stored in Supabase, never shared; consent expires after 180 days and can be revoked; contact email) and `docs/legal/terms.md` (personal, non-commercial, no warranty), merge them, and replace both URLs in the Enable Banking control panel with their `blob/main` links. This becomes a task in Stage 5.
 
 Answered by the real data check (2026-10-08, details in [research.md](research.md#real-data-check-2026-10-08)):
 
