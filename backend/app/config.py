@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     email_agent_owner_user_id: uuid.UUID | None = None
     finance_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
+    enable_banking_app_id: str | None = None
+    enable_banking_private_key: str | None = None
+    enable_banking_redirect_url: str | None = None
     typesafe_label_model: str = "jev-latest"
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     email_timezone: str = "Europe/Berlin"
@@ -66,12 +69,26 @@ class Settings(BaseSettings):
     def normalize_log_level(cls, value: str) -> str:
         return value.upper()
 
-    @field_validator("yahoo_email", "yahoo_app_password", "typesafe_api_key", mode="before")
+    @field_validator(
+        "yahoo_email",
+        "yahoo_app_password",
+        "typesafe_api_key",
+        "enable_banking_app_id",
+        "enable_banking_private_key",
+        "enable_banking_redirect_url",
+        mode="before",
+    )
     @classmethod
     def blank_optional_str(cls, value: str | None) -> str | None:
         if value is None or not str(value).strip():
             return None
         return str(value).strip()
+
+    @field_validator("enable_banking_private_key")
+    @classmethod
+    def private_key_newlines(cls, value: str | None) -> str | None:
+        # Railway variables often hold the PEM on one line with literal "\n".
+        return value.replace("\\n", "\n") if value else value
 
     @field_validator("email_agent_owner_user_id", "finance_owner_user_id", mode="before")
     @classmethod
