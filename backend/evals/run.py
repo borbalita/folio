@@ -21,6 +21,7 @@ from pathlib import Path
 from app.config import settings
 from evals.dataset import DEFAULT_VERSION, OUT_ROOT
 from evals.guard import NotLocalDatabaseError, require_local_database
+from evals.judge import JudgeNotConfiguredError, judge_model
 from evals.modes import answer, e2e, extraction, retrieval
 from evals.news_data import SCORING_NEWS_VERSION
 from evals.news_runs import EFFORTS
@@ -69,6 +70,14 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--no-judge",
+        action="store_true",
+        help=(
+            "Answer and e2e modes: skip the Claude judge (faithfulness, fact_recall), "
+            "which needs ANTHROPIC_API_KEY."
+        ),
+    )
+    parser.add_argument(
         "--replay",
         action="store_true",
         help=(
@@ -96,6 +105,14 @@ def main() -> int:
         print(exc, file=sys.stderr)
         return 1
 
+    judge = None
+    if args.mode in ("answer", "e2e") and not args.no_judge:
+        try:
+            judge = judge_model()
+        except JudgeNotConfiguredError as exc:
+            print(exc, file=sys.stderr)
+            return 1
+
     started = datetime.now(UTC)
     try:
         with eval_tracing() as client:
@@ -112,6 +129,7 @@ def main() -> int:
                     model=args.model,
                     effort=args.effort,
                     rerank=args.rerank == "on",
+                    judge=judge,
                 )
                 name = (
                     f"e2e-{args.version}-{args.model}-effort-{args.effort or 'default'}"
@@ -124,6 +142,7 @@ def main() -> int:
                     args.concurrency,
                     model=args.model,
                     effort=args.effort,
+                    judge=judge,
                 )
                 name = f"answer-{args.version}-{args.model}-effort-{args.effort or 'default'}"
     except LangfuseNotConfiguredError as exc:

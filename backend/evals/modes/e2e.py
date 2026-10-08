@@ -28,9 +28,10 @@ from evals.agent_run import ToolStep, candidate_model, effort_settings, run_agen
 from evals.cases import RagCase
 from evals.dataset import IdMap, load_id_map, load_rag_cases
 from evals.experiment import RunConfig, publication, run_experiment
+from evals.judge import JudgeScores, rubric_prompts
 from evals.langfuse_sync import item_id, local_rag_payloads, rag_dataset_name
 from evals.modes import answer
-from evals.modes.answer import chunks_of
+from evals.modes.answer import chunks_of, judge_note, judged
 from evals.modes.retrieval import chunk_owners
 from evals.scoring import (
     AnswerScores,
@@ -103,6 +104,7 @@ class E2EResult(BaseModel):
     usage: dict[str, int]
     seconds: float
     scores: AnswerScores
+    judge: JudgeScores | None
 
 
 async def run_case(
@@ -111,6 +113,7 @@ async def run_case(
     owners: dict[UUID, str],
     model: Model,
     model_settings: OpenAIResponsesModelSettings | None,
+    judge: Model | None,
     *,
     rerank: bool,
 ) -> E2EResult:
@@ -149,6 +152,7 @@ async def run_case(
             & deps.seen_ids,
             seen_ids=deps.seen_ids,
         ),
+        judge=await judged(case, deps, record.answer, judge),
     )
 
 
@@ -203,6 +207,7 @@ def run(
     model: str,
     effort: str | None,
     rerank: bool,
+    judge: Model | None,
 ) -> dict[str, object]:
     cases = load_rag_cases(version)
     dataset_name = rag_dataset_name(version)
@@ -214,7 +219,7 @@ def run(
 
     async def task(key: str) -> E2EResult:
         result = await run_case(
-            by_item[key], id_map, owners, chat, model_settings, rerank=rerank
+            by_item[key], id_map, owners, chat, model_settings, judge, rerank=rerank
         )
         recall = (
             "n/a" if result.search_recall is None else f"{result.search_recall:.2f}"
@@ -225,7 +230,10 @@ def run(
         )
         return result
 
-    prompts = {"instructions": INSTRUCTIONS_PATH.read_text(encoding="utf-8")}
+    prompts = {
+        "instructions": INSTRUCTIONS_PATH.read_text(encoding="utf-8"),
+        **(rubric_prompts() if judge else {}),
+    }
     search = "no rerank"
     if rerank:
         search = (
@@ -240,7 +248,7 @@ def run(
         version=version,
         subject=(
             f"{model} (effort {effort or 'default'}, Responses API), "
-            f"email-search {search}"
+            f"email-search {search}" + judge_note(judge)
         ),
         today=cases[0].today,
         prompts=prompts,

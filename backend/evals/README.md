@@ -136,6 +136,16 @@ Scores are the answer test's, with two differences: `distractor_cited` counts on
 
 Each search is kept with its query, filters (`since`, `until`, `label`, `sender`, `mailbox`), and the emails returned, so a failure from a wrong filter is visible; the `search_recall` comment in Langfuse lists them. The summary adds searches per case and cases with no search.
 
+
+### Judge
+
+Answer and end-to-end runs also call a Claude Sonnet 5.5 judge (`evals/judge.py`), twice per answer, with the rubrics in `evals/rubrics/`. It needs `ANTHROPIC_API_KEY` in `backend/.env` (listed in `.env.example`); without it the command stops, and `--no-judge` runs the code checks only. This is the stack's one Anthropic use, eval-only: the `anthropic` SDK already comes with `pydantic-ai`.
+
+- **faithfulness**: the answer's claims judged against the full text of the passages it cites; supported claims / claims. A simple, correct inference counts as supported.
+- **fact_recall**: answerable cases; the case's expected facts stated correctly / expected facts. Each fact is `correct`, `wrong` (another value, e.g. an outdated date), or `missing`.
+
+Neither applies to a refusal. Each verdict comes with its reason, before the verdict, and the Langfuse comment lists them. Question, answer, passages, and facts go to the judge as tagged, escaped data that the rubric says never to follow. A failed call is a `judge_error` score with the error, never a 0. Rubric hashes are in the run metadata. Judge scores are trusted only after calibration (001/12).
+
 ## Scoping integration test
 
 Proves against the eval database that email search returns only the user's active-mailbox mail. Needs `prepare` to have run (with or without ingested data); it rolls back everything it writes and makes no network calls.
