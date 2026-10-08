@@ -89,7 +89,11 @@ export function LoginPage() {
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
-            <Button type="submit" disabled={submitting || status === 'loading'}>
+            <Button
+              type="submit"
+              disabled={submitting || status === 'loading'}
+              className="bg-(--brand-cyan) text-white hover:bg-(--brand-cyan)/90"
+            >
               {submitting
                 ? 'Please wait…'
                 : mode === 'sign-in'
