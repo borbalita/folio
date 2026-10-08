@@ -69,3 +69,16 @@ def test_document_thread_uses_copilot(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert called == ["documents"]
     assert "email assistant isn't available" not in text
+
+
+def test_finance_thread_replies_with_the_stub(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("no other agent should run")
+
+    monkeypatch.setattr(orchestrator, "run_agent", fail)
+    monkeypatch.setattr(orchestrator, "run_email_agent", fail)
+    monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
+
+    assert "finance assistant" in _collect("finance")

@@ -33,7 +33,7 @@ class ChatThread(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "agent IN ('documents', 'email')",
+            "agent IN ('documents', 'email', 'finance')",
             name="ck_chat_threads_agent",
         ),
         Index("ix_chat_threads_user_id_updated_at", "user_id", "updated_at"),

@@ -1,8 +1,8 @@
 # 001 — Finance agent: invoices, bank sync, and payments
 
 - Created: 2026-10-06
-- Status: Ready
-- Current stage: Discovery complete; implementation starts per task
+- Status: In progress
+- Current stage: Implementation; 001/03 and 001/04 done
 
 ## Approval state
 
@@ -97,8 +97,8 @@ Before 001/05: the content-free tracing change (separate task).
 
 - [ ] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
 - [ ] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)
-- [ ] [001/03 — Finance agent shell, owner only](tasks/03-finance-shell.md)
-- [ ] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
+- [x] [001/03 — Finance agent shell, owner only](tasks/03-finance-shell.md)
+- [x] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
 - [ ] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
 - [ ] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
 - [ ] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03

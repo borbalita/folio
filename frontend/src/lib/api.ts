@@ -1,6 +1,6 @@
 import { http } from '@/lib/http'
 
-export type AgentName = 'documents' | 'email'
+export type AgentName = 'documents' | 'email' | 'finance'
 
 export interface Thread {
   id: string
@@ -56,9 +56,9 @@ export const api = {
 
   getMessages: (threadId: string) => http.get<ThreadMessage[]>(`/threads/${threadId}/messages`),
 
-  listInvoices: () => http.get<InvoiceSummary[]>('/email/invoices'),
+  listInvoices: () => http.get<InvoiceSummary[]>('/finance/invoices'),
 
-  getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/email/invoices/${emailId}`),
+  getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/finance/invoices/${emailId}`),
 
-  getAttachment: (attachmentId: string) => http.getBlob(`/email/attachments/${attachmentId}`),
+  getAttachment: (attachmentId: string) => http.getBlob(`/finance/attachments/${attachmentId}`),
 }

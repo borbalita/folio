@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     yahoo_email: str | None = None
     yahoo_app_password: str | None = None
     email_agent_owner_user_id: uuid.UUID | None = None
+    finance_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
     typesafe_label_model: str = "jev-latest"
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
@@ -72,7 +73,7 @@ class Settings(BaseSettings):
             return None
         return str(value).strip()
 
-    @field_validator("email_agent_owner_user_id", mode="before")
+    @field_validator("email_agent_owner_user_id", "finance_owner_user_id", mode="before")
     @classmethod
     def blank_optional_uuid(cls, value: str | uuid.UUID | None) -> str | uuid.UUID | None:
         if value is None or (isinstance(value, str) and not value.strip()):

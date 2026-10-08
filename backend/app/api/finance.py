@@ -1,4 +1,4 @@
-"""Invoice list, invoice detail, and stored PDF attachments for the email agent."""
+"""Finance routes. Every route is owner-only."""
 
 from __future__ import annotations
 
@@ -12,9 +12,21 @@ from fastapi.responses import Response
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
+from app.auth.finance_access import require_finance_owner
 from app.database import invoices
 
-router = APIRouter(prefix="/email", tags=["email"])
+
+def finance_owner(user: Annotated[CurrentUser, Depends(get_current_user)]) -> CurrentUser:
+    require_finance_owner(user)
+    return user
+
+
+router = APIRouter(
+    prefix="/finance", tags=["finance"], dependencies=[Depends(finance_owner)]
+)
+
+# Invoice data stays scoped to the owner's mailboxes, so each route resolves them
+# after the router-level owner check.
 
 
 @router.get("/invoices")

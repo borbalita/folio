@@ -100,7 +100,7 @@ export function InvoicePage() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-sm text-destructive">{error.message}</p>
-        <Button render={<Link to="/email" />}>Back to chats</Button>
+        <Button render={<Link to="/finance/invoices" />}>Back to invoices</Button>
       </div>
     )
   }

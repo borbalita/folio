@@ -24,3 +24,13 @@ None.
 
 ## Notes
 - Decision: Finance is its own agent; the owner is a fixed setting, failing closed.
+- Implementation plan: [03-finance-shell.plan.md](03-finance-shell.plan.md).
+
+## Verified
+
+2026-10-08, PR: [#14](https://github.com/borbalita/folio/pull/14)
+
+- Owner `/me` lists `finance` (test): `tests/api/test_finance_access.py` passes.
+- Another user gets 403 on `/finance` API routes (test): `test_finance_access.py` and `test_finance_invoices.py` pass. The thread messages, delete and stream routes also return 403 on a Finance thread.
+- Setting unset → API starts and nobody gets `finance` (test): `test_finance_access.py` passes; the whole suite runs with the setting unset (191 passed).
+- Owner sees the Finance card and it opens `/finance`; another user gets no card and `/finance` redirects to `/` (browser): checked as `tasnadibori@yahoo.com`. The card opened `/finance/invoices` with Invoices, Transactions, Accounts and Sign out. Then the backend was restarted with an owner id matching nobody: no card, and `/finance/invoices` redirected to `/`. Passed.

@@ -19,8 +19,8 @@ The document copilot stays the same product. A second agent, **Email**, chats ov
 - Every email-related route returns **403** to a user with no mailbox. This covers:
   - thread list and create with `agent=email`
   - messages posted to an email thread
-  - invoice list and detail
-  - attachment download
+
+  Invoice list and detail and attachment download moved to Finance (`/finance/...`), owner-only.
 - `GET /me` (or the existing current-user endpoint) returns `agents: ["documents"]` or `["documents", "email"]`. The frontend hides the Email card on `/` when `email` is absent.
 - Tests: the owner gets 200 and a non-owner gets 403 on each route above, and the document routes are unaffected.
 
@@ -63,7 +63,7 @@ docs/
 | `/` | Agent picker. One card per agent the user can open. Documents is always there. Email is there only when `/me` includes `email`. Choosing a card goes to that agent's route. |
 | `/documents`, `/documents/:threadId` | Document copilot |
 | `/email`, `/email/:threadId` | Email agent (owner only; others redirect to `/`) |
-| `/email/invoices/:emailId` | Invoice detail |
+| `/email/invoices/:emailId` | Redirects to `/finance/invoices/:emailId` |
 | `/chat` | Redirect to `/documents` |
 | `/chat/:threadId` | Redirect to `/documents/:threadId` |
 
@@ -72,7 +72,6 @@ docs/
 - The sidebar header names the current agent and links back to `/`, so the picker stays reachable after a choice.
 - Email is shown only to the owner. A non-owner who opens `/email` returns to the picker.
 - Each agent has its own thread list, empty state, and new-chat action.
-- The Email sidebar has an **Invoices** section above the thread list. It lists emails labeled `invoice` (from, subject, date), newest first.
 - Main files touched: `frontend/src/App.tsx` and `frontend/src/components/chat/ThreadSidebar.tsx`.
 
 ### 4.3 Chat view
@@ -85,13 +84,13 @@ docs/
 ### 4.4 Invoice detail
 
 - Shows from, subject, date, and the saved body.
-- Lists the email's PDF attachments. Each one opens in an embedded viewer served from `GET /email/attachments/:id` (`Content-Type: application/pdf`).
+- Lists the email's PDF attachments. Each one opens in an embedded viewer served from `GET /finance/attachments/:id` (`Content-Type: application/pdf`).
 - A skipped attachment is listed with its filename and "not stored (over 10 MB)".
 - There is no pay action.
 
 ## 5. Chat dispatch
 
-- `chat_threads.agent` is `text not null default 'documents'` with a check constraint `in ('documents','email')`. Existing threads stay on the copilot.
+- `chat_threads.agent` is `text not null default 'documents'` with a check constraint `in ('documents','email','finance')`. Existing threads stay on the copilot.
 - Thread list and create take `agent` and filter by it.
 - `backend/app/chat/orchestrator.py` branches on `thread.agent`. The document path is unchanged.
 - The email path is a sibling PydanticAI agent in `backend/app/email_assistant/` (instructions, tools, grounding). It uses the same configured chat model as the copilot.
@@ -467,9 +466,7 @@ The critical path is **2 → 5 → 6 → 7 → 8 → 9**. Tasks 1, 3, 4, and 10 
 - Depends on: 4, 5.
 - Scope:
   - email citation fields;
-  - the invoice list and detail view;
-  - the attachment endpoint;
-  - the skipped-attachment display.
+  - the invoice list and detail view, the attachment endpoint, and the skipped-attachment display (since moved to Finance, owner-only, under `/finance/...`).
 - Done when: an invoice opens with its stored PDF and no call to Yahoo.
 
 **11. Overview doc and end-to-end check**
