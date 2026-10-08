@@ -2,12 +2,11 @@ import { Link, NavLink } from 'react-router-dom'
 import { ChevronLeft, Plus } from 'lucide-react'
 
 import { ChatIcon } from '@/components/chat/ChatIcon'
-import { InvoiceList } from '@/components/chat/InvoiceList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import type { AgentInfo } from '@/lib/agents'
-import type { InvoiceSummary, Thread } from '@/lib/api'
+import type { Thread } from '@/lib/api'
 
 interface ThreadSidebarProps {
   agent: AgentInfo
@@ -16,8 +15,6 @@ interface ThreadSidebarProps {
   error: string | null
   creating: boolean
   userEmail: string | undefined
-  /** Email agent only; null hides the section. */
-  invoices: { items: InvoiceSummary[]; error: string | null } | null
   onNewChat: () => void
   onSignOut: () => void
 }
@@ -29,7 +26,6 @@ export function ThreadSidebar({
   error,
   creating,
   userEmail,
-  invoices,
   onNewChat,
   onSignOut,
 }: ThreadSidebarProps) {
@@ -55,7 +51,6 @@ export function ThreadSidebar({
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
-        {invoices ? <InvoiceList invoices={invoices.items} error={invoices.error} /> : null}
         <nav className="flex flex-col gap-0.5 p-2">
           {loading ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">Loading threads…</p>

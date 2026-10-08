@@ -8,9 +8,10 @@ import { ChatEmptyState } from '@/pages/chat/ChatEmptyState'
 import { ChatPage } from '@/pages/chat/ChatPage'
 import { ChatThreadPage } from '@/pages/chat/ChatThreadPage'
 import { LegacyChatRedirect } from '@/pages/chat/LegacyChatRedirect'
-import { InvoicePage } from '@/pages/email/InvoicePage'
+import { LegacyInvoiceRedirect } from '@/pages/email/LegacyInvoiceRedirect'
 import { AccountsPage } from '@/pages/finance/AccountsPage'
 import { FinanceLayout } from '@/pages/finance/FinanceLayout'
+import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
 import { TransactionsPage } from '@/pages/finance/TransactionsPage'
 import { LoginPage } from '@/pages/login/LoginPage'
@@ -37,13 +38,14 @@ export default function App() {
                 <Route path="/email" element={<ChatPage key="email" agentName="email" />}>
                   <Route index element={<ChatEmptyState />} />
                   <Route path=":threadId" element={<ChatThreadPage />} />
-                  <Route path="invoices/:emailId" element={<InvoicePage />} />
                 </Route>
               </Route>
+              <Route path="/email/invoices/:emailId" element={<LegacyInvoiceRedirect />} />
               <Route element={<AgentRoute agent="finance" />}>
                 <Route path="/finance" element={<FinanceLayout />}>
                   <Route index element={<Navigate to="invoices" replace />} />
                   <Route path="invoices" element={<InvoicesPage />} />
+                  <Route path="invoices/:emailId" element={<InvoicePage />} />
                   <Route path="transactions" element={<TransactionsPage />} />
                   <Route path="accounts" element={<AccountsPage />} />
                 </Route>

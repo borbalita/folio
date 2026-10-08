@@ -74,8 +74,8 @@ Relative dates ("last week") are resolved in `EMAIL_TIMEZONE`. Grounding rejects
 
 - Every PDF attachment is saved at ingest, whatever the email's label, in `email_attachments` as `bytea`.
 - **10 MB cap.** A PDF over `ATTACHMENT_MAX_BYTES` (default 10 MB) still gets a row with its filename and size, `content` null, and `skipped_reason = 'too_large'`. The invoice page lists it as "not stored (over 10 MB)".
-- The Email sidebar lists `invoice` emails, newest first. `/email/invoices/:emailId` shows from, subject, date, the body, and each stored PDF in an embedded viewer.
-- PDFs come from `GET /email/attachments/:id`, out of Postgres. Opening an invoice never contacts Yahoo.
+- Invoices live in the Finance agent: `/finance/invoices` lists `invoice` emails, newest first, and `/finance/invoices/:emailId` shows from, subject, date, the body, and each stored PDF in an embedded viewer.
+- PDFs come from `GET /finance/attachments/:id` (Finance owner only; old `/email/invoices/:emailId` links redirect), out of Postgres. Opening an invoice never contacts Yahoo.
 - There is no pay action.
 
 ## Deferred

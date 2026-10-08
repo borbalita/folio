@@ -4,7 +4,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import { ThreadSidebar } from '@/components/chat/ThreadSidebar'
 import { AGENTS, type AgentInfo } from '@/lib/agents'
 import { useAuth } from '@/lib/auth'
-import { api, type AgentName, type InvoiceSummary, type Thread } from '@/lib/api'
+import { api, type AgentName, type Thread } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
 
 export interface ChatOutletContext {
@@ -20,10 +20,6 @@ export function ChatPage({ agentName }: { agentName: AgentName }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
-  const [invoices, setInvoices] = useState<{
-    items: InvoiceSummary[]
-    error: string | null
-  } | null>(null)
 
   const refreshThreads = useCallback(async () => {
     try {
@@ -57,28 +53,6 @@ export function ChatPage({ agentName }: { agentName: AgentName }) {
     }
   }, [agentName])
 
-  useEffect(() => {
-    if (agentName !== 'email') {
-      return
-    }
-    let cancelled = false
-    api
-      .listInvoices()
-      .then((items) => {
-        if (!cancelled) {
-          setInvoices({ items, error: null })
-        }
-      })
-      .catch((caught: unknown) => {
-        if (!cancelled) {
-          setInvoices({ items: [], error: describeApiError(caught) })
-        }
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [agentName])
-
   async function onNewChat() {
     setCreating(true)
     try {
@@ -102,7 +76,6 @@ export function ChatPage({ agentName }: { agentName: AgentName }) {
         error={error}
         creating={creating}
         userEmail={user?.email}
-        invoices={invoices}
         onNewChat={() => {
           void onNewChat()
         }}

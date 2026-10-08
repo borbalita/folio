@@ -8,7 +8,9 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.database import invoices, mailboxes
+from tests.conftest import TEST_USER_ID
 
 OWN_MAILBOX = uuid.UUID("00000000-0000-0000-0000-000000000010")
 OTHER_MAILBOX = uuid.UUID("00000000-0000-0000-0000-000000000020")
@@ -16,8 +18,25 @@ EMAIL_ID = uuid.UUID("00000000-0000-0000-0000-000000000030")
 ATTACHMENT_ID = uuid.UUID("00000000-0000-0000-0000-000000000040")
 
 
+@pytest.fixture(autouse=True)
+def finance_owner(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", TEST_USER_ID)
+
+
 def _owns_mailbox(user_id: uuid.UUID) -> list[uuid.UUID]:
     return [OWN_MAILBOX]
+
+
+def test_invoice_routes_are_forbidden_for_another_user(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+
+    assert authed_client.get("/finance/invoices").status_code == 403
+    assert authed_client.get(f"/finance/invoices/{EMAIL_ID}").status_code == 403
+    assert authed_client.get(f"/finance/attachments/{ATTACHMENT_ID}").status_code == 403
 
 
 def test_invoice_routes_are_forbidden_without_a_mailbox(
@@ -26,9 +45,9 @@ def test_invoice_routes_are_forbidden_without_a_mailbox(
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
 
-    assert authed_client.get("/email/invoices").status_code == 403
-    assert authed_client.get(f"/email/invoices/{EMAIL_ID}").status_code == 403
-    assert authed_client.get(f"/email/attachments/{ATTACHMENT_ID}").status_code == 403
+    assert authed_client.get("/finance/invoices").status_code == 403
+    assert authed_client.get(f"/finance/invoices/{EMAIL_ID}").status_code == 403
+    assert authed_client.get(f"/finance/attachments/{ATTACHMENT_ID}").status_code == 403
 
 
 def test_owner_lists_invoices_scoped_to_their_mailboxes(
@@ -44,7 +63,7 @@ def test_owner_lists_invoices_scoped_to_their_mailboxes(
 
     monkeypatch.setattr(invoices, "list_invoices", list_invoices)
 
-    response = authed_client.get("/email/invoices")
+    response = authed_client.get("/finance/invoices")
 
     assert response.status_code == 200
     assert response.json()[0]["subject"] == "Invoice 42"
@@ -66,7 +85,7 @@ def test_owner_downloads_a_stored_pdf_inline(
         ),
     )
 
-    response = authed_client.get(f"/email/attachments/{ATTACHMENT_ID}")
+    response = authed_client.get(f"/finance/attachments/{ATTACHMENT_ID}")
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"

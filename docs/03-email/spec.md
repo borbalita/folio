@@ -63,7 +63,7 @@ docs/
 | `/` | Agent picker. One card per agent the user can open. Documents is always there. Email is there only when `/me` includes `email`. Choosing a card goes to that agent's route. |
 | `/documents`, `/documents/:threadId` | Document copilot |
 | `/email`, `/email/:threadId` | Email agent (owner only; others redirect to `/`) |
-| `/email/invoices/:emailId` | Invoice detail |
+| `/email/invoices/:emailId` | Redirects to `/finance/invoices/:emailId` |
 | `/chat` | Redirect to `/documents` |
 | `/chat/:threadId` | Redirect to `/documents/:threadId` |
 
@@ -72,7 +72,6 @@ docs/
 - The sidebar header names the current agent and links back to `/`, so the picker stays reachable after a choice.
 - Email is shown only to the owner. A non-owner who opens `/email` returns to the picker.
 - Each agent has its own thread list, empty state, and new-chat action.
-- The Email sidebar has an **Invoices** section above the thread list. It lists emails labeled `invoice` (from, subject, date), newest first.
 - Main files touched: `frontend/src/App.tsx` and `frontend/src/components/chat/ThreadSidebar.tsx`.
 
 ### 4.3 Chat view
@@ -85,7 +84,7 @@ docs/
 ### 4.4 Invoice detail
 
 - Shows from, subject, date, and the saved body.
-- Lists the email's PDF attachments. Each one opens in an embedded viewer served from `GET /email/attachments/:id` (`Content-Type: application/pdf`).
+- Lists the email's PDF attachments. Each one opens in an embedded viewer served from `GET /finance/attachments/:id` (`Content-Type: application/pdf`).
 - A skipped attachment is listed with its filename and "not stored (over 10 MB)".
 - There is no pay action.
 

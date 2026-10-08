@@ -40,15 +40,9 @@ def test_finance_is_off_for_everyone_when_unset(
     monkeypatch.setattr(settings, "finance_owner_user_id", None)
 
     assert authed_client.get("/me").json()["agents"] == ["documents"]
-    assert authed_client.get("/finance/access").status_code == 403
-
-
-def test_owner_can_reach_finance_routes(
-    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(settings, "finance_owner_user_id", TEST_USER_ID)
-
-    assert authed_client.get("/finance/access").status_code == 200
+    # A mailbox is present, so only the owner check can produce the 403.
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    assert authed_client.get("/finance/invoices").status_code == 403
 
 
 def test_finance_routes_are_forbidden_for_another_user(
@@ -56,6 +50,8 @@ def test_finance_routes_are_forbidden_for_another_user(
 ) -> None:
     monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
 
-    assert authed_client.get("/finance/access").status_code == 403
+    # A mailbox is present, so only the owner check can produce the 403.
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    assert authed_client.get("/finance/invoices").status_code == 403
     assert authed_client.get("/threads", params={"agent": "finance"}).status_code == 403
     assert authed_client.post("/threads", json={"agent": "finance"}).status_code == 403
