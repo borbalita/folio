@@ -25,6 +25,26 @@ export interface Me {
   agents: AgentName[]
 }
 
+export interface InvoiceSummary {
+  id: string
+  from: string
+  subject: string
+  sentAt: string
+}
+
+export interface InvoiceAttachment {
+  id: string
+  filename: string
+  sizeBytes: number
+  /** Set when ingest kept only the metadata, e.g. `too_large`. */
+  skippedReason: string | null
+}
+
+export interface InvoiceDetail extends InvoiceSummary {
+  body: string
+  attachments: InvoiceAttachment[]
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -35,4 +55,10 @@ export const api = {
     http.post<Thread>('/threads', title ? { agent, title } : { agent }),
 
   getMessages: (threadId: string) => http.get<ThreadMessage[]>(`/threads/${threadId}/messages`),
+
+  listInvoices: () => http.get<InvoiceSummary[]>('/email/invoices'),
+
+  getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/email/invoices/${emailId}`),
+
+  getAttachment: (attachmentId: string) => http.getBlob(`/email/attachments/${attachmentId}`),
 }
