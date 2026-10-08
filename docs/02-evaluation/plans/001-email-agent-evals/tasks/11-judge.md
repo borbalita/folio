@@ -28,3 +28,5 @@
 **Review notes**: Commit message explains the eval-only Anthropic exception (no new package; `anthropic` is already locked through `pydantic-ai`).
 
 **Complexity**: Medium.
+
+**Plan**: [11-judge.plan.md](11-judge.plan.md).
