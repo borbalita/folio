@@ -2,7 +2,7 @@
 
 **A personal AI workspace with three agents: one for my inbox, one for my finances, one for research filings.** Each agent answers in plain language and cites its sources, and says so when the data doesn't support an answer.
 
-Built end to end by [Borbála Tasnádi](https://tasnadi-ai.de), freelance AI engineer, as a working example of how I build AI products: specified first, tested, observable and deployed.
+Built end to end by [Borbála Tasnádi](https://tasnadi-ai.de), freelance AI engineer, as a working example of how she build AI products: specified first, tested, observable and deployed.
 
 <!-- Demo videos: add links or embeds here. -->
 
