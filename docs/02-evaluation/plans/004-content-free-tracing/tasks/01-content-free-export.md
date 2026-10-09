@@ -5,7 +5,7 @@ No app trace in Langfuse carries content; traces keep models, tools, tokens, tim
 
 ## Scope
 - `Agent.instrument_all(InstrumentationSettings(include_content=False, include_binary_content=False))`.
-- Hand-made spans lose their content: `generate-chat-response` (no input or output), `hybrid-search` and `news-search` (no input), `embed-query` (no input), `rerank` (only the candidate count as input). Their metadata, levels and status codes stay.
+- Hand-made spans lose their content: `generate-chat-response` (no input or output), `hybrid-search` and `news-search` (no input), `embed-query` (no input), `rerank` (no input or output; counts move to metadata). Their metadata, levels and status codes stay.
 - `ContentFreeExporter` around an `OTLPSpanExporter` built as the Langfuse SDK builds it, passed as `Langfuse(span_exporter=...)`: keeps allowlisted attribute keys only, reduces `exception` events to `exception.type`, drops other events, replaces the status description with the exception type.
 - The allowlist as concrete keys, taken from real content-free spans of a document turn, an email turn, a failing turn and a title run.
 - Delete the email regex and `_mask_otel_spans`.
@@ -27,3 +27,5 @@ None.
 ## Notes
 - Decisions: all agents; allowlist, not masking; filters and exception messages are content.
 - Langfuse 4.14.5's `mask_otel_spans` cannot touch events or status, hence the exporter.
+- Harness spans `experiment-item-run` and `experiment-item-task` pass the exporter unchanged.
+- Implementation plan: [01-content-free-export.plan.md](01-content-free-export.plan.md).
