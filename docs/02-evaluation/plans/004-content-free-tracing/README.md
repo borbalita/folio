@@ -1,8 +1,8 @@
 # 004 — Content-free tracing
 
 - Created: 2026-10-09
-- Status: Ready
-- Current stage: Spec approved; 004/01 next
+- Status: In progress
+- Current stage: 004/01 implemented; its live Langfuse check is pending
 
 ## Approval state
 

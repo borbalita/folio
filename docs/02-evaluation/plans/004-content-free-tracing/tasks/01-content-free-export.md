@@ -29,3 +29,15 @@ None.
 - Langfuse 4.14.5's `mask_otel_spans` cannot touch events or status, hence the exporter.
 - Harness spans `experiment-item-run` and `experiment-item-task` pass the exporter unchanged.
 - Implementation plan: [01-content-free-export.plan.md](01-content-free-export.plan.md).
+
+## Verified
+
+2026-10-09, PR: not opened yet.
+
+- Document and email turns export no content; model, tokens, tool names and `citation_count` present (test): met compositionally, not by one test of the real agents, whose tools need the database. `tests/test_observability.py` runs a PydanticAI agent with a tool, a PDF and instructions through `ContentFreeExporter`; the source-layer tests in `tests/chat/test_orchestrator.py`, `tests/retrieval/test_base.py`, `tests/retrieval/news/test_news_retriever.py` and `tests/retrieval/email/test_email_rerank.py` cover every hand-made span; `tests/test_trace_export.py` covers the exporter. Passed.
+- A raising turn exports level and exception type, no message (test): `test_failing_agent_exports_the_type_only`, `test_failed_turn_span_keeps_the_code_not_the_message`, `test_exception_events_keep_only_the_type`, `test_status_message_gives_way_to_the_exception_type`. Passed.
+- A PDF input leaves no binary or base64 attribute (test): `test_agent_run_records_no_content_or_file_at_the_source`, which fails when content and binary are switched on. Passed.
+- Unknown attribute keys are dropped (test): `test_unknown_keys_are_dropped`; library drift is caught by `test_recorded_keys_match_the_known_set`. Passed.
+- One Documents and one Email turn in Langfuse show shape and no content (manual): pending; needs the owner to run the turns and look in Langfuse.
+
+Fast suite: 413 passed; `ruff check` clean. A fresh whole-branch review found no critical issues; its four important findings were fixed with tests.
