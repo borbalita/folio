@@ -20,3 +20,4 @@ None.
 
 ## Notes
 - Follows up the placeholder noted in Open questions.
+- Implementation plan: [01-legal-pages.plan.md](01-legal-pages.plan.md).
