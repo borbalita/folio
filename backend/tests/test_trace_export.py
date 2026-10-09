@@ -160,3 +160,41 @@ def test_langfuse_otlp_exporter_matches_the_sdk() -> None:
         b"pk:sk"
     ).decode("ascii")
     assert default._headers["x-langfuse-public-key"] == "pk"
+
+
+def test_status_message_that_is_not_a_code_is_dropped() -> None:
+    span = content_free(
+        _finished(
+            attributes={"langfuse.observation.status_message": "SECRET text: boom"},
+            status=Status(StatusCode.ERROR, "SECRET text: boom"),
+        )
+    )
+
+    assert "SECRET" not in _everything(span)
+    assert span.status.description is None
+
+
+def test_status_message_gives_way_to_the_exception_type() -> None:
+    span = content_free(
+        _finished(
+            attributes={"langfuse.observation.status_message": "agent_run_failed"},
+            exception=RuntimeError("SECRET"),
+            status=Status(StatusCode.ERROR),
+        )
+    )
+
+    assert span.status.description == "RuntimeError"
+    assert span.attributes["langfuse.observation.status_message"] == "RuntimeError"
+
+
+def test_non_error_status_has_no_description(caplog) -> None:
+    span = content_free(
+        _finished(
+            attributes={"langfuse.observation.status_message": "missing_citations"},
+        )
+    )
+
+    assert span.status.status_code == StatusCode.UNSET
+    assert span.status.description is None
+    assert span.attributes["langfuse.observation.status_message"] == "missing_citations"
+    assert "description should only be set" not in caplog.text

@@ -8,13 +8,14 @@ and a library upgrade may add new attributes.
 from __future__ import annotations
 
 import base64
+import re
 from collections.abc import Sequence
 
 from langfuse._version import __version__ as langfuse_version
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import Event, ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from opentelemetry.trace import Status
+from opentelemetry.trace import Status, StatusCode
 
 # Langfuse's experiment runner writes these; eval harness records may keep synthetic content.
 HARNESS_SPANS = frozenset({"experiment-item-run", "experiment-item-task"})
@@ -75,6 +76,7 @@ ALLOWED_METADATA = frozenset(
 )
 _METADATA_PREFIX = "langfuse.observation.metadata."
 _STATUS_MESSAGE = "langfuse.observation.status_message"
+_CODE = re.compile(r"[A-Za-z0-9_.]+")
 
 
 def _allowed(key: str) -> bool:
@@ -97,10 +99,13 @@ def content_free(span: ReadableSpan) -> ReadableSpan:
         for event in span.events
         if event.name == "exception"
     ]
+    # Langfuse's own producers (e.g. @observe) write str(exception) here; keep codes only.
     if exceptions:
-        description = exceptions[-1].attributes["exception.type"]
-    else:
-        description = attributes.get(_STATUS_MESSAGE)
+        attributes[_STATUS_MESSAGE] = exceptions[-1].attributes["exception.type"]
+    elif not _CODE.fullmatch(str(attributes.get(_STATUS_MESSAGE, ""))):
+        attributes.pop(_STATUS_MESSAGE, None)
+    error = span.status.status_code is StatusCode.ERROR
+    description = attributes.get(_STATUS_MESSAGE) if error else None
     return ReadableSpan(
         name=span.name,
         context=span.context,

@@ -104,3 +104,76 @@ def test_configure_tracing_uses_content_free_settings(
     assert settings.include_binary_content is False
     assert isinstance(langfuse_kwargs["span_exporter"], ContentFreeExporter)
     assert "mask_otel_spans" not in langfuse_kwargs
+
+
+# Every attribute key a content-free PydanticAI 2.46 run records, allowlisted or not.
+# A library upgrade that changes this set fails here, so the allowlist is revisited.
+PYDANTIC_AI_KEYS = {
+    "agent_name",
+    "gen_ai.agent.call.id",
+    "gen_ai.agent.name",
+    "gen_ai.aggregated_usage.input_tokens",
+    "gen_ai.aggregated_usage.output_tokens",
+    "gen_ai.conversation.id",
+    "gen_ai.input.messages",
+    "gen_ai.operation.name",
+    "gen_ai.output.messages",
+    "gen_ai.provider.name",
+    "gen_ai.request.model",
+    "gen_ai.response.model",
+    "gen_ai.system",
+    "gen_ai.tool.call.id",
+    "gen_ai.tool.definitions",
+    "gen_ai.tool.name",
+    "gen_ai.usage.input_tokens",
+    "gen_ai.usage.output_tokens",
+    "logfire.json_schema",
+    "logfire.msg",
+    "model_name",
+    "model_request_parameters",
+    "pydantic_ai.all_messages",
+}
+
+
+@pytest.fixture
+def recorded() -> Iterator[InMemorySpanExporter]:
+    """PydanticAI spans as recorded at the source, before any export filtering."""
+    exporter = InMemorySpanExporter()
+    provider = TracerProvider()
+    provider.add_span_processor(SimpleSpanProcessor(exporter))
+    Agent.instrument_all(observability.content_free_instrumentation(provider))
+    yield exporter
+    Agent.instrument_all(False)
+
+
+def _run_search_agent() -> None:
+    agent = Agent(FunctionModel(_searching_model), instructions="SECRET-INSTR")
+
+    @agent.tool_plain
+    def search(query: str) -> str:
+        return "SECRET-RESULT"
+
+    agent.run_sync(
+        [
+            "SECRET-USER",
+            BinaryContent(data=b"%PDF-SECRET", media_type="application/pdf"),
+        ]
+    )
+
+
+def test_agent_run_records_no_content_or_file_at_the_source(
+    recorded: InMemorySpanExporter,
+) -> None:
+    _run_search_agent()
+
+    everything = _everything(recorded)
+    assert "SECRET-" not in everything
+    assert "%PDF" not in everything
+    assert "JVBER" not in everything  # base64 of "%PDF"
+
+
+def test_recorded_keys_match_the_known_set(recorded: InMemorySpanExporter) -> None:
+    _run_search_agent()
+
+    keys = {key for s in recorded.get_finished_spans() for key in s.attributes or {}}
+    assert keys == PYDANTIC_AI_KEYS
