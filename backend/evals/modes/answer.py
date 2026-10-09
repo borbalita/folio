@@ -26,6 +26,7 @@ from evals.agent_run import ToolStep, candidate_model, effort_settings, run_agen
 from evals.cases import RagCase
 from evals.dataset import IdMap, load_id_map, load_rag_cases
 from evals.experiment import RunConfig, publication, run_experiment
+from evals.judge import JudgeScores, judge_answer, rubric_prompts
 from evals.langfuse_sync import item_id, local_rag_payloads, rag_dataset_name
 from evals.modes.retrieval import chunk_owners
 from evals.replay import ReplayRetriever, evidence_email_keys, load_evidence
@@ -45,6 +46,8 @@ class AnswerResult(BaseModel):
     usage: dict[str, int]
     seconds: float
     scores: AnswerScores
+    judge: JudgeScores | None
+    """None when the run had no judge."""
 
 
 class ScoredAnswer(Protocol):
@@ -56,9 +59,33 @@ class ScoredAnswer(Protocol):
     usage: dict[str, int]
     seconds: float
     scores: AnswerScores
+    judge: JudgeScores | None
 
 
 METRICS = ("refusal_correct", "evidence_cited", "distractor_cited", "grounding_pass")
+JUDGE_METRICS = ("faithfulness", "fact_recall")
+
+
+def metric(result: ScoredAnswer, name: str) -> float | None:
+    if name in JUDGE_METRICS:
+        return getattr(result.judge, name) if result.judge else None
+    return getattr(result.scores, name)
+
+
+async def judged(
+    case: RagCase, deps: EmailAgentDeps, answer: EmailAnswer, judge: Model | None
+) -> JudgeScores | None:
+    if judge is None:
+        return None
+    return await judge_answer(
+        case.question,
+        case.today,
+        answer,
+        deps.seen_passages,
+        case.expected_facts,
+        answerable=case.answerable,
+        model=judge,
+    )
 
 
 def chunks_of(keys: list[str], id_map: IdMap) -> set[UUID]:
@@ -76,6 +103,7 @@ async def run_case(
     owners: dict[UUID, str],
     model: Model,
     model_settings: OpenAIResponsesModelSettings | None,
+    judge: Model | None,
 ) -> AnswerResult:
     passages = await asyncio.to_thread(_load_evidence, case, id_map)
     deps = EmailAgentDeps(
@@ -106,6 +134,7 @@ async def run_case(
             distractor_chunk_ids=chunks_of(case.distractor_keys, id_map),
             seen_ids=deps.seen_ids,
         ),
+        judge=await judged(case, deps, record.answer, judge),
     )
 
 
@@ -113,7 +142,7 @@ def summarize(results: Sequence[ScoredAnswer]) -> dict[str, object]:
     """Averages overall and per case kind; each metric over the cases it applies to."""
 
     def averages(group: Sequence[ScoredAnswer]) -> dict[str, float | None]:
-        return {m: mean(getattr(r.scores, m) for r in group) for m in METRICS}
+        return {m: mean(metric(r, m) for r in group) for m in METRICS + JUDGE_METRICS}
 
     by_kind: dict[str, list[ScoredAnswer]] = defaultdict(list)
     for result in results:
@@ -128,6 +157,11 @@ def summarize(results: Sequence[ScoredAnswer]) -> dict[str, object]:
             Counter(
                 r.scores.grounding_error for r in results if r.scores.grounding_error
             )
+        ),
+        "judge_errors": sum(
+            1
+            for r in results
+            if r.judge and (r.judge.support_error or r.judge.facts_error)
         ),
         "tokens": {
             key: sum(r.usage[key] for r in results)
@@ -145,11 +179,39 @@ def answer_evaluations(result: ScoredAnswer) -> list[Evaluation]:
         "distractor_cited": f"cited {result.cited_email_keys}",
         "grounding_pass": result.scores.grounding_error or "ok",
     }
-    return [
-        Evaluation(name=metric, value=value, comment=comments[metric])
-        for metric in METRICS
-        if (value := getattr(result.scores, metric)) is not None
+    evaluations = [
+        Evaluation(name=name, value=value, comment=comments[name])
+        for name in METRICS
+        if (value := getattr(result.scores, name)) is not None
     ]
+    if result.judge is not None:
+        evaluations.extend(judge_evaluations(result.judge))
+    return evaluations
+
+
+def judge_evaluations(judge: JudgeScores) -> list[Evaluation]:
+    """Per-claim and per-fact reasons go in the comment; a failed call is a judge_error, never 0."""
+    evaluations = []
+    if judge.faithfulness is not None and judge.support is not None:
+        lines = [f"{c.verdict}: {c.claim} ({c.reason})" for c in judge.support.claims]
+        evaluations.append(
+            Evaluation(
+                name="faithfulness", value=judge.faithfulness, comment="\n".join(lines)
+            )
+        )
+    if judge.fact_recall is not None and judge.facts is not None:
+        lines = [f"{f.verdict}: {f.name} ({f.reason})" for f in judge.facts.facts]
+        evaluations.append(
+            Evaluation(
+                name="fact_recall", value=judge.fact_recall, comment="\n".join(lines)
+            )
+        )
+    errors = [e for e in (judge.support_error, judge.facts_error) if e]
+    if errors:
+        evaluations.append(
+            Evaluation(name="judge_error", value=1.0, comment="\n".join(errors))
+        )
+    return evaluations
 
 
 def run(
@@ -159,6 +221,7 @@ def run(
     *,
     model: str,
     effort: str | None,
+    judge: Model | None,
 ) -> dict[str, object]:
     cases = load_rag_cases(version)
     dataset_name = rag_dataset_name(version)
@@ -167,10 +230,14 @@ def run(
     owners = chunk_owners(id_map)
     chat = candidate_model(model)
     model_settings = effort_settings(effort)
-    subject = f"{model} (effort {effort or 'default'}, Responses API)"
+    subject = f"{model} (effort {effort or 'default'}, Responses API)" + judge_note(
+        judge
+    )
 
     async def task(key: str) -> AnswerResult:
-        result = await run_case(by_item[key], id_map, owners, chat, model_settings)
+        result = await run_case(
+            by_item[key], id_map, owners, chat, model_settings, judge
+        )
         print(f"  {result.case_id} {result.kind:14} {scores_line(result)}")
         return result
 
@@ -179,7 +246,10 @@ def run(
         version=version,
         subject=subject,
         today=cases[0].today,
-        prompts={"instructions": INSTRUCTIONS_PATH.read_text(encoding="utf-8")},
+        prompts={
+            "instructions": INSTRUCTIONS_PATH.read_text(encoding="utf-8"),
+            **(rubric_prompts() if judge else {}),
+        },
         concurrency=concurrency,
     )
     experiment = run_experiment(
@@ -204,6 +274,10 @@ def run(
     }
 
 
+def judge_note(judge: Model | None) -> str:
+    return f", judge {judge.model_name}" if judge else ", no judge"
+
+
 def scores_line(result: ScoredAnswer) -> str:
     s = result.scores
     parts = [s.refusal_outcome]
@@ -213,6 +287,12 @@ def scores_line(result: ScoredAnswer) -> str:
         parts.append(f"distractor {s.distractor_cited:.0f}")
     if s.grounding_pass is not None:
         parts.append(f"grounding {s.grounding_error or 'ok'}")
+    if result.judge is not None:
+        for name in JUDGE_METRICS:
+            if (value := getattr(result.judge, name)) is not None:
+                parts.append(f"{name} {value:.2f}")
+        if result.judge.support_error or result.judge.facts_error:
+            parts.append("judge_error")
     return (
         "  ".join(parts) + f"  cited {result.cited_email_keys}  {result.seconds:.1f}s"
     )
@@ -225,6 +305,7 @@ def print_summary(summary: dict[str, object]) -> None:
     print(
         f"\n{summary['cases']} cases, {summary['unanswerable_cases']} unanswerable; "
         f"refusals {summary['refusal_outcomes']}; grounding errors {summary['grounding_errors']}; "
+        f"judge errors {summary['judge_errors']}; "
         f"tokens {summary['tokens']}; {summary['seconds_mean']:.1f}s per case"
     )
     for name, averages in [
@@ -235,6 +316,6 @@ def print_summary(summary: dict[str, object]) -> None:
             f"  {name:15} "
             + "  ".join(
                 f"{m} {'n/a' if averages[m] is None else f'{averages[m]:.3f}'}"
-                for m in METRICS
+                for m in METRICS + JUDGE_METRICS
             )
         )

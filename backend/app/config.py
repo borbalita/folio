@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     yahoo_app_password: str | None = None
     email_agent_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
+    # Evals only: the Claude judge. The app itself never calls Anthropic.
+    anthropic_api_key: str | None = None
     typesafe_label_model: str = "jev-latest"
     email_rerank: bool = True
     email_rerank_candidates: int = Field(default=20, gt=0)
@@ -83,6 +85,7 @@ class Settings(BaseSettings):
         "yahoo_email",
         "yahoo_app_password",
         "typesafe_api_key",
+        "anthropic_api_key",
         "news_extraction_model",
         "news_extraction_reasoning_effort",
         mode="before",
