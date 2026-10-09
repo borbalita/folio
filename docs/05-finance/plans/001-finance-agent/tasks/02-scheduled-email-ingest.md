@@ -39,4 +39,4 @@ Railway cron service settings:
 - Source: this repo, root directory `/backend`. Config as Code path: `/backend/railway.email-ingest.json`. That file sets the start command `python -m ingest.email --scheduled`, the cron schedule `*/30 * * * *` (UTC) and the restart policy `NEVER`.
 - Variables: reference the backend service's `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `OPENAI_API_KEY`, `OPENAI_CHAT_MODEL`, `OPENAI_EMBEDDING_MODEL`, `OPENAI_EMBEDDING_DIMENSIONS`, `ALLOWED_ORIGINS`, `ENVIRONMENT` and `LANGFUSE_*`. Also set `YAHOO_EMAIL`, `YAHOO_APP_PASSWORD`, `EMAIL_AGENT_OWNER_USER_ID` and `TYPESAFE_API_KEY`, plus `TYPESAFE_LABEL_MODEL`, `EMAIL_TIMEZONE` and `AI_NEWSLETTER_DOMAINS` if they are set locally.
 
-PR: not opened yet; it waits for 001/07 to merge.
+PR: https://github.com/borbalita/folio/pull/18
