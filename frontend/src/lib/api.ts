@@ -45,6 +45,22 @@ export interface InvoiceDetail extends InvoiceSummary {
   attachments: InvoiceAttachment[]
 }
 
+export type BankName = 'N26' | 'ING' | 'PayPal'
+
+export interface BankAccount {
+  id: string
+  name: string | null
+  ibanMasked: string | null
+  currency: string | null
+}
+
+export interface BankConnection {
+  bank: BankName
+  connected: boolean
+  validUntil: string | null
+  accounts: BankAccount[]
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -59,6 +75,14 @@ export const api = {
   listInvoices: () => http.get<InvoiceSummary[]>('/finance/invoices'),
 
   getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/finance/invoices/${emailId}`),
+
+  listBankConnections: () => http.get<BankConnection[]>('/finance/bank-connections'),
+
+  startBankConnection: (bank: BankName) =>
+    http.post<{ url: string }>(`/finance/bank-connections/${bank}/start`),
+
+  completeBankConnection: (code: string, state: string) =>
+    http.post<BankConnection[]>('/finance/bank-connections/callback', { code, state }),
 
   getAttachment: (attachmentId: string) => http.getBlob(`/finance/attachments/${attachmentId}`),
 }

@@ -11,9 +11,13 @@ from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
+from app.database.models.finance.bank_account import BankAccount
+from app.database.models.finance.bank_connection import BankConnection
 from app.database.models.user import User
 
 __all__ = [
+    "BankAccount",
+    "BankConnection",
     "Base",
     "ChatMessage",
     "ChatThread",

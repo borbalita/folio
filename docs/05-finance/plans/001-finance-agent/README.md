@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation; 001/03 and 001/04 done
+- Current stage: Implementation; 001/03, 001/04 and 001/07 done
 
 ## Approval state
 
@@ -79,7 +79,7 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 - **Access:** `finance_owner_user_id` names the single owner; every Finance route returns 403 to anyone else; Finance is off when the setting is missing.
 - **Failure modes:** expired or revoked consent shows Reconnect, the sync skips that bank, and the owner gets emails at 14 days, 3 days and on expiry (Yahoo SMTP, stdlib); Reconnect all renews every bank in one sitting. Failed syncs and extractions go to the job-run log; failed extractions are `needs_info`. At most one open payment draft per invoice; Approve re-checks the invoice; only a match or the owner marks it paid.
 - **Privacy:** no content reaches Langfuse; Finance traces keep models, tools, tokens, timings and errors only. Full content goes to a local trace output when a local-only setting is on; the API refuses to start with it in production. Rejected: pattern masking and a Langfuse debug switch. The Enable Banking key lives only on the owner's laptop and in Railway's variables.
-- **Configuration and deployment:** settings for Enable Banking (app id, PEM contents, redirect URL), the owner, the extraction model, and local tracing; two Railway cron services; redirect URLs for the deployed frontend and local work. New dependencies: `pyjwt` and `cryptography` pinned directly, `segno` for QR codes.
+- **Configuration and deployment:** settings for Enable Banking (app id, PEM contents, redirect URL), the owner, the extraction model, and local tracing; two Railway cron services; redirect URLs for the deployed frontend and local work. Enable Banking accepts only https redirect URLs, localhost included (found in 001/07), so local work runs the Vite dev server on https with a self-signed certificate. New dependencies: `pyjwt` and `cryptography` pinned directly, `segno` for QR codes.
 
 ## Success criteria
 
@@ -101,7 +101,7 @@ Before 001/05: the content-free tracing change (separate task).
 - [x] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
 - [ ] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
 - [ ] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
-- [ ] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03
+- [x] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03
 - [ ] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
 - [ ] [001/09 — Invoices matched to transactions](tasks/09-matching.md) — after 06, 08
 - [ ] [001/10 — Pay invoices with a GiroCode QR](tasks/10-qr-payments.md) — after 09

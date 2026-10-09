@@ -822,6 +822,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "langfuse" },
@@ -831,6 +832,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-ai", extra = ["typesafe"] },
     { name = "pydantic-settings" },
+    { name = "pyjwt" },
     { name = "sqlalchemy" },
     { name = "structlog" },
     { name = "supabase" },
@@ -850,6 +852,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = "==1.18.5" },
+    { name = "cryptography", specifier = "==49.0.0" },
     { name = "fastapi", specifier = "==0.141.0" },
     { name = "httpx", specifier = "==0.28.1" },
     { name = "langfuse", specifier = "==4.14.5" },
@@ -859,6 +862,7 @@ requires-dist = [
     { name = "pydantic", specifier = "==2.13.4" },
     { name = "pydantic-ai", extras = ["typesafe"], specifier = "==2.46.0" },
     { name = "pydantic-settings", specifier = "==2.14.2" },
+    { name = "pyjwt", specifier = "==2.13.0" },
     { name = "sqlalchemy", specifier = "==2.0.51" },
     { name = "structlog", specifier = "==26.1.0" },
     { name = "supabase", specifier = "==2.31.0" },

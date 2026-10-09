@@ -164,6 +164,21 @@ export function describeApiError(error: unknown): string {
   return UNEXPECTED_ERROR
 }
 
+/** User-facing message for routes whose `detail` is written for the user (Finance bank routes). */
+export function describeApiErrorDetail(error: unknown): string {
+  if (
+    error instanceof ApiError &&
+    !error.isNetworkError &&
+    (error.status === 400 || error.status === 502 || error.status === 503)
+  ) {
+    const detail = detailFromBody(error.body)
+    if (detail) {
+      return detail
+    }
+  }
+  return describeApiError(error)
+}
+
 /** Fetches a binary response (e.g. a PDF) with the same auth and error rules as JSON calls. */
 async function getBlob(path: string, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Blob> {
   const headers: Record<string, string> = {}
