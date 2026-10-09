@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api, type BankConnection, type BankName } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
-import { describeApiError } from '@/lib/http'
+import { describeApiErrorDetail } from '@/lib/http'
 
 type State = { connections: BankConnection[] } | { error: string } | null
 
@@ -24,7 +24,7 @@ export function AccountsPage() {
       })
       .catch((caught: unknown) => {
         if (!cancelled) {
-          setState({ error: describeApiError(caught) })
+          setState({ error: describeApiErrorDetail(caught) })
         }
       })
     return () => {
@@ -50,7 +50,7 @@ export function AccountsPage() {
       const { url } = await api.startBankConnection(bank)
       window.location.assign(url)
     } catch (caught: unknown) {
-      setStartError(describeApiError(caught))
+      setStartError(describeApiErrorDetail(caught))
       setStarting(null)
     }
   }

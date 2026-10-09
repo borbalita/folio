@@ -112,13 +112,14 @@ def test_start_without_config_is_503_naming_setting(
     assert "ENABLE_BANKING" in response.json()["detail"]
 
 
+@pytest.mark.parametrize("status", [0, 500])
 def test_start_bank_error_is_502_without_provider_body(
-    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch, status: int
 ) -> None:
     monkeypatch.setattr(bank_connections, "begin_connection", lambda *a: None)
 
     async def start_authorization(bank: str, state: str) -> str:
-        raise EnableBankingError(500, "secret provider text")
+        raise EnableBankingError(status, "secret provider text")
 
     monkeypatch.setattr(enable_banking, "start_authorization", start_authorization)
 
@@ -126,6 +127,27 @@ def test_start_bank_error_is_502_without_provider_body(
 
     assert response.status_code == 502
     assert response.json()["detail"] == "Could not reach the bank; try again."
+    assert "secret provider text" not in response.text
+
+
+def test_start_refused_by_enable_banking_says_so(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(bank_connections, "begin_connection", lambda *a: None)
+
+    async def start_authorization(bank: str, state: str) -> str:
+        raise EnableBankingError(400, '{"error":"REDIRECT_URI_NOT_ALLOWED"}')
+
+    monkeypatch.setattr(enable_banking, "start_authorization", start_authorization)
+
+    response = authed_client.post("/finance/bank-connections/N26/start")
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Enable Banking refused the request; "
+        "check the application's redirect URLs and settings."
+    )
+    assert "REDIRECT_URI_NOT_ALLOWED" not in response.text
 
 
 def test_callback_with_wrong_state_is_refused(

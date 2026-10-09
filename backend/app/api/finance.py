@@ -128,5 +128,12 @@ async def start_bank_connection(
         raise HTTPException(503, str(exc)) from exc
     except enable_banking.EnableBankingError as exc:
         log.warning("bank_start_failed", bank=bank, status=exc.status, body=exc.body)
+        # A 4xx means the bank was reached and refused; only the owner can fix the settings.
+        if 400 <= exc.status < 500:
+            raise HTTPException(
+                502,
+                "Enable Banking refused the request; "
+                "check the application's redirect URLs and settings.",
+            ) from exc
         raise HTTPException(502, "Could not reach the bank; try again.") from exc
     return {"url": url}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { api } from '@/lib/api'
-import { describeApiError } from '@/lib/http'
+import { describeApiErrorDetail } from '@/lib/http'
 
 export function BankCallbackPage() {
   const [params] = useSearchParams()
@@ -23,7 +23,7 @@ export function BankCallbackPage() {
     api
       .completeBankConnection(code, state)
       .then(() => navigate('/finance/accounts', { replace: true }))
-      .catch((caught: unknown) => setApiError(describeApiError(caught)))
+      .catch((caught: unknown) => setApiError(describeApiErrorDetail(caught)))
   }, [bankError, code, state, navigate])
 
   const error = bankError ?? apiError ?? (!code || !state ? 'Missing bank response.' : null)
