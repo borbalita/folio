@@ -47,3 +47,10 @@ Shared by both agents: thread history sent to the model, and long-term memories 
 The finance agent: invoices from mail, bank and PayPal transactions, categories, and payments you approve.
 
 - [Plans](05-finance/plans/README.md)
+
+## Legal
+
+Linked from the Enable Banking application.
+
+- [Privacy](legal/privacy.md)
+- [Terms](legal/terms.md)
