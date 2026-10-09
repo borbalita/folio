@@ -1,4 +1,12 @@
-Typecheck and lint: `pnpm tsc --noEmit` and `pnpm lint`. CI and git hooks: [root README](../README.md#ci-and-git-hooks).
+Typecheck and lint: `pnpm tsc --noEmit` and `pnpm lint`.
+
+Local https: Enable Banking redirects only to https URLs, so connecting a bank locally needs the dev server on `https://localhost:5173`. `pnpm dev` serves https when `.cert/` holds a certificate; create one once from `frontend/`:
+
+```bash
+mkdir -p .cert && openssl req -x509 -newkey rsa:2048 -nodes -keyout .cert/key.pem -out .cert/cert.pem -days 825 -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
+```
+
+The certificate is self-signed: accept the browser warning once. Add `https://localhost:5173` to the backend's `ALLOWED_ORIGINS`. CI and git hooks: [root README](../README.md#ci-and-git-hooks).
 
 # React + TypeScript + Vite
 
