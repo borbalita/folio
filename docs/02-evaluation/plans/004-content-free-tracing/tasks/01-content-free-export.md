@@ -32,7 +32,7 @@ None.
 
 ## Verified
 
-2026-10-09, PR: not opened yet.
+2026-10-09, PR: [#22](https://github.com/borbalita/folio/pull/22)
 
 - Document and email turns export no content; model, tokens, tool names and `citation_count` present (test): met compositionally, not by one test of the real agents, whose tools need the database. `tests/test_observability.py` runs a PydanticAI agent with a tool, a PDF and instructions through `ContentFreeExporter`; the source-layer tests in `tests/chat/test_orchestrator.py`, `tests/retrieval/test_base.py`, `tests/retrieval/news/test_news_retriever.py` and `tests/retrieval/email/test_email_rerank.py` cover every hand-made span; `tests/test_trace_export.py` covers the exporter. Passed.
 - A raising turn exports level and exception type, no message (test): `test_failing_agent_exports_the_type_only`, `test_failed_turn_span_keeps_the_code_not_the_message`, `test_exception_events_keep_only_the_type`, `test_status_message_gives_way_to_the_exception_type`. Passed.
