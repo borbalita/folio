@@ -16,6 +16,7 @@ uv run python -m ingest.email --limit 50 --since 2026-09-01
 
 - Reads INBOX over IMAP (`imap.mail.yahoo.com:993`, stdlib `imaplib`) with a Yahoo app password.
 - `--since` filters first. Then `--limit` keeps the newest N. The default is 5, and `0` means no cap.
+- `--scheduled` is the cron mode: no cap, fetches from `last_synced_at` minus 1 day (or the last 7 days if never synced), and writes one `job_runs` row per run. It can't be combined with `--limit` or `--since`.
 - The first run creates the `mailboxes` row and gives it to `EMAIL_AGENT_OWNER_USER_ID`. Ingest exits at once if that setting, `YAHOO_EMAIL`, or `YAHOO_APP_PASSWORD` is missing. The API starts without them.
 - Each message is parsed, labeled, chunked, and embedded in one transaction. The run prints a summary: fetched, skipped, new, re-embedded, count per label, attachments saved or skipped, news items, stories rebuilt.
 - The IMAP side is an adapter that returns a provider-neutral `ParsedMessage`. The rest of the pipeline never knows it's Yahoo. Gmail or a work account would be a new adapter.
