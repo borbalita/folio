@@ -1,16 +1,12 @@
 # Borbfolio
 
-**A personal AI workspace with three agents: one for research filings, one for my inbox, one for my finances.** Each agent answers in plain language and cites its sources, and says so when the data doesn't support an answer.
+**A personal AI workspace with three agents: one for my inbox, one for my finances, one for research filings.** Each agent answers in plain language and cites its sources, and says so when the data doesn't support an answer.
 
 Built end to end by [Borbála Tasnádi](https://tasnadi-ai.de), freelance AI engineer, as a working example of how I build AI products: specified first, tested, observable and deployed.
 
 <!-- Demo videos: add links or embeds here. -->
 
 ## The agents
-
-### Document Copilot: research over SEC filings
-
-Analysts ask questions about 10-K filings (Apple, Microsoft, NVIDIA, Amazon, Alphabet) and get answers in which every claim links to the passage it came from. If the filings don't cover a question, it says so instead of guessing. It's built around a client brief for a fictional research firm whose analysts lose half their week reading filings: [client brief](docs/01-document-copilot/client-brief.md), [architecture](docs/01-document-copilot/architecture.md).
 
 ### Email Assistant: chat over a real inbox
 
@@ -29,6 +25,10 @@ Details: [overview](docs/03-email/overview.md).
 - **Payments:** prepared as a GiroCode QR, so every transfer is confirmed in the bank's own app.
 
 Plan and progress: [finance plan](docs/05-finance/plans/001-finance-agent/README.md).
+
+### Document Copilot: research over SEC filings
+
+Analysts ask questions about 10-K filings (Apple, Microsoft, NVIDIA, Amazon, Alphabet) and get answers in which every claim links to the passage it came from. If the filings don't cover a question, it says so instead of guessing. It's built around a client brief for a fictional research firm whose analysts lose half their week reading filings: [client brief](docs/01-document-copilot/client-brief.md), [architecture](docs/01-document-copilot/architecture.md).
 
 ## What this project demonstrates
 
