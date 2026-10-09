@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from collections.abc import Callable
 from datetime import date
 from unittest.mock import MagicMock
 
@@ -17,7 +18,7 @@ from app.chat.titles import DEFAULT_THREAD_TITLE
 from app.database import chats
 from app.grounding import UNKNOWN_CHUNK, DocumentGrounder, GroundingError
 from app.retrieval.documents.retriever import DocumentPassage
-from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
+from tests.conftest import TEST_THREAD_ID, TEST_USER_ID, span_text
 
 A = uuid.UUID("00000000-0000-0000-0000-00000000000a")
 USER = CurrentUser(id=TEST_USER_ID, email="test@example.com")
@@ -325,3 +326,48 @@ def test_run_turn_unexpected_error_streams_generic_user_error(
     assert errors == [{"type": "error", "errorText": UNEXPECTED_TURN_ERROR}]
     assert "secret boom" not in "".join(frames)
     append.assert_not_called()
+
+
+def test_turn_span_has_no_question_or_answer(
+    monkeypatch: pytest.MonkeyPatch, langfuse_spans: Callable[[], tuple]
+) -> None:
+    _patch_chats(monkeypatch)
+
+    async def fake_run(prompt: str, deps: object) -> AgentTurnResult:
+        deps.seen_ids.add(A)  # type: ignore[attr-defined]
+        deps.seen_passages[A] = PASSAGE  # type: ignore[attr-defined]
+        return AgentTurnResult(
+            answer=GroundedAnswer(
+                answer="SECRET-A",
+                citations=[Citation(chunk_id=A, citation_index=1, excerpt="x")],
+            ),
+            usage=None,
+        )
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", fake_run)
+
+    _collect([{"role": "user", "content": "SECRET-Q"}])
+
+    exported = span_text(langfuse_spans(), "generate-chat-response")
+    assert "SECRET" not in exported
+    assert "langfuse.observation.metadata.citation_count" in exported
+
+
+def test_failed_turn_span_keeps_the_code_not_the_message(
+    monkeypatch: pytest.MonkeyPatch, langfuse_spans: Callable[[], tuple]
+) -> None:
+    _patch_chats(monkeypatch)
+
+    async def boom(prompt: str, deps: object) -> None:
+        raise ModelHTTPError(
+            status_code=429, model_name="gpt-5.5", body={"message": "SECRET"}
+        )
+
+    monkeypatch.setattr("app.chat.orchestrator.run_agent", boom)
+
+    _collect([{"role": "user", "content": "SECRET-Q"}])
+
+    exported = span_text(langfuse_spans(), "generate-chat-response")
+    assert "SECRET" not in exported
+    assert "'langfuse.observation.level': 'ERROR'" in exported
+    assert "'langfuse.observation.status_message': 'agent_run_failed'" in exported

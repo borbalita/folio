@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import date
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -84,12 +83,6 @@ class DocumentRetriever(HybridRetriever[DocumentSearchFilters, DocumentPassage])
                 )
             )
         return passages
-
-    def _span_output(self, passages: list[DocumentPassage]) -> dict[str, Any]:
-        return {
-            "passage_count": len(passages),
-            "tickers": sorted({passage.ticker for passage in passages}),
-        }
 
 
 def _passage_by_id(session: Session, chunk_id: UUID) -> DocumentPassage | None:

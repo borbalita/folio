@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -13,6 +14,7 @@ from app.retrieval.email import rerank
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.retriever import EmailPassage, EmailRetriever
 from app.retrieval.queries import RankedHit
+from tests.conftest import span_text
 
 USER = UUID("00000000-0000-0000-0000-000000000001")
 MAILBOX = UUID("00000000-0000-0000-0000-000000000010")
@@ -208,3 +210,21 @@ def test_reranking_without_a_typesafe_key_fails_at_startup() -> None:
 
     with pytest.raises(ValidationError, match="EMAIL_RERANK needs TYPESAFE_API_KEY"):
         Settings.model_validate(values)
+
+
+def test_rerank_span_keeps_counts_not_query(
+    langfuse_spans: Callable[[], tuple],
+) -> None:
+    passages = [_passage(n) for n in range(1, 4)]
+    judge = _judge_by_subject(
+        {"Subject 1": "full", "Subject 2": "none", "Subject 3": None}
+    )
+
+    rerank.rerank(
+        passages, query="SECRET-Q", question="SECRET-QQ", judge=judge, top_k=10
+    )
+
+    exported = span_text(langfuse_spans(), "rerank")
+    assert "SECRET" not in exported
+    for count, value in (("candidates", 3), ("kept", 2), ("dropped", 1), ("failed", 1)):
+        assert f"'langfuse.observation.metadata.{count}': {value}" in exported

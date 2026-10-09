@@ -240,7 +240,6 @@ async def run_turn(
         langfuse.start_as_current_observation(
             as_type="span",
             name="generate-chat-response",
-            input=user_text,
         ) as turn_span,
         propagate_attributes(
             user_id=str(user.id),
@@ -265,7 +264,6 @@ async def run_turn(
         except AGENT_FAILURES:
             log.exception("agent_run_failed", **log_context)
             turn_span.update(
-                output=ASSISTANT_UNAVAILABLE,
                 level="ERROR",
                 status_message="agent_run_failed",
             )
@@ -275,7 +273,6 @@ async def run_turn(
         except Exception:
             log.exception("turn_failed", **log_context)
             turn_span.update(
-                output=UNEXPECTED_TURN_ERROR,
                 level="ERROR",
                 status_message="turn_failed",
             )
@@ -291,7 +288,6 @@ async def run_turn(
             )
             canned = agent.grounder.user_answer(exc)
             turn_span.update(
-                output=canned,
                 level="WARNING",
                 status_message=exc.code,
                 metadata={"grounding_failure_code": exc.code},
@@ -313,7 +309,6 @@ async def run_turn(
 
         citation_parts = agent.citation_payloads(result, deps)
         turn_span.update(
-            output=result.answer.answer,
             metadata={
                 "citation_count": len(result.answer.citations),
                 "insufficient_evidence": result.answer.insufficient_evidence,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from uuid import UUID
 
 import pytest
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.retrieval.base import HybridRetriever
 from app.retrieval.queries import RankedHit
+from tests.conftest import span_text
 
 A = UUID("00000000-0000-0000-0000-00000000000a")
 B = UUID("00000000-0000-0000-0000-00000000000b")
@@ -100,3 +102,24 @@ def test_full_text_gets_keywords_from_the_subclass_prompt(prompts: list[str]) ->
 
     assert prompts == ["test prompt"]
     assert queries.full_text_query == "RENT"
+
+
+class _SenderFilters(_Filters):
+    sender: str
+
+
+def test_search_span_has_settings_not_query(
+    langfuse_spans: Callable[[], tuple],
+) -> None:
+    retriever = _Retriever(_Queries([_hit(A, 1)], [_hit(B, 1)]))
+
+    retriever.search(
+        "SECRET-Q", filters=_SenderFilters(sender="SECRET-F"), session=object()
+    )
+
+    spans = langfuse_spans()
+    search = span_text(spans, "hybrid-search")
+    assert "SECRET" not in search
+    assert "langfuse.observation.metadata.top_k" in search
+    assert "'langfuse.observation.metadata.passage_count': 2" in search
+    assert "SECRET" not in span_text(spans, "embed-query")
