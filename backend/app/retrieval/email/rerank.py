@@ -77,8 +77,11 @@ def rerank(
     with langfuse.start_as_current_observation(
         as_type="span",
         name="rerank",
-        input={"query": query, "question": question, "candidates": len(passages)},
-        metadata={"model": settings.typesafe_label_model, "top_k": top_k},
+        metadata={
+            "model": settings.typesafe_label_model,
+            "top_k": top_k,
+            "candidates": len(passages),
+        },
     ) as span:
         prompts = [judge_input(query, question, passage) for passage in passages]
         verdicts = asyncio.run(_judge_all(prompts, judge)) if prompts else []
@@ -94,14 +97,10 @@ def rerank(
         )
         result = [passage for _, _, passage in kept][:top_k]
         span.update(
-            output={
+            metadata={
                 "kept": len(result),
                 "dropped": verdicts.count("none"),
                 "failed": verdicts.count(None),
-                "verdicts": [
-                    {"subject": p.subject, "evidence": v}
-                    for p, v in zip(passages, verdicts, strict=True)
-                ],
             }
         )
         return result

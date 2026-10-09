@@ -21,7 +21,7 @@ Invoices arrive by email and get the `invoice` label, but nothing tracks whether
 - **Invoices:** email ingest labels a message `invoice` with one Jev decision ([labels.py](../../../../backend/ingest/email/labels.py)) and stores every PDF as bytea ([pipeline.py](../../../../backend/ingest/email/pipeline.py)). Nothing is extracted. The Email agent lists invoices in its sidebar and shows an invoice page with the stored PDFs, behind an owner-only attachment endpoint ([email.py](../../../../backend/app/api/email.py), [invoices.py](../../../../backend/app/database/invoices.py), [InvoicePage.tsx](../../../../frontend/src/pages/email/InvoicePage.tsx)).
 - **Extraction pattern:** newsletter extraction ([news.py](../../../../backend/ingest/email/news.py)) is a structured LLM call with its own model and effort settings in [config.py](../../../../backend/app/config.py); eval plan 003 benchmarked the models.
 - **Agents:** `chat_threads.agent` is checked to `documents`, `email` ([thread.py](../../../../backend/app/database/models/chat/thread.py)); the picker reads [agents.ts](../../../../frontend/src/lib/agents.ts). Every table has RLS.
-- **Tracing:** all agents send full content to Langfuse today ([observability.py](../../../../backend/app/observability.py)); a separate change makes it content-free.
+- **Tracing:** all agents send full content to Langfuse today ([observability.py](../../../../backend/app/observability.py)); [eval plan 004](../../../02-evaluation/plans/004-content-free-tracing/README.md) makes it content-free.
 - **Scheduling:** none; email ingest is a manual CLI and Railway runs only the API. No bank integration.
 - **Memory:** [04-memory](../../../04-memory/spec.md) (draft) plans thread history for the existing agents; Finance would need the same.
 
@@ -93,7 +93,7 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 
 ## Tasks
 
-Before 001/05: the content-free tracing change (separate task).
+Before 001/05: [eval plan 004 — content-free tracing](../../../02-evaluation/plans/004-content-free-tracing/README.md), tasks 01–03.
 
 - [ ] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
 - [ ] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)

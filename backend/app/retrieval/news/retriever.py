@@ -97,14 +97,12 @@ class NewsRetriever:
         with langfuse.start_as_current_observation(
             as_type="retriever",
             name="news-search",
-            input={"query": query, "filters": filters.model_dump(mode="json")},
             metadata={"top_k": settings.retrieval_top_k},
         ) as span:
             with langfuse.start_as_current_observation(
                 as_type="embedding",
                 name="embed-query",
                 model=settings.openai_embedding_model,
-                input=query,
             ):
                 query_vec = embed_query(query)
             hits = self.queries.semantic(
@@ -120,7 +118,7 @@ class NewsRetriever:
                 for hit in hits
                 if hit.chunk_id in loaded
             ]
-            span.update(output={"passage_count": len(passages)})
+            span.update(metadata={"passage_count": len(passages)})
             return passages
 
 
