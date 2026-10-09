@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -26,10 +26,10 @@ def _chat_model() -> OpenAIChatModel:
     )
 
 
-def email_prompt(user_text: str) -> str:
-    today = datetime.now(ZoneInfo(settings.email_timezone)).date().isoformat()
+def email_prompt(user_text: str, today: date | None = None) -> str:
+    today = today or datetime.now(ZoneInfo(settings.email_timezone)).date()
     return (
-        f"Today is {today} in {settings.email_timezone}. "
+        f"Today is {today.isoformat()} in {settings.email_timezone}. "
         "Resolve relative dates from that day.\n\n"
         f"{user_text}"
     )

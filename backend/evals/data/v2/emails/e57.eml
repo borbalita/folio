@@ -1,0 +1,19 @@
+From: Lindenstrom Billing <billing@lindenstrom.example>
+To: Anna Weber <anna@example.com>
+Date: Fri, 02 Oct 2026 08:35:00 +0200
+Subject: September electricity usage: payment due
+Message-ID: <e57@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html><html><head><meta charset=3D"UTF-8"></head><body style=3D"font=
+-family: Arial, sans-serif; color: #333; line-height: 1.5; padding: 20px;"><p=
+>Dear Anna Weber,</p><p>Your September electricity usage has been billed unde=
+r invoice <strong>LS-2609-418</strong>.</p><p>The total amount due is <strong=
+>=E2=82=AC54.10</strong>. Please ensure your payment reaches us by <strong>19=
+ October 2026</strong>, using the invoice number as your payment reference so=
+ we can allocate it correctly.</p><p>If you have already paid, thank you. If =
+you have any questions about your electricity usage or this invoice, please r=
+eply to this email and our billing team will be happy to help.</p><p>Kind reg=
+ards,<br>Lindenstrom Billing</p></body></html>

@@ -1,12 +1,14 @@
 import uuid
 from datetime import UTC, date, datetime
+from types import SimpleNamespace
 
 import pytest
+from openai import NOT_GIVEN
 
 from app.config import settings
 from app.database.models.email.news_item import NewsItem
 from app.database.models.user import User
-from ingest.email.news import ExtractedItem
+from ingest.email.news import ExtractedItem, Extraction, extract_with_model
 from ingest.email.parse import ParsedMessage
 from ingest.email.pipeline import ingest_fetched
 
@@ -73,7 +75,9 @@ def test_other_mail_is_not_extracted(monkeypatch: pytest.MonkeyPatch) -> None:
         [_parsed(from_address="person@example.com")],
         uidvalidity=1,
         highest_uid=1,
-        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        embed=lambda texts: [
+            [0.0] * settings.openai_embedding_dimensions for _ in texts
+        ],
         classifier=lambda _prompt: "other",
         extract=extract,
     )
@@ -124,3 +128,57 @@ class _MemorySession:
 
     def commit(self) -> None:
         return None
+
+
+class _FakeCompletions:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def parse(self, **kwargs: object) -> object:
+        self.calls.append(kwargs)
+        message = SimpleNamespace(parsed=Extraction(items=[]))
+        return SimpleNamespace(choices=[SimpleNamespace(message=message)])
+
+
+def _fake_client(monkeypatch: pytest.MonkeyPatch) -> _FakeCompletions:
+    completions = _FakeCompletions()
+    client = SimpleNamespace(chat=SimpleNamespace(completions=completions))
+    monkeypatch.setattr("ingest.email.news._client", lambda: client)
+    return completions
+
+
+def test_extraction_defaults_to_the_chat_model_without_effort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    completions = _fake_client(monkeypatch)
+    monkeypatch.setattr("ingest.email.news.settings.openai_chat_model", "chat-model")
+    monkeypatch.setattr("ingest.email.news.settings.news_extraction_model", None)
+    monkeypatch.setattr(
+        "ingest.email.news.settings.news_extraction_reasoning_effort", None
+    )
+
+    assert extract_with_model(_parsed(from_address="dan@tldrnewsletter.com")) == []
+
+    call = completions.calls[0]
+    assert call["model"] == "chat-model"
+    assert call["reasoning_effort"] is NOT_GIVEN
+
+
+def test_extraction_uses_its_own_model_and_effort(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    completions = _fake_client(monkeypatch)
+    monkeypatch.setattr("ingest.email.news.settings.openai_chat_model", "chat-model")
+    monkeypatch.setattr(
+        "ingest.email.news.settings.news_extraction_model", "cheap-model"
+    )
+    monkeypatch.setattr(
+        "ingest.email.news.settings.news_extraction_reasoning_effort", "low"
+    )
+
+    extract_with_model(_parsed(from_address="dan@tldrnewsletter.com"))
+
+    call = completions.calls[0]
+    assert call["model"] == "cheap-model"
+    assert call["reasoning_effort"] == "low"
+    assert call["response_format"] is Extraction

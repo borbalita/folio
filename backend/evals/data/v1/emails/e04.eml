@@ -1,0 +1,39 @@
+From: Layout Letter <editor@layoutletter.example>
+To: Anna Weber <anna@example.com>
+Date: Tue, 16 Jun 2026 07:40:00 +0200
+Subject: Layout Letter 184: Designing for small screens
+Message-ID: <e04@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Layout Letter</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#f5f5f2;color:#252525;f=
+ont-family:Arial,sans-serif;line-height:1.6;">
+<main style=3D"max-width:600px;margin:0 auto;padding:28px;background-color:#f=
+fffff;">
+<p style=3D"color:#666666;">Layout Letter =C2=B7 Issue 184</p>
+<h1 style=3D"font-size:28px;line-height:1.2;">Designing for small screens</h1>
+<p>Hi Anna,</p>
+<p>This week, we=E2=80=99re looking at the details that make a small screen f=
+eel less cramped=E2=80=94and a little more human.</p>
+<h2 style=3D"font-size:20px;">Put navigation within reach</h2>
+<p>Thumb-friendly navigation starts with comfortable placement, generous touc=
+h targets, and enough space between actions. Try your layout with one hand: t=
+he awkward stretches often reveal more than a tidy desktop preview.</p>
+<h2 style=3D"font-size:20px;">Give captions room to breathe</h2>
+<p>Readable captions need contrast, clear wording, and a size that holds up o=
+n a phone. Keep them close to the image they describe without squeezing them =
+into the margins.</p>
+<h2 style=3D"font-size:20px;">In conversation with Nela Brandt</h2>
+<p>Our featured interview explores the illustrator=E2=80=99s approach to visu=
+al storytelling, with an eye toward how images and their accompanying words w=
+ork together.</p>
+<p>What small-screen detail do you wish more designers paid attention to? Rep=
+ly and tell us.</p>
+<p>Until next week,<br>The Layout Letter team</p>
+</main>
+</body>
+</html>

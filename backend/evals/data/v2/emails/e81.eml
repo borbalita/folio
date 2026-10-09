@@ -1,0 +1,26 @@
+From: FrameDesk Accounts <billing@framedesk.example>
+To: Anna Weber <anna@example.com>
+Date: Wed, 26 Aug 2026 07:20:00 +0200
+Subject: FrameDesk team export add-on invoice
+Message-ID: <e81@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>FrameDesk Invoice</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #222; line-height: 1.5;=
+ padding: 20px;">
+<p>Hello Anna Weber,</p>
+<p>Your invoice for the FrameDesk team export add-on is ready. Please review =
+the payment details below and arrange payment by the due date.</p>
+<p><strong>Invoice number:</strong> FD-EX-8047<br><strong>Amount due:</strong=
+> =E2=82=AC36.20<br><strong>Due date:</strong> 6 September 2026</p>
+<p>Please include the invoice number with your payment so we can match it to =
+your account. If you have any questions about this charge or need help with p=
+ayment, reply to this email and our accounts team will assist you.</p>
+<p>Thank you for using FrameDesk.</p>
+<p>Kind regards,<br>FrameDesk Accounts</p>
+</body>
+</html>

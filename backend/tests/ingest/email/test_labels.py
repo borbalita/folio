@@ -22,7 +22,9 @@ def _parsed(from_address: str = "person@example.com") -> ParsedMessage:
     )
 
 
-def test_domain_and_full_address_map_to_sources(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_domain_and_full_address_map_to_sources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(
         "ingest.email.labels.settings.ai_newsletter_domains",
         {

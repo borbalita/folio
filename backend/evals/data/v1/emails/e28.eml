@@ -1,0 +1,30 @@
+From: Paper Finch <hello@paperfinch.example>
+To: Anna Weber <anna@example.com>
+Date: Sat, 01 Aug 2026 00:40:00 +0200
+Subject: Midnight stationery sale
+Message-ID: <e28@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Midnight stationery sale</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#f8f5ef;font-family:Ari=
+al,sans-serif;color:#333333;">
+<div style=3D"max-width:560px;margin:auto;padding:28px;background-color:#ffff=
+ff;">
+<h1 style=3D"font-size:24px;color:#46594a;">A fresh page starts here</h1>
+<p>Hi Anna,</p>
+<p>Our midnight stationery sale is live! Enjoy <strong>25%</strong> off selec=
+ted planners and find a little inspiration for your everyday plans.</p>
+<p>Whether you=E2=80=99re making room for big ideas or keeping your week neat=
+ly organised, take a look through the selection and choose a planner that fee=
+ls like you.</p>
+<p>Use code <strong>PLAN25</strong> at checkout before <strong>5 August 2026<=
+/strong> to claim your discount on eligible planners.</p>
+<p>Happy browsing=E2=80=94and happy planning!</p>
+<p>Warm wishes,<br>The Paper Finch team</p>
+</div>
+</body>
+</html>

@@ -62,9 +62,7 @@ def test_new_when_message_is_absent() -> None:
 
 def test_fake_fetch_feeds_the_pipeline(monkeypatch) -> None:
     owner_id = uuid.uuid4()
-    monkeypatch.setattr(
-        "ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com"
-    )
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com")
     monkeypatch.setattr(
         "ingest.email.pipeline.settings.email_agent_owner_user_id", owner_id
     )
@@ -76,7 +74,9 @@ def test_fake_fetch_feeds_the_pipeline(monkeypatch) -> None:
         [parsed, missing],
         uidvalidity=42,
         highest_uid=9,
-        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        embed=lambda texts: [
+            [0.0] * settings.openai_embedding_dimensions for _ in texts
+        ],
         classifier=lambda _prompt: "other",
     )
     assert summary.fetched == 2

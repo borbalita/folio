@@ -8,7 +8,9 @@ from functools import lru_cache
 from zoneinfo import ZoneInfo
 
 import structlog
-from openai import APIError, OpenAI
+from openai import NOT_GIVEN, APIError, OpenAI
+from openai.types.chat import ParsedChatCompletion
+from openai.types.shared import ReasoningEffort
 from pydantic import BaseModel, Field
 
 from app.config import settings
@@ -16,10 +18,11 @@ from ingest.email.parse import ParsedMessage
 
 log = structlog.get_logger(__name__)
 
-_SYSTEM_PROMPT = (
+SYSTEM_PROMPT = (
     "Extract the news items from this newsletter in the order they appear. "
     "Each item has a title, a one-sentence blurb, and the story url. "
     "Mark sponsor as true for a paid sponsor, an ad, or a 'together with' placement. "
+    "Also mark as sponsor the newsletter's own job listings and advertising offers. "
     "Leave those blocks in the list so they stay in order."
 )
 
@@ -34,7 +37,7 @@ class ExtractedItem(BaseModel):
     )
 
 
-class _Extraction(BaseModel):
+class Extraction(BaseModel):
     items: list[ExtractedItem]
 
 
@@ -68,17 +71,33 @@ def _client() -> OpenAI:
     return OpenAI(api_key=settings.openai_api_key)
 
 
-def extract_with_model(parsed: ParsedMessage) -> list[ExtractedItem] | None:
-    completion = _client().chat.completions.parse(
-        model=settings.openai_chat_model,
+def request_extraction(
+    parsed: ParsedMessage,
+    *,
+    model: str,
+    reasoning_effort: ReasoningEffort | None,
+) -> ParsedChatCompletion[Extraction]:
+    """One extraction call with the production prompt and schema. Evals call this directly."""
+    effort = reasoning_effort if reasoning_effort is not None else NOT_GIVEN
+    return _client().chat.completions.parse(
+        model=model,
         messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": f"Subject: {parsed.subject}\n\n{parsed.body}",
             },
         ],
-        response_format=_Extraction,
+        response_format=Extraction,
+        reasoning_effort=effort,
+    )
+
+
+def extract_with_model(parsed: ParsedMessage) -> list[ExtractedItem] | None:
+    completion = request_extraction(
+        parsed,
+        model=settings.news_extraction_model or settings.openai_chat_model,
+        reasoning_effort=settings.news_extraction_reasoning_effort,
     )
     parsed_items = completion.choices[0].message.parsed
     if parsed_items is None:

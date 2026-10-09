@@ -3,7 +3,8 @@ from pathlib import Path
 from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import Field, field_validator
+from openai.types.shared import ReasoningEffort
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
@@ -42,13 +43,20 @@ class Settings(BaseSettings):
     email_agent_owner_user_id: uuid.UUID | None = None
     finance_owner_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
+    # Evals only: the Claude judge. The app itself never calls Anthropic.
+    anthropic_api_key: str | None = None
     enable_banking_app_id: str | None = None
     enable_banking_private_key: str | None = None
     enable_banking_redirect_url: str | None = None
     typesafe_label_model: str = "jev-latest"
+    email_rerank: bool = True
+    email_rerank_candidates: int = Field(default=20, gt=0)
     attachment_max_bytes: int = Field(default=10 * 1024 * 1024, gt=0)
     email_timezone: str = "Europe/Berlin"
     news_match_window_hours: int = Field(default=48, gt=0)
+    # Unset: extraction uses openai_chat_model at the model's default effort.
+    news_extraction_model: str | None = None
+    news_extraction_reasoning_effort: ReasoningEffort | None = None
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
@@ -57,6 +65,14 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @model_validator(mode="after")
+    def rerank_needs_typesafe(self) -> "Settings":
+        if self.email_rerank and not self.typesafe_api_key:
+            raise ValueError(
+                "EMAIL_RERANK needs TYPESAFE_API_KEY; set it or EMAIL_RERANK=false"
+            )
+        return self
 
     @field_validator("email_timezone")
     @classmethod
@@ -73,6 +89,9 @@ class Settings(BaseSettings):
         "yahoo_email",
         "yahoo_app_password",
         "typesafe_api_key",
+        "anthropic_api_key",
+        "news_extraction_model",
+        "news_extraction_reasoning_effort",
         "enable_banking_app_id",
         "enable_banking_private_key",
         "enable_banking_redirect_url",
@@ -92,7 +111,9 @@ class Settings(BaseSettings):
 
     @field_validator("email_agent_owner_user_id", "finance_owner_user_id", mode="before")
     @classmethod
-    def blank_optional_uuid(cls, value: str | uuid.UUID | None) -> str | uuid.UUID | None:
+    def blank_optional_uuid(
+        cls, value: str | uuid.UUID | None
+    ) -> str | uuid.UUID | None:
         if value is None or (isinstance(value, str) and not value.strip()):
             return None
         return value
@@ -103,7 +124,10 @@ class Settings(BaseSettings):
         if value is None or value == "":
             return {}
         if isinstance(value, dict):
-            return {str(key).strip().lower(): str(item).strip() for key, item in value.items()}
+            return {
+                str(key).strip().lower(): str(item).strip()
+                for key, item in value.items()
+            }
         mapping: dict[str, str] = {}
         for part in str(value).split(","):
             if "=" not in part:

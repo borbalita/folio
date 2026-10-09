@@ -1,0 +1,27 @@
+From: SwiftParcel <tracking@swiftparcel.example>
+To: Anna Weber <anna@example.com>
+Date: Sun, 28 Jun 2026 10:45:00 +0200
+Subject: Your Paper Finch parcel is on its way
+Message-ID: <e10@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Your parcel update</title></head>
+<body style=3D"margin:0;padding:24px;font-family:Arial,sans-serif;color:#3333=
+33;background-color:#ffffff;">
+<p style=3D"margin:0 0 16px;">Hello Anna Weber,</p>
+<p style=3D"margin:0 0 16px;">Your Paper Finch parcel has left our sorting ce=
+ntre and is on its way. We=E2=80=99re pleased to share the latest shipment de=
+tails with you:</p>
+<p style=3D"margin:0 0 8px;">Tracking number: SP-604821</p>
+<p style=3D"margin:0 0 16px;">Estimated delivery: 30 June 2026</p>
+<p style=3D"margin:0 0 16px;">To follow its progress, enter your tracking num=
+ber on the SwiftParcel tracking page. The estimated delivery may change as yo=
+ur parcel moves through our network, so please check tracking for the latest =
+updates.</p>
+<p style=3D"margin:0;">Best regards,<br>The SwiftParcel Team</p>
+</body>
+</html>

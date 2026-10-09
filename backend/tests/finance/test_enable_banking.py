@@ -79,6 +79,7 @@ def test_private_key_with_literal_newlines_is_normalised(pem):
         openai_embedding_model="x",
         openai_embedding_dimensions=1,
         allowed_origins="http://localhost",
+        email_rerank=False,
         enable_banking_private_key=pem.strip().replace("\n", "\\n"),
     )
 

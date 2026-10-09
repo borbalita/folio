@@ -1,0 +1,27 @@
+From: HavelCurrent Billing <billing@havelcurrent.example>
+To: Anna Weber <anna@example.com>
+Date: Fri, 04 Sep 2026 08:10:00 +0200
+Subject: August studio electricity invoice
+Message-ID: <e66@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html>
+<head><meta charset=3D"UTF-8"><title>Studio electricity invoice</title></head>
+<body style=3D"font-family: Arial, sans-serif; color: #333333; line-height: 1=
+.5; padding: 20px;">
+<p>Dear Anna Weber,</p>
+<p>Your August studio electricity invoice is ready. Please find your payment =
+summary below:</p>
+<p><strong>Invoice number:</strong> HC-0826-419<br><strong>Amount due:</stron=
+g> =E2=82=AC52.15<br><strong>Payment due:</strong> 18 September 2026</p>
+<p>Please pay the amount due by the payment deadline and use the invoice numb=
+er as your payment reference so we can match your payment correctly.</p>
+<p>If you have any questions about this invoice, please reply to this email. =
+Our billing team will be happy to help.</p>
+<p>Thank you for choosing HavelCurrent.</p>
+<p>Kind regards,<br>HavelCurrent Billing</p>
+</body>
+</html>

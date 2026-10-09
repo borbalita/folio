@@ -1,0 +1,26 @@
+From: Reed Paper <orders@reedpaper.example>
+To: Anna Weber <anna@example.com>
+Date: Thu, 10 Sep 2026 15:10:00 +0200
+Subject: Re: Your stationery order =?utf-8?b?4oCU?= first parcel
+Message-ID: <e73@folio-eval.example>
+In-Reply-To: <e72@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Your stationery order</title></head>
+<body style=3D"margin:0;padding:24px;font-family:Arial,sans-serif;font-size:1=
+5px;line-height:1.6;color:#333333;background-color:#ffffff;">
+<p>Hi Anna,</p>
+<p>A quick update on your stationery order: your planner has shipped in the f=
+irst parcel. Its tracking number is <strong>RP-SHIP-60982-A</strong>.</p>
+<p>The brass clip will follow in a separate parcel once packing is complete. =
+We=E2=80=99ll let you know when it=E2=80=99s on its way, so you can keep trac=
+k of both items.</p>
+<p>Thanks for ordering with us. If you have any questions about your delivery=
+, just reply to this email.</p>
+<p>Best wishes,<br>Reed Paper</p>
+</body>
+</html>

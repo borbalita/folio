@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extraction review</title>
+<style>
+  :root { --bg:#faf8f3; --card:#fff; --ink:#1d1d1b; --muted:#6b6a65; --line:#e3e0d8;
+          --accent:#2f5d8a; --ok:#2e7d4f; --warn:#a15c00; --bad:#a33; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
+  header { position:sticky; top:0; z-index:2; background:var(--bg); border-bottom:1px solid var(--line);
+           padding:10px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; }
+  #progress { font-variant-numeric: tabular-nums; }
+  #saved { color:var(--muted); font-size:13px; }
+  main { max-width:980px; margin:0 auto; padding:16px; }
+  .newsletter { margin:0 0 28px; }
+  .newsletter > h2 { font-size:15px; margin:0 0 4px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
+  .tag { display:inline-block; font-size:12px; padding:1px 7px; border-radius:10px; border:1px solid var(--line); }
+  .tag.full { border-color:var(--accent); color:var(--accent); }
+  details.body pre { white-space:pre-wrap; font:13px/1.4 ui-monospace, monospace; background:var(--card);
+                     border:1px solid var(--line); padding:10px; max-height:420px; overflow:auto; }
+  .group { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin:8px 0; }
+  .group.done { border-left:4px solid var(--ok); }
+  .group.todo { border-left:4px solid var(--warn); }
+  .reasons { font-size:12px; color:var(--warn); margin-bottom:6px; }
+  .version { display:flex; gap:8px; align-items:flex-start; padding:4px 0; border-top:1px dashed var(--line); }
+  .version:first-of-type { border-top:none; }
+  .version .text { flex:1; min-width:0; }
+  .version .title { font-weight:600; }
+  .version a { color:var(--accent); word-break:break-all; font-size:13px; }
+  .runs { font-size:12px; color:var(--muted); }
+  .sponsor { color:var(--bad); font-size:12px; font-weight:600; }
+  .verdicts { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .verdicts button { border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:6px;
+                     padding:5px 12px; cursor:pointer; font:inherit; }
+  .verdicts button.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .missing { margin-top:8px; font-size:13px; }
+  .missing input { font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:4px; }
+  .missing li { margin:2px 0; }
+  label.filter { font-size:13px; }
+  .ok { font-size:12px; color:var(--ok); }
+  .unusable { font-size:12px; color:var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Extraction review</h1>
+  <span id="progress"></span>
+  <label class="filter"><input type="checkbox" id="onlyTodo"> only undecided</label>
+  <span id="saved"></span>
+</header>
+<main id="root"></main>
+<script>
+const DATA = __DATA__;
+const decisions = DATA.decisions;
+const root = document.getElementById('root');
+
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'class') node.className = value;
+    else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
+    else node.setAttribute(key, value);
+  }
+  for (const child of children.flat()) {
+    if (child != null) node.append(child instanceof Node ? child : document.createTextNode(child));
+  }
+  return node;
+}
+
+// Identical versions (same title, URL, sponsor flag) are shown once with every run that produced them.
+function variants(group) {
+  const seen = new Map();
+  for (const run of DATA.runs) {
+    const item = group.versions[run];
+    if (!item) continue;
+    const id = JSON.stringify([item.title, item.url, item.sponsor]);
+    if (!seen.has(id)) seen.set(id, { item, runs: [] });
+    seen.get(id).runs.push(run);
+  }
+  return [...seen.values()];
+}
+
+let saveTimer = null;
+function save() {
+  document.getElementById('saved').textContent = 'saving…';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const response = await fetch('/', { method: 'POST', body: JSON.stringify(decisions) });
+    document.getElementById('saved').textContent =
+      response.ok ? 'saved ' + new Date().toLocaleTimeString() : 'NOT saved (' + response.status + ')';
+  }, 300);
+}
+
+function updateProgress() {
+  const all = DATA.newsletters.flatMap(n => n.groups);
+  const done = all.filter(g => decisions.groups[g.id]).length;
+  document.getElementById('progress').textContent = `${done} / ${all.length} decided`;
+}
+
+function groupCard(group) {
+  const card = el('div', { class: 'group' });
+  const options = variants(group);
+  function render() {
+    const decision = decisions.groups[group.id];
+    card.className = 'group ' + (decision ? 'done' : 'todo');
+    card.hidden = document.getElementById('onlyTodo').checked && !!decision;
+    card.replaceChildren(
+      group.reasons.length ? el('div', { class: 'reasons' }, group.reasons.join(' · ')) : null,
+      ...options.map(({ item, runs }) => el('div', { class: 'version' },
+        options.length > 1 ? el('input', {
+          type: 'radio', name: 'v-' + group.id, title: 'Use this title and URL',
+          ...(decision && decision.run && runs.includes(decision.run) ? { checked: '' } : {}),
+          onchange: () => { decide(decision ? decision.verdict : 'news', runs[0]); },
+        }) : null,
+        el('div', { class: 'text' },
+          el('div', { class: 'title' }, item.title, item.sponsor ? el('span', { class: 'sponsor' }, '  sponsor') : null),
+          item.url
+            ? el('a', { href: item.url, target: '_blank', rel: 'noreferrer noopener' }, item.url)
+            : el('div', { class: 'runs' }, '(no link)'),
+          item.url ? el('div', { class: group.usable_url[runs[0]] ? 'ok' : 'unusable' },
+            group.usable_url[runs[0]] ? 'link in text ✓' : 'not a usable link ✗ (counts as no link)') : null,
+          el('div', { class: 'runs' }, runs.join(', ')),
+        ),
+      )),
+      el('div', { class: 'verdicts' },
+        ...[['news', 'News item'], ['sponsor', 'Sponsor'], ['skip', 'Not an item']].map(([verdict, label]) =>
+          el('button', {
+            class: decision && decision.verdict === verdict ? 'on' : '',
+            onclick: () => decide(verdict, decision && decision.run ? decision.run : defaultRun()),
+          }, label)),
+        decision ? sameTitleButton(group, decision.verdict) : null,
+      ),
+    );
+  }
+  function defaultRun() {
+    return group.suggested_run;
+  }
+  function decide(verdict, run) {
+    decisions.groups[group.id] = { verdict, run };
+    render(); updateProgress(); save();
+  }
+  card.rerender = render;
+  render();
+  return card;
+}
+
+// Recurring blocks (job ads, "Advertise", sponsors) repeat across editions: decide once, apply to all.
+const byTitle = new Map();
+function sameTitleButton(group, verdict) {
+  const others = (byTitle.get(group.title_key) || []).filter(
+    other => other.group.id !== group.id && !decisions.groups[other.group.id]);
+  if (!group.title_key || others.length === 0) return null;
+  return el('button', { onclick: () => {
+    for (const other of others) {
+      decisions.groups[other.group.id] = { verdict, run: other.group.suggested_run };
+      other.card.rerender();
+    }
+    updateProgress(); save();
+  } }, `Same for ${others.length} more titled like this`);
+}
+
+function missingBox(newsletter) {
+  const box = el('div', { class: 'missing' });
+  function render() {
+    const list = decisions.missing[newsletter.key] || [];
+    const title = el('input', { placeholder: 'title', size: 40 });
+    const url = el('input', { placeholder: 'url', size: 40 });
+    box.replaceChildren(
+      el('strong', {}, 'Items no model found'),
+      el('ul', {}, ...list.map((item, index) => el('li', {}, item.title, ' — ', item.url, ' ',
+        el('button', { onclick: () => { list.splice(index, 1); render(); save(); } }, 'remove')))),
+      title, ' ', url, ' ',
+      el('button', { onclick: () => {
+        if (!title.value.trim() || !url.value.trim()) return;
+        decisions.missing[newsletter.key] = [...list, { title: title.value.trim(), url: url.value.trim(), sponsor: false }];
+        render(); save();
+      } }, 'add'),
+    );
+  }
+  render();
+  return box;
+}
+
+const cards = [];
+for (const newsletter of DATA.newsletters) {
+  const section = el('section', { class: 'newsletter' },
+    el('h2', {}, newsletter.subject),
+    el('div', { class: 'meta' }, `${newsletter.key} · ${newsletter.source} · ${newsletter.sent_date} `,
+      newsletter.full_check ? el('span', { class: 'tag full' }, 'full check: decide every item and add any missing') : null),
+    el('details', { class: 'body' }, el('summary', {}, 'Original newsletter text'), el('pre', {}, newsletter.body)),
+  );
+  for (const group of newsletter.groups) {
+    const card = groupCard(group);
+    cards.push(card);
+    if (!byTitle.has(group.title_key)) byTitle.set(group.title_key, []);
+    byTitle.get(group.title_key).push({ group, card });
+    section.append(card);
+  }
+  if (newsletter.full_check) section.append(missingBox(newsletter));
+  root.append(section);
+}
+document.getElementById('onlyTodo').addEventListener('change', () => cards.forEach(card => card.rerender()));
+cards.forEach(card => card.rerender());
+updateProgress();
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+- `needs_reply`: a person is waiting for Anna to answer, decide, or confirm something.
+- `invoice`: asks Anna to pay, or states an amount she owes or has been charged.
+- `promotional`: tries to sell her something: offers, discounts, product launches.
+- `newsletter`: a recurring informational mailing (club news, a city bulletin, a design blog digest) that is not mainly selling.
+- `other`: anything else that needs no reply and is not a bill: confirmations, notices, shipping updates, personal FYIs.

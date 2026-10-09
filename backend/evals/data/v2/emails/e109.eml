@@ -1,0 +1,35 @@
+From: Berlin Neighbourhood Office <bulletin@berlinservice.example>
+To: Anna Weber <anna@example.com>
+Date: Tue, 15 Sep 2026 08:15:00 +0200
+Subject: Neighbourhood bulletin: library volunteering
+Message-ID: <e109@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"UTF-8"><title>Neighbourhood bulletin</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#f5f5f5;font-family:Ari=
+al,sans-serif;color:#333333;">
+<div style=3D"max-width:600px;margin:0 auto;padding:24px;background-color:#ff=
+ffff;">
+<h1 style=3D"font-size:22px;margin-top:0;">Library volunteering and local rea=
+ding groups</h1>
+<p>Dear Anna Weber,</p>
+<p>Welcome to our mid-month neighbourhood bulletin. This edition focuses on w=
+ays to get involved with library volunteering and connect with neighbours thr=
+ough local reading groups.</p>
+<h2 style=3D"font-size:18px;">Volunteer orientation</h2>
+<p>The volunteer orientation will take place at Cedar Reading Room on 24 Sept=
+ember 2026. If you=E2=80=99re interested in supporting a welcoming reading sp=
+ace, the orientation is an opportunity to learn more and ask questions.</p>
+<h2 style=3D"font-size:18px;">Find your next book conversation</h2>
+<p>Interested in local reading groups? Reply to this bulletin to ask about ge=
+tting involved, whether you enjoy sharing recommendations or discussing a boo=
+k with fellow readers.</p>
+<p>We look forward to hearing from you.</p>
+<p>Kind regards,<br>Berlin Neighbourhood Office</p>
+</div>
+</body>
+</html>

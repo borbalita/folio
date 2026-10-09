@@ -1,0 +1,40 @@
+From: Layout Weekly <editor@layoutweekly.example>
+To: Anna Weber <anna@example.com>
+Date: Sun, 04 Oct 2026 07:35:00 +0200
+Subject: Layout Weekly 198: Accessible colour systems
+Message-ID: <e107@folio-eval.example>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<!DOCTYPE html>
+<html lang=3D"en">
+<head><meta charset=3D"utf-8"><title>Layout Weekly</title></head>
+<body style=3D"margin:0;padding:24px;background-color:#ffffff;color:#222222;f=
+ont-family:Arial,sans-serif;line-height:1.6;">
+<main style=3D"max-width:600px;margin:0 auto;">
+<p style=3D"font-size:14px;">Layout Weekly =C2=B7 Issue 198</p>
+<h1 style=3D"font-size:26px;line-height:1.2;">Accessible colour systems</h1>
+<p>Hi Anna,</p>
+<p>This week, we=E2=80=99re looking at what makes a colour system useful beyo=
+nd the palette: reliable contrast testing, clear naming, and guidance that ho=
+lds up when a design moves into production.</p>
+<h2 style=3D"font-size:20px;">Test the combinations, not just the swatches</h=
+2>
+<p>Contrast checks work best when they reflect actual use. Review text agains=
+t its intended background, include interaction states, and check that colour =
+isn=E2=80=99t the only way important information is communicated.</p>
+<h2 style=3D"font-size:20px;">Name colours by their role</h2>
+<p>Names such as =E2=80=9Ctext primary=E2=80=9D and =E2=80=9Csurface muted=E2=
+=80=9D help teams understand intent. Keep descriptive palette names underneat=
+h, so a change in hue doesn=E2=80=99t require a change in meaning.</p>
+<h2 style=3D"font-size:20px;">Featured case study</h2>
+<p>Our featured case study follows the South Harbour archive catalogue, exami=
+ning how contrast testing and colour naming can support a coherent, accessibl=
+e catalogue experience.</p>
+<p>As you read, consider which colour decisions in your own system are explic=
+it=E2=80=94and which still depend on someone remembering the rules.</p>
+<p>Thanks for reading,<br>The Layout Weekly editorial team</p>
+</main>
+</body>
+</html>
