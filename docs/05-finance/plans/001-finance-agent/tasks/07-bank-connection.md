@@ -41,4 +41,4 @@ Found during verification:
 - Enable Banking accepts only https redirect URLs, localhost included. Saving `http://localhost:…` fails with "unsupported scheme", and a redirect URL not registered on the application gives `REDIRECT_URI_NOT_ALLOWED`. Local work now runs the Vite dev server on https with a self-signed certificate (`daf4d82`). This is recorded in the spec.
 - A configuration error from Enable Banking (any 4xx on `POST /auth`) is reported as 502 "Could not reach the bank". The frontend then shows the chat's generic "The assistant couldn't complete this answer." Fixed in this branch (see the next commit).
 
-PR: pending.
+PR: https://github.com/borbalita/folio/pull/17
