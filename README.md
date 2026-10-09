@@ -93,12 +93,13 @@ Sign in at http://localhost:5173 (email auth). Fast tests: `cd backend && uv run
 
 ## Deploy
 
-Railway runs two services from this GitHub repo (`main`). Do not deploy from the repo root.
+Railway runs three services from this GitHub repo (`main`). Do not deploy from the repo root.
 
 | Service | Root directory | Notes |
 | --- | --- | --- |
 | backend | `/backend` | [backend/railway.json](backend/railway.json) sets `uvicorn app.main:app` and `/health`. Point Config as Code at `/backend/railway.json` (Railway does not search inside the root directory for that file). |
 | frontend | `/frontend` | Vite SPA via Caddy. Do **not** set a custom start command. |
+| email-ingest (cron) | `/backend` | Config as Code at `/backend/railway.email-ingest.json`: `python -m ingest.email --scheduled` every 30 minutes (UTC). Same variables as backend, plus `YAHOO_EMAIL`, `YAHOO_APP_PASSWORD`, `EMAIL_AGENT_OWNER_USER_ID`, `TYPESAFE_API_KEY`. |
 
 `VITE_*` vars are baked in at **build** time. Set `VITE_API_BASE_URL` to the backend origin (no trailing slash) plus `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` before the frontend build. After the frontend has a public URL, set backend `ALLOWED_ORIGINS` to that origin (and `http://localhost:5173` if you still develop locally). In Supabase Auth, add the frontend origin as Site URL and a Redirect URL; keep localhost for local sign-in.
 

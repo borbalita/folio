@@ -28,6 +28,7 @@ from app.chat.streaming import (
     format_start_step,
     format_status_part,
     format_stream_start,
+    iter_canned_text_stream,
     iter_grounded_stream,
 )
 from app.chat.titles import DEFAULT_THREAD_TITLE, generate_thread_title
@@ -36,6 +37,7 @@ from app.email_assistant.agent import run_email_agent
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailTurnResult
 from app.email_assistant.tools.mail import SEARCHING_MAIL
+from app.finance import STUB_REPLY
 from app.grounding import DocumentGrounder, EmailGrounder, Grounder, GroundingError
 from app.retrieval.documents.retriever import DocumentRetriever
 from app.retrieval.email.retriever import EmailRetriever
@@ -221,6 +223,10 @@ async def run_turn(
     if thread is None:
         thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
     await asyncio.to_thread(chats.ensure_user, user.id, user.email)
+    if thread.get("agent") == "finance":
+        async for frame in iter_canned_text_stream(STUB_REPLY):
+            yield frame
+        return
     agent = _AGENTS[thread.get("agent", "documents")]
 
     yield format_stream_start()

@@ -3,20 +3,27 @@ import { useNavigate } from 'react-router-dom'
 
 import { ChatIcon } from '@/components/chat/ChatIcon'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AGENTS, type AgentInfo } from '@/lib/agents'
 import { api } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
 import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
 export function AgentPickerPage() {
   const { email, agents } = useMe()
+  const { signOut } = useAuth()
   const navigate = useNavigate()
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const available = Object.values(AGENTS).filter((agent) => agents.includes(agent.name))
 
   async function startChat(agent: AgentInfo) {
+    if (!agent.hasThreads) {
+      void navigate(agent.path)
+      return
+    }
     setStarting(true)
     try {
       const thread = await api.createThread(agent.name)
@@ -29,7 +36,17 @@ export function AgentPickerPage() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 p-8">
-      <ThemeToggle className="absolute top-4 right-4" />
+      <div className="absolute top-4 right-4 flex gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            void signOut()
+          }}
+        >
+          Sign out
+        </Button>
+        <ThemeToggle />
+      </div>
       <div className="flex flex-col items-center gap-2 text-center">
         <ChatIcon className="size-10" />
         <h1 className="text-xl font-semibold">Choose an assistant</h1>

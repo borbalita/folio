@@ -156,3 +156,17 @@ def test_unknown_charset_keeps_the_raw_header() -> None:
     parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
 
     assert parsed.subject.startswith("=?x-bogus?Q?")
+
+
+def test_encoded_sender_name_is_decoded() -> None:
+    raw = _ENCODED_RAW.replace(
+        b"From: billing@example.com",
+        b"From: =?UTF-8?Q?J=C3=B6rg_Sz=C5=91ke?= <billing@example.com>",
+    )
+
+    parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
+
+    assert (parsed.from_name, parsed.from_address) == (
+        "Jörg Szőke",
+        "billing@example.com",
+    )

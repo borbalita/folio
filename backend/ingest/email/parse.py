@@ -83,7 +83,7 @@ def parse_rfc822(raw: bytes, *, provider_message_id: str, folder: str) -> Parsed
         folder=folder,
         subject=subject,
         from_address=from_address,
-        from_name=normalize_whitespace(from_name),
+        from_name=normalize_whitespace(decode_header_text(from_name)),
         to_addresses=to_addresses,
         sent_at=sent_at,
         body=_body(message),

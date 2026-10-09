@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.auth.email_access import require_email_access
+from app.auth.email_access import require_agent_access
 from app.chat.messages import AgentName, CreateThreadRequest, StreamChatRequest
 from app.chat.orchestrator import run_turn
 from app.database import chats
@@ -25,8 +25,7 @@ async def create_thread(
 ) -> dict[str, Any]:
     title = body.title if body else None
     agent = body.agent if body else "documents"
-    if agent == "email":
-        await require_email_access(user)
+    await require_agent_access(user, agent)
     return await asyncio.to_thread(
         chats.create_thread_for_user, user.id, user.email, title, agent
     )
@@ -37,8 +36,7 @@ async def list_threads(
     user: Annotated[CurrentUser, Depends(get_current_user)],
     agent: Annotated[AgentName, Query()] = "documents",
 ) -> list[dict[str, Any]]:
-    if agent == "email":
-        await require_email_access(user)
+    await require_agent_access(user, agent)
     return await asyncio.to_thread(chats.list_threads, user.id, agent)
 
 
@@ -47,6 +45,8 @@ async def delete_empty_thread(
     thread_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, bool]:
+    thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
+    await require_agent_access(user, thread.get("agent"))
     deleted = await asyncio.to_thread(chats.delete_thread_if_empty, thread_id, user.id)
     return {"deleted": deleted}
 
@@ -56,7 +56,8 @@ async def get_thread_messages(
     thread_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
+    thread = await asyncio.to_thread(chats.get_thread_for_user, thread_id, user.id)
+    await require_agent_access(user, thread.get("agent"))
     return await asyncio.to_thread(chats.list_messages, thread_id)
 
 
@@ -66,8 +67,7 @@ async def chat_stream(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> StreamingResponse:
     thread = await asyncio.to_thread(chats.get_thread_for_user, body.thread_id, user.id)
-    if thread.get("agent") == "email":
-        await require_email_access(user)
+    await require_agent_access(user, thread.get("agent"))
     return StreamingResponse(
         run_turn(user, body.thread_id, body.messages, thread=thread),
         media_type="text/event-stream",

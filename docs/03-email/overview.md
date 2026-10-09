@@ -16,6 +16,7 @@ uv run python -m ingest.email --limit 50 --since 2026-09-01
 
 - Reads INBOX over IMAP (`imap.mail.yahoo.com:993`, stdlib `imaplib`) with a Yahoo app password.
 - `--since` filters first. Then `--limit` keeps the newest N. The default is 5, and `0` means no cap.
+- `--scheduled` is the cron mode: no cap, fetches from `last_synced_at` minus 1 day (or the last 7 days if never synced), and writes one `job_runs` row per run. It can't be combined with `--limit` or `--since`.
 - The first run creates the `mailboxes` row and gives it to `EMAIL_AGENT_OWNER_USER_ID`. Ingest exits at once if that setting, `YAHOO_EMAIL`, or `YAHOO_APP_PASSWORD` is missing. The API starts without them.
 - Each message is parsed, labeled, chunked, and embedded in one transaction. The run prints a summary: fetched, skipped, new, re-embedded, count per label, attachments saved or skipped, news items, stories rebuilt.
 - The IMAP side is an adapter that returns a provider-neutral `ParsedMessage`. The rest of the pipeline never knows it's Yahoo. Gmail or a work account would be a new adapter.
@@ -66,7 +67,7 @@ Relative dates ("last week") are resolved in `EMAIL_TIMEZONE`. Grounding rejects
 ## Owner-only access
 
 - A user has the Email agent when they own at least one active mailbox. `GET /me` returns `agents: ["documents"]` or `["documents", "email"]`.
-- Every email route returns 403 to a user without a mailbox: thread list and create for `agent=email`, posting to an email thread, invoice list and detail, and attachment download.
+- Every email route returns 403 to a user without a mailbox: thread list and create for `agent=email`, and posting to an email thread. Invoices and attachment downloads are Finance routes (`/finance/...`), owner-only.
 - Every email query is scoped to the caller's active mailboxes. An invoice or attachment in another user's mailbox returns 403.
 - Document routes don't depend on any of this.
 
@@ -74,8 +75,8 @@ Relative dates ("last week") are resolved in `EMAIL_TIMEZONE`. Grounding rejects
 
 - Every PDF attachment is saved at ingest, whatever the email's label, in `email_attachments` as `bytea`.
 - **10 MB cap.** A PDF over `ATTACHMENT_MAX_BYTES` (default 10 MB) still gets a row with its filename and size, `content` null, and `skipped_reason = 'too_large'`. The invoice page lists it as "not stored (over 10 MB)".
-- The Email sidebar lists `invoice` emails, newest first. `/email/invoices/:emailId` shows from, subject, date, the body, and each stored PDF in an embedded viewer.
-- PDFs come from `GET /email/attachments/:id`, out of Postgres. Opening an invoice never contacts Yahoo.
+- Invoices live in the Finance agent: `/finance/invoices` lists `invoice` emails, newest first, and `/finance/invoices/:emailId` shows from, subject, date, the body, and each stored PDF in an embedded viewer.
+- PDFs come from `GET /finance/attachments/:id` (Finance owner only; old `/email/invoices/:emailId` links redirect), out of Postgres. Opening an invoice never contacts Yahoo.
 - There is no pay action.
 
 ## Deferred

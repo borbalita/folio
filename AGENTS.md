@@ -55,6 +55,20 @@ Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
 - **Backend:** add or update pytest tests in the same change. Run `uv run pytest -m "not integration"` from `backend/` before finishing. Details in `backend/AGENTS.md`.
 - **Frontend:** no test runner — manual QA, `pnpm tsc --noEmit`, `pnpm lint`. Details in `frontend/AGENTS.md`.
 
+## Implementing a planned task
+
+Plans live in `docs/<area>/plans/NNN-<topic>/`: a `README.md` spec and one file per task in `tasks/NN-<name>.md`. A request like "Implement 001/03" means that task. These rules apply whichever skills or plugins you use.
+
+- **Design is settled.** The task file plus the spec's Decisions and Design are the approved design; skip brainstorming. If the work shows a decision or the design is wrong, stop and raise it with the user. Change the spec only after they agree.
+- **Plan file.** Save the implementation plan beside the task as `tasks/NN-<name>.plan.md` (not `docs/superpowers/plans/`), and link it from the task file.
+- **Verify every acceptance criterion before finishing the branch.** The main session does this, not subagents, because it needs a browser and the user. Criteria are tagged:
+  - `(test)`: write it as a failing test first; confirm the tests pass.
+  - `(browser)`: run the app, do the named steps in a browser, and note what you saw.
+  - `(manual)`: do every part you can, then ask the user to do the rest and wait for their answer.
+  - Offer the user to repeat any `(browser)` check themselves.
+- **Record and tick.** Add a `Verified` section to the task file: date, one line per criterion with how it was checked and the result, and the PR link. Tick the task in the spec's Tasks checklist only when every criterion passed. A failed or skipped criterion keeps it unticked, with the reason.
+- **Plan status.** Set the spec's status to `In progress` with the first task, and `Complete` when every task and success criterion is met.
+
 ## Configuration
 
 A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.
