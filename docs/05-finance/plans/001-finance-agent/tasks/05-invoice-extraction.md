@@ -37,4 +37,4 @@ Every invoice email yields one or more invoices with payee, IBAN, BIC, amount, c
 - Edited invoice, backfill reruns → fields unchanged: `test_rerun_of_all_keeps_edited_fields` and `test_reextraction_keeps_edited_fields_and_rechecks`; both fail when the edited-field guard is removed. Pass.
 - Content-free tracing: `test_extraction_call_is_traced_without_content` (no subject, body, file name, PDF bytes or extracted IBAN in exported spans). Pass.
 - Suite: `uv run pytest -m "not integration"` with `EMAIL_RERANK=false` and no Langfuse keys, as CI runs it: 463 passed. `ruff check` clean.
-- Real stored invoices, backfill → each has fields or `needs_info`: **pending** — needs the migration applied and a backfill run against the real database.
+- Real stored invoices, backfill → each has fields or `needs_info`: migration applied, `backfill_invoices` run on 6 invoice emails: 6 invoices, 0 failures, none left without a row. 1 `open` (linked to its PDF), 5 `needs_info` with `no_invoice_found`; 2 of those 5 have a PDF. **Waiting on the owner** to confirm those two are not payable invoices (e.g. receipts already paid, which the prompt tells the model to skip).
