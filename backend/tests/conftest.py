@@ -58,6 +58,9 @@ def langfuse_spans(
 ) -> Callable[[], tuple[ReadableSpan, ...]]:
     """The app's hand-made Langfuse observations, as recorded before export filtering."""
     client, exported = _test_langfuse()
+    # Without Langfuse keys (CI) this is the process's only client, so get_client() in
+    # earlier, unpatched tests returns it too; drain their buffered spans before clearing.
+    client.flush()
     exported.clear()
     for module in (
         "app.chat.orchestrator",
