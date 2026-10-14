@@ -20,4 +20,4 @@ The owner asks Finance about invoices and prepares payments in chat, and answers
 - Given a payment card in chat, when the owner ticks and approves, then the QR shows as on the invoice page. (browser)
 
 ## Dependencies
-001/10; the content-free tracing change.
+001/10; content-free tracing ([eval plan 004](../../../../02-evaluation/plans/004-content-free-tracing/README.md), tasks 01–03).

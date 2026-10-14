@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 from types import SimpleNamespace
 from uuid import UUID
@@ -9,6 +10,7 @@ import pytest
 from app.retrieval.news.queries import NewsSearchFilters
 from app.retrieval.news.retriever import NewsPassage, NewsRetriever
 from app.retrieval.queries import RankedHit
+from tests.conftest import span_text
 
 USER = UUID("00000000-0000-0000-0000-000000000001")
 OWNED = UUID("00000000-0000-0000-0000-000000000010")
@@ -144,3 +146,28 @@ def test_big_stories_with_no_mailbox_runs_no_query() -> None:
         == []
     )
     assert session.sql == ""
+
+
+def test_search_span_has_settings_not_query_or_filters(
+    monkeypatch: pytest.MonkeyPatch, langfuse_spans: Callable[[], tuple]
+) -> None:
+    monkeypatch.setattr("app.retrieval.news.retriever.embed_query", lambda _q: [0.1])
+    monkeypatch.setattr(
+        "app.retrieval.news.queries.NewsQueries.semantic",
+        lambda *_args, **_kwargs: [RankedHit(chunk_id=A, rank=1, score=0.9)],
+    )
+    monkeypatch.setattr(
+        "app.retrieval.news.retriever.load_news_items",
+        lambda _session, _ids, _filters: {A: _passage(A)},
+    )
+
+    NewsRetriever().search(
+        "SECRET-Q", filters=_filters(since=date(2026, 9, 17)), session=object()
+    )
+
+    spans = langfuse_spans()
+    search = span_text(spans, "news-search")
+    assert "SECRET" not in search
+    assert "2026-09-17" not in search
+    assert "'langfuse.observation.metadata.passage_count': 1" in search
+    assert "SECRET" not in span_text(spans, "embed-query")

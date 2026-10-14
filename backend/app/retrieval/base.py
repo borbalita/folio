@@ -42,7 +42,6 @@ class HybridRetriever[FiltersT: BaseModel, PassageT: BaseModel](ABC):
         with langfuse.start_as_current_observation(
             as_type="retriever",
             name="hybrid-search",
-            input={"query": query, "filters": filters.model_dump(mode="json")},
             metadata={
                 "corpus": self.corpus,
                 "candidate_k": settings.retrieval_candidate_k,
@@ -54,7 +53,6 @@ class HybridRetriever[FiltersT: BaseModel, PassageT: BaseModel](ABC):
                 as_type="embedding",
                 name="embed-query",
                 model=settings.openai_embedding_model,
-                input=query,
             ):
                 query_vec = embed_query(query)
 
@@ -75,14 +73,14 @@ class HybridRetriever[FiltersT: BaseModel, PassageT: BaseModel](ABC):
             )[: self._fused_count()]
 
             passages = self._hydrate(session, fused, filters) if fused else []
-            span.update(output=self._span_output(passages))
+            span.update(metadata=self._span_metadata(passages))
             return passages
 
     def _fused_count(self) -> int:
         """How many fused hits to hydrate; more than top_k when a later step filters them."""
         return settings.retrieval_top_k
 
-    def _span_output(self, passages: list[PassageT]) -> dict[str, Any]:
+    def _span_metadata(self, passages: list[PassageT]) -> dict[str, Any]:
         return {"passage_count": len(passages)}
 
     @abstractmethod

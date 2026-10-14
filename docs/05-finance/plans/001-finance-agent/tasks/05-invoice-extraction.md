@@ -21,7 +21,7 @@ Every invoice email yields one or more invoices with payee, IBAN, BIC, amount, c
 - Given real stored invoices, when the backfill runs, then each has fields or `needs_info`. (manual)
 
 ## Dependencies
-001/04; the content-free tracing change.
+001/04; content-free tracing ([eval plan 004](../../../../02-evaluation/plans/004-content-free-tracing/README.md), tasks 01–03).
 
 ## Notes
 - Decisions: PDFs go to the model as files; one call on `gpt-6.1-sol`, `gpt-6-astra` next if weak; no trace content.

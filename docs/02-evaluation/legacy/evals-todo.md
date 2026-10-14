@@ -83,6 +83,8 @@ generate-chat-response (SPAN, root)
    └─ chat gpt-5.5 (GENERATION)
 ```
 
+**Since [plan 004](../plans/004-content-free-tracing/README.md):** traces are content-free. The nested spans above show models, tokens, timings, tool names and counts, not questions, answers, queries or passages.
+
 ## Step 4 — Capture what's currently discarded
 
 - [ ] In `app/assistant/agent.py::run_agent`, widen the `usage` dict to include `cache_read_tokens`, `cache_write_tokens`, `details` from `RunUsage` — cheap to add now that it's about to be visible in dashboards
@@ -99,6 +101,8 @@ generate-chat-response (SPAN, root)
 - [ ] Emit `citation_count` as a numeric score for the thin-answer signal
 
 **Verify:** Langfuse trace detail view shows all three scores after a real chat turn; a Langfuse dashboard chart can group traces by `grounding_failure_code`.
+
+**Since [plan 004](../plans/004-content-free-tracing/README.md):** traces carry no text, so these scores and counts are the signal; reading a failure means reproducing it locally.
 
 ## Step 6 — Offline eval harness (`pydantic-evals`)
 
