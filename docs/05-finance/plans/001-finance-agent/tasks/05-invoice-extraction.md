@@ -29,7 +29,7 @@ Every invoice email yields one or more invoices with payee, IBAN, BIC, amount, c
 
 ## Verified
 
-2026-10-14, branch `feat/invoice-extraction`.
+2026-10-14, branch `feat/invoice-extraction`, PR [borbalita/folio#26](https://github.com/borbalita/folio/pull/26).
 
 - Two mocked invoices for one email → two invoices linked to the email and their PDFs: `test_two_invoices_link_to_the_email_and_their_pdfs`, plus the ingest path in `test_invoice_email_gets_its_invoices_extracted`. Pass.
 - Wrong IBAN checksum → `needs_info`: `test_wrong_iban_checksum_needs_info` and `tests/finance/test_invoice_checks.py`. Pass.
