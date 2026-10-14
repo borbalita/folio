@@ -2,7 +2,7 @@
 
 - Created: 2026-10-09
 - Status: In progress
-- Current stage: 004/01 implemented; its live Langfuse check is pending
+- Current stage: 004/01 done; 004/02 and 004/03 next
 
 ## Approval state
 
@@ -81,7 +81,7 @@ configure_tracing()
 
 ## Tasks
 
-- [ ] [004/01 — Content-free Langfuse export](tasks/01-content-free-export.md)
+- [x] [004/01 — Content-free Langfuse export](tasks/01-content-free-export.md)
 - [ ] [004/02 — Local trace content and the production guard](tasks/02-local-trace-content.md) — after 01
 - [ ] [004/03 — Email ingest is traced](tasks/03-traced-ingest.md) — after 01
 - [ ] [004/04 — Evals under content-free tracing](tasks/04-evals.md) — after 02

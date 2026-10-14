@@ -38,6 +38,6 @@ None.
 - A raising turn exports level and exception type, no message (test): `test_failing_agent_exports_the_type_only`, `test_failed_turn_span_keeps_the_code_not_the_message`, `test_exception_events_keep_only_the_type`, `test_status_message_gives_way_to_the_exception_type`. Passed.
 - A PDF input leaves no binary or base64 attribute (test): `test_agent_run_records_no_content_or_file_at_the_source`, which fails when content and binary are switched on. Passed.
 - Unknown attribute keys are dropped (test): `test_unknown_keys_are_dropped`; library drift is caught by `test_recorded_keys_match_the_known_set`. Passed.
-- One Documents and one Email turn in Langfuse show shape and no content (manual): pending; needs the owner to run the turns and look in Langfuse.
+- One Documents and one Email turn in Langfuse show shape and no content (manual): 2026-10-14, the owner ran Documents and Email turns locally from this branch (backend log: `tracing_configured`, four `POST /chat/stream` 200, no errors) and checked Langfuse: input and output empty on every observation; the tree of agent run, model calls, tools and search spans intact; model name, token counts, cost and duration on the model calls; `citation_count`, `insufficient_evidence`, `retrieved_chunk_count`, user and session ids present. Passed.
 
-Fast suite: 413 passed; `ruff check` clean. A fresh whole-branch review found no critical issues; its four important findings were fixed with tests.
+Fast suite: 413 passed; `ruff check` clean; CI green after a fixture fix (stale spans in the no-keys CI run). A fresh whole-branch review found no critical issues; its four important findings were fixed with tests.
