@@ -19,6 +19,8 @@ from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.user import User
+from ingest.email.invoices import Extractor as InvoiceExtractor
+from ingest.email.invoices import InvoiceOutcome, extract_invoices
 from ingest.email.labels import label_message
 from ingest.email.news import edition_date, embed_text, extract_news_items
 from ingest.email.parse import ParsedMessage, content_hash
@@ -41,6 +43,8 @@ class IngestSummary:
     attachments_skipped: int = 0
     news_items: int = 0
     stories_rebuilt: int = 0
+    invoices: int = 0
+    invoice_failures: int = 0
 
     def render(self) -> str:
         label_counts = ", ".join(
@@ -57,6 +61,8 @@ class IngestSummary:
                 f"attachments skipped: {self.attachments_skipped}",
                 f"news items: {self.news_items}",
                 f"stories rebuilt: {self.stories_rebuilt}",
+                f"invoices: {self.invoices}",
+                f"invoice failures: {self.invoice_failures}",
             ]
         )
 
@@ -101,6 +107,7 @@ def ingest_messages(
     embed=embed_texts,
     classifier=None,
     extract=None,
+    invoice_extract: InvoiceExtractor | None = None,
 ) -> IngestSummary:
     summary = IngestSummary(fetched=len(messages))
     editions: set[date] = set()
@@ -113,8 +120,8 @@ def ingest_messages(
                 subject=parsed.subject,
             )
             continue
-        action, label, saved, skipped, news_count, edition = _store_one(
-            session, mailbox_id, parsed, embed, classifier, extract
+        action, label, saved, skipped, news_count, edition, invoices = _store_one(
+            session, mailbox_id, parsed, embed, classifier, extract, invoice_extract
         )
         if edition is not None:
             editions.add(edition)
@@ -122,6 +129,9 @@ def ingest_messages(
         summary.attachments_saved += saved
         summary.attachments_skipped += skipped
         summary.news_items += news_count
+        if invoices is not None:
+            summary.invoices += invoices.invoices
+            summary.invoice_failures += int(invoices.failed)
         if action == "skip":
             summary.skipped += 1
         elif action == "new":
@@ -144,7 +154,8 @@ def _store_one(
     embed,
     classifier,
     extract,
-) -> tuple[str, str, int, int, int, date | None]:
+    invoice_extract: InvoiceExtractor | None = None,
+) -> tuple[str, str, int, int, int, date | None, InvoiceOutcome | None]:
     stored_row = session.scalar(
         select(EmailMessage).where(
             EmailMessage.mailbox_id == mailbox_id,
@@ -163,7 +174,7 @@ def _store_one(
         assert stored_row is not None
         # Backfills names on mail stored before from_name existed; no re-embedding needed.
         stored_row.from_name = parsed.from_name
-        return action, "", 0, 0, 0, None
+        return action, "", 0, 0, 0, None, None
 
     label, source = label_message(parsed, classifier=classifier)
     digest = content_hash(parsed.body, parsed.subject)
@@ -226,7 +237,9 @@ def _store_one(
                 embedding=vector,
             )
         )
-    saved, skipped = _write_attachments(session, stored_row.id, parsed)
+    attachments = _write_attachments(session, stored_row.id, parsed)
+    saved = sum(1 for row in attachments if row.content is not None)
+    skipped = len(attachments) - saved
     news_count = 0
     edition = None
     if label == EmailLabel.AI_NEWSLETTER and source is not None:
@@ -234,31 +247,32 @@ def _store_one(
             session, stored_row.id, source, parsed, embed, extract
         )
         edition = edition_date(parsed.sent_at)
-    return action, label, saved, skipped, news_count, edition
+    invoices = None
+    if label == EmailLabel.INVOICE:
+        session.flush()
+        invoices = extract_invoices(
+            session, stored_row, attachments, extract=invoice_extract
+        )
+    return action, label, saved, skipped, news_count, edition, invoices
 
 
 def _write_attachments(
     session: Session, email_id: uuid.UUID, parsed: ParsedMessage
-) -> tuple[int, int]:
-    saved = 0
-    skipped = 0
+) -> list[EmailAttachment]:
+    rows = []
     for attachment in parsed.attachments:
         too_large = len(attachment.content) > settings.attachment_max_bytes
-        session.add(
-            EmailAttachment(
-                email_id=email_id,
-                filename=attachment.filename,
-                content_type=attachment.content_type,
-                size_bytes=len(attachment.content),
-                content=None if too_large else attachment.content,
-                skipped_reason="too_large" if too_large else None,
-            )
+        row = EmailAttachment(
+            email_id=email_id,
+            filename=attachment.filename,
+            content_type=attachment.content_type,
+            size_bytes=len(attachment.content),
+            content=None if too_large else attachment.content,
+            skipped_reason="too_large" if too_large else None,
         )
-        if too_large:
-            skipped += 1
-        else:
-            saved += 1
-    return saved, skipped
+        session.add(row)
+        rows.append(row)
+    return rows
 
 
 def _write_news_items(
@@ -356,6 +370,7 @@ def ingest_fetched(
     embed=embed_texts,
     classifier=None,
     extract=None,
+    invoice_extract: InvoiceExtractor | None = None,
 ) -> IngestSummary:
     mailbox = upsert_yahoo_mailbox(session)
     session.commit()
@@ -366,6 +381,7 @@ def ingest_fetched(
         embed=embed,
         classifier=classifier,
         extract=extract,
+        invoice_extract=invoice_extract,
     )
     record_sync(session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid)
     return summary
