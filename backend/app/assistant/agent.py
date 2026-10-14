@@ -8,8 +8,6 @@ from pathlib import Path
 from uuid import UUID
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
 
 from app.assistant.deps import DocumentAgentDeps
 from app.assistant.outputs import AgentTurnResult, GroundedAnswer
@@ -18,7 +16,7 @@ from app.assistant.tools import (
     execute_read_surrounding_chunks,
     execute_search_filings,
 )
-from app.config import settings
+from app.chat_model import chat_model
 
 INSTRUCTIONS_PATH = Path(__file__).with_name("instructions.md")
 
@@ -38,17 +36,10 @@ def looking_through_label(ticker: str | None) -> str:
     return LOOKING_THROUGH_FILINGS
 
 
-def _chat_model() -> OpenAIChatModel:
-    return OpenAIChatModel(
-        settings.openai_chat_model,
-        provider=OpenAIProvider(api_key=settings.openai_api_key),
-    )
-
-
 @lru_cache(maxsize=1)
 def get_agent() -> Agent[DocumentAgentDeps, GroundedAnswer]:
     agent: Agent[DocumentAgentDeps, GroundedAnswer] = Agent(
-        _chat_model(),
+        chat_model(),
         deps_type=DocumentAgentDeps,
         output_type=GroundedAnswer,
         instructions=INSTRUCTIONS_PATH.read_text(encoding="utf-8"),

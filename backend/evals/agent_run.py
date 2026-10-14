@@ -42,10 +42,7 @@ class AgentRecord(BaseModel):
 
 
 def candidate_model(name: str) -> Model:
-    """Through the Responses API: GPT-6.1 Sol only calls tools there.
-
-    The app uses Chat Completions with its configured model; switching is one line in agent.py.
-    """
+    """Through the Responses API, like the app (see app/chat_model.py)."""
     return OpenAIResponsesModel(
         name, provider=OpenAIProvider(api_key=settings.openai_api_key)
     )

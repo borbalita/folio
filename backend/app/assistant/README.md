@@ -72,7 +72,7 @@ Chat-model knobs live in `app.config.settings` (env vars in `backend/.env`). Req
 
 | Env var | Setting | Example | Role |
 | --- | --- | --- | --- |
-| `OPENAI_CHAT_MODEL` | `openai_chat_model` | `gpt-4o-mini` | Chat model for the agent |
+| `OPENAI_CHAT_MODEL` | `openai_chat_model` | `gpt-6.1-sol` | Chat model for every agent, through the Responses API |
 | `OPENAI_API_KEY` | `openai_api_key` | | API key for chat and (via retrieval) embeddings |
 
 Search limits, RRF, neighbors, and embedding model: [retrieval README](../retrieval/README.md).

@@ -8,22 +8,14 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
 
+from app.chat_model import chat_model
 from app.config import settings
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer, EmailTurnResult
 from app.email_assistant.tools import mail, news
 
 INSTRUCTIONS_PATH = Path(__file__).with_name("instructions.md")
-
-
-def _chat_model() -> OpenAIChatModel:
-    return OpenAIChatModel(
-        settings.openai_chat_model,
-        provider=OpenAIProvider(api_key=settings.openai_api_key),
-    )
 
 
 def email_prompt(user_text: str, today: date | None = None) -> str:
@@ -38,7 +30,7 @@ def email_prompt(user_text: str, today: date | None = None) -> str:
 @lru_cache(maxsize=1)
 def get_agent() -> Agent[EmailAgentDeps, EmailAnswer]:
     agent: Agent[EmailAgentDeps, EmailAnswer] = Agent(
-        _chat_model(),
+        chat_model(),
         deps_type=EmailAgentDeps,
         output_type=EmailAnswer,
         instructions=INSTRUCTIONS_PATH.read_text(encoding="utf-8"),
