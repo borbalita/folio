@@ -131,15 +131,15 @@ Open http://localhost:5173 and sign in.
 
 ## Deployment
 
-Railway deploys `main` from this repo as separate services:
+Railway deploys `main` from this repo as separate services, all defined in [`.railway/railway.ts`](.railway/railway.ts):
 
 | Service | Root directory | Config |
 | --- | --- | --- |
-| backend | `/backend` | [`/backend/railway.json`](backend/railway.json): uvicorn and the `/health` check |
+| backend | `/backend` | uvicorn and the `/health` check |
 | frontend | `/frontend` | Vite build served by Caddy; no custom start command |
-| email-ingest (cron) | `/backend` | [`/backend/railway.email-ingest.json`](backend/railway.email-ingest.json): `python -m ingest.email --scheduled` every 30 minutes (UTC); same variables as backend |
+| email-ingest (cron) | `/backend` | `python -m ingest.email --scheduled` every 30 minutes (UTC); its variables reference the backend's |
 
-Railway does not look inside the root directory for config files, so set each service's config path explicitly.
+Service settings change only with `railway config plan` and then `railway config apply`, not on push. Variables are not in the file; set them in Railway.
 
 - **Frontend:** set `VITE_API_BASE_URL` to the backend's public URL; the browser calls the backend directly. `VITE_*` variables are baked in at build time, so set them before the build.
 - **Backend:** set `ALLOWED_ORIGINS` to the frontend's URL.

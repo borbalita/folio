@@ -8,6 +8,7 @@
 - A generic `job_runs` table plus a `run_job(job, work)` helper. It inserts a `running` row, calls `work()`, and then sets `ok` with the returned counts, or `failed` with the error and re-raises. The row is written in its own session, so a rolled-back ingest session can't lose it. 001/08's bank sync reuses this helper.
 - `ingest.email.run` gets a `--scheduled` flag. It reads the mailbox's `last_synced_at`, works out the IMAP `SINCE` date, fetches with no cap, and runs the existing pipeline inside `run_job("email_ingest", ...)`. Overlap is handled by the existing skip rule (`ingest_action`).
 - A Railway config file `backend/railway.email-ingest.json` holds the start command and the cron schedule. The cron service points its config-file path at it, because the backend's `railway.json` would otherwise give it the API's uvicorn start command and healthcheck.
+  - Superseded 2026-10-14: Railway deprecated Config as Code and new services can't set a config-file path, so the cron service ran the API's start command. Both services are now defined in `.railway/railway.ts`.
 
 **Tech Stack:** Python 3.12, SQLAlchemy + Alembic, pytest, Railway config-as-code.
 
