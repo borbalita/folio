@@ -25,3 +25,4 @@ Every invoice email yields one or more invoices with payee, IBAN, BIC, amount, c
 
 ## Notes
 - Decisions: PDFs go to the model as files; one call on `gpt-6.1-sol`, `gpt-6-astra` next if weak; no trace content.
+- Implementation plan: [05-invoice-extraction.plan.md](05-invoice-extraction.plan.md).
