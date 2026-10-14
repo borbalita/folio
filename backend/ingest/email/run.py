@@ -8,9 +8,12 @@ import sys
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
+from langfuse import propagate_attributes
+
 from app.config import settings
 from app.database.job_runs import run_job
 from app.logging import configure_logging
+from app.observability import configure_tracing, shutdown_tracing
 from ingest.email.pipeline import ingest_fetched, open_session, upsert_yahoo_mailbox
 from ingest.email.yahoo import YahooImapAdapter
 
@@ -81,6 +84,15 @@ def run_scheduled() -> None:
 
 def main(argv: list[str] | None = None) -> int:
     configure_logging()
+    configure_tracing()
+    try:
+        with propagate_attributes(tags=["ingest"]):
+            return _run(argv)
+    finally:
+        shutdown_tracing()
+
+
+def _run(argv: list[str] | None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.scheduled and (args.limit is not None or args.since is not None):
