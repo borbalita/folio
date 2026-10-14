@@ -1,6 +1,7 @@
 import asyncio
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
 import httpx
 import jwt
@@ -220,3 +221,128 @@ def test_error_response_raises_enable_banking_error(configured):
         asyncio.run(run())
     assert exc.value.status == 400
     assert "invalid_grant" in exc.value.body
+
+
+def _entry(**overrides) -> dict:
+    entry = {
+        "entry_reference": None,
+        "transaction_amount": {"currency": "EUR", "amount": "12.50"},
+        "credit_debit_indicator": "DBIT",
+        "status": "BOOK",
+        "booking_date": "2026-10-01",
+        "creditor": {"name": "Stadtwerke"},
+        "creditor_account": {"iban": "DE89370400440532013000"},
+        "debtor": {"name": "Owner"},
+        "debtor_account": {"iban": "DE02120300000000202051"},
+        "remittance_information": ["Rechnung 4711", "Kunde 42"],
+        "bank_transaction_code": {"description": "Transfer", "code": "PMNT"},
+    }
+    entry.update(overrides)
+    return entry
+
+
+def test_fetch_follows_continuation_key(configured):
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if "continuation_key" not in request.url.params:
+            return httpx.Response(
+                200,
+                json={"transactions": [_entry(entry_reference="a")], "continuation_key": "k2"},
+            )
+        return httpx.Response(200, json={"transactions": [_entry(entry_reference="b")]})
+
+    result = asyncio.run(
+        enable_banking.fetch_transactions(
+            "acc-1", date(2026, 7, 16), client=mock_client(handler)
+        )
+    )
+
+    assert [t.entry_reference for t in result] == ["a", "b"]
+    assert requests[0].url.path == "/accounts/acc-1/transactions"
+    assert requests[1].url.params["continuation_key"] == "k2"
+    assert all(r.url.params["date_from"] == "2026-07-16" for r in requests)
+
+
+def test_fetch_drops_pending_entries(configured):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "transactions": [
+                    _entry(entry_reference="booked"),
+                    _entry(entry_reference="pending", status="PDNG"),
+                    _entry(entry_reference="pending2", status="PEND"),
+                ],
+                "continuation_key": None,
+            },
+        )
+
+    result = asyncio.run(
+        enable_banking.fetch_transactions(
+            "acc-1", date(2026, 7, 16), client=mock_client(handler)
+        )
+    )
+
+    assert [t.entry_reference for t in result] == ["booked"]
+
+
+def test_parse_debit_is_negative_and_uses_creditor():
+    tx = enable_banking.parse_transaction(_entry())
+
+    assert tx is not None
+    assert tx.amount == Decimal("-12.50")
+    assert tx.direction == "DBIT"
+    assert tx.currency == "EUR"
+    assert tx.booking_date == date(2026, 10, 1)
+    assert tx.counterparty_name == "Stadtwerke"
+    assert tx.counterparty_iban == "DE89370400440532013000"
+    assert tx.remittance == "Rechnung 4711\nKunde 42"
+    assert tx.bank_code == "Transfer"
+
+
+def test_parse_credit_uses_debtor():
+    tx = enable_banking.parse_transaction(_entry(credit_debit_indicator="CRDT"))
+
+    assert tx is not None
+    assert tx.amount == Decimal("12.50")
+    assert tx.counterparty_name == "Owner"
+    assert tx.counterparty_iban == "DE02120300000000202051"
+
+
+def test_parse_paypal_uses_transaction_date():
+    entry = _entry(transaction_date="2026-09-30", creditor_account=None)
+    del entry["booking_date"]
+
+    tx = enable_banking.parse_transaction(entry)
+
+    assert tx is not None
+    assert tx.booking_date == date(2026, 9, 30)
+    assert tx.counterparty_iban is None
+
+
+def test_parse_unknown_indicator_raises():
+    with pytest.raises(EnableBankingError):
+        enable_banking.parse_transaction(_entry(credit_debit_indicator="XXXX"))
+
+
+def test_fetch_sends_psu_headers_when_given(configured):
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"transactions": []})
+
+    asyncio.run(
+        enable_banking.fetch_transactions(
+            "acc-1",
+            date(2026, 7, 16),
+            psu_headers={"Psu-Ip-Address": "1.2.3.4", "Psu-User-Agent": "UA"},
+            client=mock_client(handler),
+        )
+    )
+
+    assert seen[0].headers["Psu-Ip-Address"] == "1.2.3.4"
+    assert seen[0].headers["Psu-User-Agent"] == "UA"
+    assert seen[0].headers["Authorization"].startswith("Bearer ")
