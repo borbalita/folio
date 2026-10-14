@@ -9,10 +9,8 @@ from openai import APIError
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.exceptions import AgentRunError, ModelAPIError, UnexpectedModelBehavior
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
 
-from app.config import settings
+from app.chat_model import chat_model
 
 log = structlog.get_logger(__name__)
 
@@ -34,10 +32,7 @@ class ThreadTitle(BaseModel):
 @lru_cache(maxsize=1)
 def _title_agent() -> Agent[None, ThreadTitle]:
     return Agent(
-        OpenAIChatModel(
-            settings.openai_chat_model,
-            provider=OpenAIProvider(api_key=settings.openai_api_key),
-        ),
+        chat_model(),
         output_type=ThreadTitle,
         instructions=_SYSTEM_PROMPT,
         name="thread-title",
