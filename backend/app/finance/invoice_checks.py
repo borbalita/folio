@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from datetime import date
 from decimal import Decimal
 
-from app.database.models.finance.invoice import InvoiceStatus
+from app.database.models.finance.invoice import Invoice, InvoiceStatus
 
 # IBAN lengths per country, from the SWIFT IBAN registry.
 _IBAN_LENGTHS = {
@@ -36,6 +36,9 @@ class InvoiceFields:
     reference: str | None = None
     invoice_date: date | None = None
     due_date: date | None = None
+
+
+FIELD_NAMES = tuple(field.name for field in fields(InvoiceFields))
 
 
 def normalize_iban(raw: str) -> str:
@@ -69,3 +72,14 @@ def check(fields: InvoiceFields) -> tuple[InvoiceStatus, list[str]]:
     if fields.currency != "EUR":
         issues.append("currency_not_eur")
     return (InvoiceStatus.NEEDS_INFO if issues else InvoiceStatus.OPEN), issues
+
+
+def fields_of(row: Invoice) -> InvoiceFields:
+    return InvoiceFields(**{name: getattr(row, name) for name in FIELD_NAMES})
+
+
+def recheck(row: Invoice) -> None:
+    """Refresh issues; a paid invoice stays paid whatever its fields say."""
+    status, row.issues = check(fields_of(row))
+    if row.status != InvoiceStatus.PAID:
+        row.status = status

@@ -19,3 +19,6 @@ The owner sees, filters, corrects and marks invoices from the Finance invoices l
 
 ## Dependencies
 001/05.
+
+## Notes
+- Implementation plan: [06-invoice-dashboard.plan.md](06-invoice-dashboard.plan.md).

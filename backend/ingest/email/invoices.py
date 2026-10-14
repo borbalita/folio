@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
@@ -22,7 +22,12 @@ from app.config import settings
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.message import EmailMessage
 from app.database.models.finance.invoice import Invoice, InvoiceStatus
-from app.finance.invoice_checks import InvoiceFields, check, normalize_iban
+from app.finance.invoice_checks import (
+    FIELD_NAMES,
+    InvoiceFields,
+    normalize_iban,
+    recheck,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -77,8 +82,6 @@ class InvoiceOutcome:
 
 
 Extractor = Callable[[InvoiceSource], list[ExtractedInvoice]]
-
-_FIELD_NAMES = tuple(field.name for field in fields(InvoiceFields))
 
 
 def _model() -> Model:
@@ -180,7 +183,7 @@ def _no_invoice_found(
     if first is None:
         session.add(_placeholder(email_id, "no_invoice_found"))
     else:
-        for name in _FIELD_NAMES:
+        for name in FIELD_NAMES:
             setattr(first, name, None)
         first.attachment_id = None
         first.status = InvoiceStatus.NEEDS_INFO
@@ -202,12 +205,11 @@ def _apply(
     row: Invoice, extracted: InvoiceFields, attachment_id: uuid.UUID | None
 ) -> None:
     edited = set(row.edited_fields or [])
-    for name in _FIELD_NAMES:
+    for name in FIELD_NAMES:
         if name not in edited:
             setattr(row, name, getattr(extracted, name))
     row.attachment_id = attachment_id
-    current = InvoiceFields(**{name: getattr(row, name) for name in _FIELD_NAMES})
-    row.status, row.issues = check(current)
+    recheck(row)
 
 
 def _clean(item: ExtractedInvoice) -> InvoiceFields:
