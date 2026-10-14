@@ -57,6 +57,7 @@ class Settings(BaseSettings):
     # Unset: extraction uses openai_chat_model at the model's default effort.
     news_extraction_model: str | None = None
     news_extraction_reasoning_effort: ReasoningEffort | None = None
+    invoice_extraction_model: str = "gpt-6.1-sol"
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
