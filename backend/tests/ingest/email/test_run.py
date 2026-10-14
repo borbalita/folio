@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import uuid
 from datetime import UTC, date, datetime, timedelta
@@ -120,6 +121,21 @@ def scheduled_env(monkeypatch):
 
     set_last_synced(None)
     env.set_last_synced = set_last_synced
+    env.tracing = []
+
+    @contextlib.contextmanager
+    def fake_propagate(**kwargs):
+        env.tracing.append(("enter", kwargs))
+        yield
+        env.tracing.append(("exit", kwargs))
+
+    monkeypatch.setattr(
+        "ingest.email.run.configure_tracing", lambda: env.tracing.append("configure")
+    )
+    monkeypatch.setattr(
+        "ingest.email.run.shutdown_tracing", lambda: env.tracing.append("shutdown")
+    )
+    monkeypatch.setattr("ingest.email.run.propagate_attributes", fake_propagate)
     monkeypatch.setattr("ingest.email.run.YahooImapAdapter", _FakeAdapter)
     monkeypatch.setattr("ingest.email.run.open_session", lambda: ingest_session)
     monkeypatch.setattr("ingest.email.run.ingest_fetched", lambda *a, **k: env.summary)
@@ -180,3 +196,29 @@ def test_scheduled_rejects_limit_and_since(extra) -> None:
     with pytest.raises(SystemExit) as exc:
         main(["--scheduled", *extra])
     assert exc.value.code == 2
+
+
+INGEST_TAG = {"tags": ["ingest"]}
+TRACED_RUN = [
+    "configure",
+    ("enter", INGEST_TAG),
+    ("exit", INGEST_TAG),
+    "shutdown",
+]
+
+
+@pytest.mark.parametrize("argv", [[], ["--scheduled"]])
+def test_run_is_traced_and_flushed(scheduled_env, argv) -> None:
+    assert main(argv) == 0
+
+    assert scheduled_env.tracing == TRACED_RUN
+
+
+def test_failed_run_still_flushes_tracing(scheduled_env) -> None:
+    _FakeAdapter.error = OSError("imap down")
+
+    with pytest.raises(OSError):
+        main(["--scheduled"])
+
+    assert scheduled_env.tracing[0] == "configure"
+    assert scheduled_env.tracing[-1] == "shutdown"
