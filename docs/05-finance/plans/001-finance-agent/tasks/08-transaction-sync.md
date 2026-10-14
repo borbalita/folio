@@ -27,3 +27,4 @@ Booked transactions from the N26 main account, ING and PayPal are stored without
 
 ## Notes
 - Real-data findings in [research.md](../research.md#real-data-check-2026-10-08).
+- Implementation plan: [08-transaction-sync.plan.md](08-transaction-sync.plan.md).
