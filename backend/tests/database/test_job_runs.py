@@ -75,3 +75,28 @@ def test_long_error_is_truncated() -> None:
         run_job("email_ingest", work, open_session=lambda: session)
 
     assert len(session.added[0].error or "") == 2000
+
+
+def test_last_started_returns_newest(monkeypatch: pytest.MonkeyPatch) -> None:
+    from contextlib import contextmanager
+    from datetime import UTC, datetime
+    from unittest.mock import MagicMock
+
+    from sqlalchemy.dialects import postgresql
+
+    from app.database import job_runs
+
+    newest = datetime(2026, 10, 14, 12, tzinfo=UTC)
+    session = MagicMock()
+    session.scalar.return_value = newest
+
+    @contextmanager
+    def fake_get_session():
+        yield session
+
+    monkeypatch.setattr(job_runs, "get_session", fake_get_session)
+
+    assert job_runs.last_started("bank_sync") == newest
+    sql = str(session.scalar.call_args.args[0].compile(dialect=postgresql.dialect()))
+    assert "max(job_runs.started_at)" in sql
+    assert "job_runs.job = " in sql

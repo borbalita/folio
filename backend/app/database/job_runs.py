@@ -2,9 +2,10 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.engine import get_session_factory
+from app.database.engine import get_session, get_session_factory
 from app.database.models.job_run import JobRun, JobStatus
 
 _ERROR_MAX_CHARS = 2000
@@ -44,3 +45,8 @@ def run_job(
         return counts
     finally:
         session.close()
+
+
+def last_started(job: str) -> datetime | None:
+    with get_session() as session:
+        return session.scalar(select(func.max(JobRun.started_at)).where(JobRun.job == job))
