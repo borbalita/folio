@@ -26,3 +26,15 @@ Every invoice email yields one or more invoices with payee, IBAN, BIC, amount, c
 ## Notes
 - Decisions: PDFs go to the model as files; one call on `gpt-6.1-sol`, `gpt-6-astra` next if weak; no trace content.
 - Implementation plan: [05-invoice-extraction.plan.md](05-invoice-extraction.plan.md).
+
+## Verified
+
+2026-10-14, branch `feat/invoice-extraction`.
+
+- Two mocked invoices for one email → two invoices linked to the email and their PDFs: `test_two_invoices_link_to_the_email_and_their_pdfs`, plus the ingest path in `test_invoice_email_gets_its_invoices_extracted`. Pass.
+- Wrong IBAN checksum → `needs_info`: `test_wrong_iban_checksum_needs_info` and `tests/finance/test_invoice_checks.py`. Pass.
+- Two model failures → `needs_info` and logged: `test_two_model_failures_store_needs_info_and_log` (one row with `extraction_failed`, one `invoice_extract_failed` warning, failures counted into `job_runs`). Pass.
+- Edited invoice, backfill reruns → fields unchanged: `test_rerun_of_all_keeps_edited_fields` and `test_reextraction_keeps_edited_fields_and_rechecks`; both fail when the edited-field guard is removed. Pass.
+- Content-free tracing: `test_extraction_call_is_traced_without_content` (no subject, body, file name, PDF bytes or extracted IBAN in exported spans). Pass.
+- Suite: `uv run pytest -m "not integration"` with `EMAIL_RERANK=false` and no Langfuse keys, as CI runs it: 463 passed. `ruff check` clean.
+- Real stored invoices, backfill → each has fields or `needs_info`: **pending** — needs the migration applied and a backfill run against the real database.
