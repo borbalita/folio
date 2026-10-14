@@ -6,6 +6,7 @@ import hashlib
 import uuid
 from collections import Counter
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import func, select
@@ -16,6 +17,8 @@ from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.database.models.finance.transaction import Transaction
 from app.finance.enable_banking import EbTransaction
+
+CENT = Decimal("0.01")
 
 
 def dedup_keys(txs: list[EbTransaction]) -> list[str]:
@@ -31,12 +34,13 @@ def dedup_keys(txs: list[EbTransaction]) -> list[str]:
         if tx.entry_reference:
             keys.append(f"ref:{tx.direction}:{tx.entry_reference}")
             continue
+        # Normalised, so a bank re-sending "4.2" as "4.20" doesn't change the key.
         fields = (
             tx.booking_date.isoformat(),
-            str(tx.amount),
-            tx.counterparty_name or "",
-            tx.counterparty_iban or "",
-            tx.remittance,
+            str(tx.amount.quantize(CENT)),
+            (tx.counterparty_name or "").strip(),
+            (tx.counterparty_iban or "").strip(),
+            tx.remittance.strip(),
         )
         ordinal = seen[fields]
         seen[fields] += 1

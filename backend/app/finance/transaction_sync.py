@@ -32,12 +32,18 @@ async def sync_all(
     now = datetime.now(UTC)
     accounts, skipped = bank_connections.sync_targets(user_id, now)
     latest = transactions.latest_booking_dates([a.id for a in accounts])
-    counts = {"accounts": len(accounts), "fetched": 0, "added": 0, "skipped": skipped}
+    counts = {
+        "accounts": len(accounts),
+        "fetched": 0,
+        "added": 0,
+        "skipped": skipped,
+        "unparsed": 0,
+    }
     failures: list[str] = []
     for account in accounts:
         since = latest[account.id] - OVERLAP if account.id in latest else today - FIRST_SYNC
         try:
-            txs = await enable_banking.fetch_transactions(
+            txs, unparsed = await enable_banking.fetch_transactions(
                 account.uid, since, psu_headers=psu_headers
             )
         except enable_banking.EnableBankingError as exc:
@@ -45,6 +51,7 @@ async def sync_all(
             failures.append(f"{account.bank}: {exc}")
             continue
         counts["fetched"] += len(txs)
+        counts["unparsed"] += unparsed
         counts["added"] += transactions.store(account.id, txs)
     if failures:
         raise BankSyncFailed("; ".join(failures))

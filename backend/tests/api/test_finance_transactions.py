@@ -13,7 +13,7 @@ from app.finance import transaction_sync
 from app.finance.transaction_sync import BankSyncFailed
 from tests.conftest import TEST_USER_ID
 
-COUNTS = {"accounts": 3, "fetched": 10, "added": 4, "skipped": 0}
+COUNTS = {"accounts": 3, "fetched": 10, "added": 4, "skipped": 0, "unparsed": 0}
 
 
 @pytest.fixture(autouse=True)

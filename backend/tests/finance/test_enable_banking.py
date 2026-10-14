@@ -253,13 +253,14 @@ def test_fetch_follows_continuation_key(configured):
             )
         return httpx.Response(200, json={"transactions": [_entry(entry_reference="b")]})
 
-    result = asyncio.run(
+    result, unparsed = asyncio.run(
         enable_banking.fetch_transactions(
             "acc-1", date(2026, 7, 16), client=mock_client(handler)
         )
     )
 
     assert [t.entry_reference for t in result] == ["a", "b"]
+    assert unparsed == 0
     assert requests[0].url.path == "/accounts/acc-1/transactions"
     assert requests[1].url.params["continuation_key"] == "k2"
     assert all(r.url.params["date_from"] == "2026-07-16" for r in requests)
@@ -279,7 +280,7 @@ def test_fetch_drops_pending_entries(configured):
             },
         )
 
-    result = asyncio.run(
+    result, _ = asyncio.run(
         enable_banking.fetch_transactions(
             "acc-1", date(2026, 7, 16), client=mock_client(handler)
         )

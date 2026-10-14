@@ -83,10 +83,9 @@ def pages(monkeypatch: pytest.MonkeyPatch) -> dict[str, list[list[dict]]]:
 
     async def fake_fetch(uid, date_from, *, psu_headers=None, client=None):
         calls.append((uid, date_from))
-        result = []
-        for page in by_uid.get(uid, []):
-            result.extend(t for t in map(enable_banking.parse_transaction, page) if t)
-        return result
+        return enable_banking.parse_page(
+            [e for page in by_uid.get(uid, []) for e in page]
+        )
 
     monkeypatch.setattr(enable_banking, "fetch_transactions", fake_fetch)
     by_uid["__calls__"] = calls  # type: ignore[assignment]
@@ -135,7 +134,7 @@ def test_pending_entries_are_not_stored(monkeypatch, store, pages) -> None:
 
     counts = run()
 
-    assert counts == {"accounts": 1, "fetched": 1, "added": 1, "skipped": 0}
+    assert counts == {"accounts": 1, "fetched": 1, "added": 1, "skipped": 0, "unparsed": 0}
 
 
 def test_second_run_over_overlap_adds_nothing(monkeypatch, store, pages) -> None:
@@ -189,7 +188,7 @@ def test_one_failing_bank_does_not_stop_the_others(monkeypatch, store) -> None:
     async def fetch(uid, date_from, *, psu_headers=None, client=None):
         if uid == "ing-uid":
             raise EnableBankingError(401, "expired")
-        return [enable_banking.parse_transaction(entry("ok"))]
+        return enable_banking.parse_page([entry("ok")])
 
     monkeypatch.setattr(enable_banking, "fetch_transactions", fetch)
     targets(monkeypatch, [ING, N26])
@@ -203,7 +202,9 @@ def test_one_failing_bank_does_not_stop_the_others(monkeypatch, store) -> None:
 def test_skipped_connections_are_counted(monkeypatch, store, pages) -> None:
     targets(monkeypatch, [], skipped=1)
 
-    assert run() == {"accounts": 0, "fetched": 0, "added": 0, "skipped": 1}
+    assert run() == {
+        "accounts": 0, "fetched": 0, "added": 0, "skipped": 1, "unparsed": 0
+    }
 
 
 def test_psu_headers_reach_the_bank_call(monkeypatch, store) -> None:
@@ -211,7 +212,7 @@ def test_psu_headers_reach_the_bank_call(monkeypatch, store) -> None:
 
     async def fetch(uid, date_from, *, psu_headers=None, client=None):
         seen.append(psu_headers)
-        return []
+        return [], 0
 
     monkeypatch.setattr(enable_banking, "fetch_transactions", fetch)
     targets(monkeypatch, [N26])
@@ -266,3 +267,17 @@ def test_run_bank_sync_records_a_job(monkeypatch, store, pages) -> None:
 
     assert jobs == ["bank_sync"]
     assert counts["accounts"] == 1
+
+
+def test_an_unreadable_entry_is_counted_and_the_rest_stored(
+    monkeypatch, store, pages
+) -> None:
+    targets(monkeypatch, [ING])
+    broken = entry("bad")
+    del broken["credit_debit_indicator"]
+    pages["ing-uid"] = [[entry("good"), broken]]
+
+    counts = run()
+
+    assert counts["added"] == 1
+    assert counts["unparsed"] == 1

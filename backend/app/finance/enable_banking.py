@@ -5,8 +5,11 @@ from typing import Any
 
 import httpx
 import jwt
+import structlog
 
 from app.config import settings
+
+log = structlog.get_logger(__name__)
 
 BASE_URL = "https://api.enablebanking.com"
 TIMEOUT_SECONDS = 30
@@ -193,15 +196,37 @@ def parse_transaction(entry: dict) -> EbTransaction | None:
         raise EnableBankingError(200, "unexpected transaction") from exc
 
 
+def parse_page(entries: list[dict]) -> tuple[list[EbTransaction], int]:
+    """Booked transactions, and how many entries could not be read.
+
+    One unreadable entry is skipped rather than failing the account: it would
+    otherwise be re-read, and fail, on every sync.
+    """
+    parsed: list[EbTransaction] = []
+    unparsed = 0
+    for entry in entries:
+        try:
+            tx = parse_transaction(entry)
+        except EnableBankingError as exc:
+            unparsed += 1
+            # The cause's type only: its message can carry transaction content.
+            log.warning("bank_transaction_unparsed", cause=type(exc.__cause__).__name__)
+            continue
+        if tx is not None:
+            parsed.append(tx)
+    return parsed, unparsed
+
+
 async def fetch_transactions(
     account_uid: str,
     date_from: date,
     *,
     psu_headers: dict[str, str] | None = None,
     client: httpx.AsyncClient | None = None,
-) -> list[EbTransaction]:
-    """Every booked transaction since `date_from`, across all pages."""
+) -> tuple[list[EbTransaction], int]:
+    """Every booked transaction since `date_from` across all pages, and the unreadable count."""
     result: list[EbTransaction] = []
+    unparsed = 0
     params = {"date_from": date_from.isoformat()}
     while True:
         response = await _send(
@@ -218,8 +243,10 @@ async def fetch_transactions(
             raise EnableBankingError(
                 response.status_code, "unexpected /transactions response"
             ) from exc
-        result.extend(tx for tx in map(parse_transaction, entries) if tx is not None)
+        parsed, skipped = parse_page(entries)
+        result.extend(parsed)
+        unparsed += skipped
         key = data.get("continuation_key")
         if not key:
-            return result
+            return result, unparsed
         params = {"date_from": date_from.isoformat(), "continuation_key": key}

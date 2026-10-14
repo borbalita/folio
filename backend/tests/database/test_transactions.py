@@ -95,3 +95,12 @@ def test_store_with_nothing_does_not_touch_the_database(
     monkeypatch.setattr(transactions, "get_session", None)
 
     assert transactions.store(uuid.uuid4(), []) == 0
+
+
+def test_fallback_key_ignores_amount_formatting_and_padding() -> None:
+    plain = transactions.dedup_keys([tx(amount="-4.20", name="REWE", text="Einkauf")])
+    reformatted = transactions.dedup_keys(
+        [tx(amount="-4.2", name=" REWE ", text="Einkauf\n")]
+    )
+
+    assert plain == reformatted

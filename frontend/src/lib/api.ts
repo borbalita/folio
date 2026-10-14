@@ -78,6 +78,7 @@ export interface BankSyncCounts {
   fetched: number
   added: number
   skipped: number
+  unparsed: number
 }
 
 /** Product-level API calls. Auth and error handling live in the http client. */
