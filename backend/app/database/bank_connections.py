@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import func, select, update
@@ -14,6 +16,13 @@ from app.database.models.finance.bank_connection import BankConnection
 from app.finance.enable_banking import EbAccount, EbSession
 
 BANKS: tuple[str, ...] = ("N26", "ING", "PayPal")
+
+
+@dataclass(frozen=True)
+class SyncAccount:
+    id: uuid.UUID
+    uid: str
+    bank: str
 
 
 class UnknownState(Exception):
@@ -161,3 +170,34 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
             }
         )
     return result
+
+
+def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], int]:
+    """Accounts of live connections, and how many connections were skipped.
+
+    An expired consent would only fail at the bank and spend an unattended read.
+    """
+    with get_session() as session:
+        connections = list(
+            session.scalars(select(BankConnection).where(BankConnection.user_id == user_id))
+        )
+        live = {
+            c.id: c.bank
+            for c in connections
+            if c.session_id and c.valid_until and c.valid_until > now
+        }
+        accounts = (
+            list(
+                session.scalars(
+                    select(BankAccount)
+                    .where(BankAccount.connection_id.in_(live))
+                    .order_by(BankAccount.created_at, BankAccount.id)
+                )
+            )
+            if live
+            else []
+        )
+    return (
+        [SyncAccount(id=a.id, uid=a.uid, bank=live[a.connection_id]) for a in accounts],
+        len(connections) - len(live),
+    )
