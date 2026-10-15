@@ -149,7 +149,7 @@ export function InvoicePage() {
           return (
             <section
               key={invoice.id}
-              className="grid grid-cols-1 gap-6 border-t border-border pt-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+              className="grid grid-cols-1 gap-6 border-t border-border pt-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
             >
               <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
               {pdf ? (
