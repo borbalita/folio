@@ -1,0 +1,52 @@
+"""add invoice matches
+
+Revision ID: 7d3e9a1c5b42
+Revises: 06b2152363e3
+Create Date: 2026-10-15 20:30:00.000000
+
+"""
+from collections.abc import Sequence
+
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy.dialects import postgresql
+
+# revision identifiers, used by Alembic.
+revision: str = '7d3e9a1c5b42'
+down_revision: str | Sequence[str] | None = '06b2152363e3'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
+
+# RLS with no policies: the anon key reads nothing; the backend's service role bypasses RLS.
+RLS_TABLES = ("invoice_matches",)
+
+
+def upgrade() -> None:
+    """Upgrade schema."""
+    op.create_table('invoice_matches',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('invoice_id', sa.UUID(), nullable=False),
+    sa.Column('transaction_id', sa.UUID(), nullable=False),
+    sa.Column('status', sa.String(length=16), nullable=False),
+    sa.Column('source', sa.String(length=16), nullable=False),
+    sa.Column('signals', postgresql.ARRAY(sa.Text()), server_default=sa.text("'{}'"), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.CheckConstraint("source IN ('auto', 'owner')", name='ck_invoice_matches_source'),
+    sa.CheckConstraint("status IN ('linked', 'suggested', 'rejected')", name='ck_invoice_matches_status'),
+    sa.ForeignKeyConstraint(['invoice_id'], ['invoices.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['transaction_id'], ['transactions.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('invoice_id', 'transaction_id', name='uq_invoice_matches_invoice_id_transaction_id')
+    )
+    op.create_index('uq_invoice_matches_linked_invoice', 'invoice_matches', ['invoice_id'], unique=True, postgresql_where=sa.text("status = 'linked'"))
+    op.create_index('uq_invoice_matches_linked_transaction', 'invoice_matches', ['transaction_id'], unique=True, postgresql_where=sa.text("status = 'linked'"))
+    for table in RLS_TABLES:
+        op.execute(f'ALTER TABLE public."{table}" ENABLE ROW LEVEL SECURITY')
+
+
+def downgrade() -> None:
+    """Downgrade schema."""
+    op.drop_index('uq_invoice_matches_linked_transaction', table_name='invoice_matches', postgresql_where=sa.text("status = 'linked'"))
+    op.drop_index('uq_invoice_matches_linked_invoice', table_name='invoice_matches', postgresql_where=sa.text("status = 'linked'"))
+    op.drop_table('invoice_matches')

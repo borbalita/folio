@@ -10,6 +10,8 @@ from app.database.models.finance.invoice import Invoice, InvoiceStatus
 from app.finance.invoice_checks import FIELD_NAMES, normalize_iban, recheck
 
 PAID_BY_OWNER = "owner"
+# Paid because a bank transaction was linked to it, by the rules or by the owner.
+PAID_BY_MATCH = "match"
 
 
 def apply_edit(row: Invoice, changes: dict[str, Any]) -> None:
@@ -35,6 +37,12 @@ def set_paid(row: Invoice, *, paid: bool, now: datetime) -> None:
     row.paid_at = None
     row.paid_by = None
     recheck(row)
+
+
+def mark_matched(row: Invoice, *, now: datetime) -> None:
+    row.status = InvoiceStatus.PAID
+    row.paid_at = now
+    row.paid_by = PAID_BY_MATCH
 
 
 def _clean(name: str, value: Any) -> Any:

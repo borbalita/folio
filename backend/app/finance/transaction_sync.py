@@ -9,7 +9,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import structlog
 
-from app.database import bank_connections, transactions
+from app.database import bank_connections, matches, transactions
 from app.database.job_runs import run_job
 from app.finance import enable_banking, notify
 from app.finance.expiry import due_notice
@@ -69,6 +69,8 @@ async def sync_all(
         counts["added"] += transactions.store(account.id, txs)
     counts["expired"] = len(invalidated)
     counts["notices"] = send_due_notices(user_id, now)
+    # Also after a partial failure: what was stored may pay an open invoice.
+    counts.update(matches.match_for_user(user_id, now))
     if failures:
         raise BankSyncFailed("; ".join(failures))
     return counts

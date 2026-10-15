@@ -136,6 +136,13 @@ def scheduled_env(monkeypatch):
         "ingest.email.run.shutdown_tracing", lambda: env.tracing.append("shutdown")
     )
     monkeypatch.setattr("ingest.email.run.propagate_attributes", fake_propagate)
+    env.matched = []
+
+    def fake_match(user_id):
+        env.matched.append(user_id)
+        return {"linked": 1, "suggested": 0}
+
+    monkeypatch.setattr("ingest.email.run.match_for_user", fake_match)
     monkeypatch.setattr("ingest.email.run.YahooImapAdapter", _FakeAdapter)
     monkeypatch.setattr("ingest.email.run.open_session", lambda: ingest_session)
     monkeypatch.setattr("ingest.email.run.ingest_fetched", lambda *a, **k: env.summary)
@@ -222,3 +229,21 @@ def test_failed_run_still_flushes_tracing(scheduled_env) -> None:
 
     assert scheduled_env.tracing[0] == "configure"
     assert scheduled_env.tracing[-1] == "shutdown"
+
+
+@pytest.mark.parametrize("argv", [[], ["--scheduled"]])
+def test_run_matches_invoices_for_the_owner(scheduled_env, argv) -> None:
+    from ingest.email.run import settings
+
+    assert main(argv) == 0
+
+    assert scheduled_env.matched == [settings.email_agent_owner_user_id]
+
+
+def test_scheduled_run_records_match_counts(scheduled_env) -> None:
+    scheduled_env.use_real_run_job()
+
+    assert main(["--scheduled"]) == 0
+
+    (row,) = scheduled_env.job_session.added
+    assert (row.counts["linked"], row.counts["suggested"]) == (1, 0)
