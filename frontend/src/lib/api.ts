@@ -40,9 +40,52 @@ export interface InvoiceAttachment {
   skippedReason: string | null
 }
 
+export type InvoiceStatus = 'open' | 'needs_info' | 'paid'
+
+/** One invoice extracted from an email. `amount` is a decimal string, dates are `YYYY-MM-DD`. */
+export interface Invoice {
+  id: string
+  emailId: string
+  attachmentId: string | null
+  payee: string | null
+  iban: string | null
+  bic: string | null
+  amount: string | null
+  currency: string | null
+  invoiceNumber: string | null
+  reference: string | null
+  invoiceDate: string | null
+  dueDate: string | null
+  status: InvoiceStatus
+  /** Names of the failed checks, e.g. `invalid_iban`. */
+  issues: string[]
+  paidAt: string | null
+  /** `owner` when marked by hand. */
+  paidBy: string | null
+}
+
+export interface InvoiceRow extends Invoice {
+  email: InvoiceSummary
+}
+
+export type InvoiceField =
+  | 'payee'
+  | 'iban'
+  | 'bic'
+  | 'amount'
+  | 'currency'
+  | 'invoiceNumber'
+  | 'reference'
+  | 'invoiceDate'
+  | 'dueDate'
+
+/** Only the fields sent change; null clears one. */
+export type InvoiceEdit = Partial<Record<InvoiceField, string | null>>
+
 export interface InvoiceDetail extends InvoiceSummary {
   body: string
   attachments: InvoiceAttachment[]
+  invoices: Invoice[]
 }
 
 export type BankName = 'N26' | 'ING' | 'PayPal'
@@ -96,7 +139,13 @@ export const api = {
 
   getMessages: (threadId: string) => http.get<ThreadMessage[]>(`/threads/${threadId}/messages`),
 
-  listInvoices: () => http.get<InvoiceSummary[]>('/finance/invoices'),
+  listInvoices: () => http.get<InvoiceRow[]>('/finance/invoices'),
+
+  updateInvoice: (invoiceId: string, edit: InvoiceEdit) =>
+    http.patch<Invoice>(`/finance/invoices/items/${invoiceId}`, edit),
+
+  setInvoicesPaid: (ids: string[], paid: boolean) =>
+    http.post<Invoice[]>('/finance/invoices/items/paid', { ids, paid }),
 
   getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/finance/invoices/${emailId}`),
 

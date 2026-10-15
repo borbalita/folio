@@ -1,9 +1,10 @@
-"""Invoice emails and their PDF attachments, scoped to the caller's mailboxes."""
+"""Invoices, their emails and PDF attachments, scoped to the caller's mailboxes."""
 
 from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -11,7 +12,9 @@ from sqlalchemy import select
 
 from app.database.engine import get_session
 from app.database.models.email.attachment import EmailAttachment
-from app.database.models.email.message import EmailLabel, EmailMessage
+from app.database.models.email.message import EmailMessage
+from app.database.models.finance.invoice import Invoice
+from app.finance.invoice_edits import apply_edit, set_paid
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,18 +37,40 @@ def _summary(email: EmailMessage) -> dict[str, Any]:
     }
 
 
+def _invoice(row: Invoice) -> dict[str, Any]:
+    return {
+        "id": str(row.id),
+        "emailId": str(row.email_id),
+        "attachmentId": str(row.attachment_id) if row.attachment_id else None,
+        "payee": row.payee,
+        "iban": row.iban,
+        "bic": row.bic,
+        "amount": str(row.amount) if row.amount is not None else None,
+        "currency": row.currency,
+        "invoiceNumber": row.invoice_number,
+        "reference": row.reference,
+        "invoiceDate": row.invoice_date.isoformat() if row.invoice_date else None,
+        "dueDate": row.due_date.isoformat() if row.due_date else None,
+        "status": row.status,
+        "issues": list(row.issues or []),
+        "paidAt": row.paid_at.isoformat() if row.paid_at else None,
+        "paidBy": row.paid_by,
+    }
+
+
 def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
-    """Emails labeled `invoice` in these mailboxes, newest first."""
+    """Every invoice in these mailboxes with its email, newest email first."""
     with get_session() as session:
-        emails = session.scalars(
-            select(EmailMessage)
-            .where(
-                EmailMessage.mailbox_id.in_(mailbox_ids),
-                EmailMessage.label == EmailLabel.INVOICE.value,
-            )
-            .order_by(EmailMessage.sent_at.desc())
+        rows = session.execute(
+            select(Invoice, EmailMessage)
+            .join(EmailMessage, EmailMessage.id == Invoice.email_id)
+            .where(EmailMessage.mailbox_id.in_(mailbox_ids))
+            .order_by(EmailMessage.sent_at.desc(), Invoice.position)
         )
-        return [_summary(email) for email in emails]
+        return [
+            {**_invoice(row.Invoice), "email": _summary(row.EmailMessage)}
+            for row in rows
+        ]
 
 
 def get_invoice(email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, Any]:
@@ -77,7 +102,59 @@ def get_invoice(email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, 
             }
             for row in rows
         ]
-        return {**_summary(email), "body": email.body, "attachments": attachments}
+        rows = session.scalars(
+            select(Invoice)
+            .where(Invoice.email_id == email_id)
+            .order_by(Invoice.position)
+        )
+        return {
+            **_summary(email),
+            "body": email.body,
+            "attachments": attachments,
+            "invoices": [_invoice(row) for row in rows],
+        }
+
+
+def _owned_invoices(
+    session, invoice_ids: list[uuid.UUID], mailbox_ids: list[uuid.UUID]
+) -> list[Invoice]:
+    """The invoices in the given order; 404 if any is unknown, 403 if any is someone else's."""
+    rows = session.execute(
+        select(Invoice, EmailMessage.mailbox_id)
+        .join(EmailMessage, EmailMessage.id == Invoice.email_id)
+        .where(Invoice.id.in_(invoice_ids))
+    ).all()
+    by_id = {row.Invoice.id: row for row in rows}
+    if any(invoice_id not in by_id for invoice_id in invoice_ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Invoice not found"
+        )
+    if any(row.mailbox_id not in mailbox_ids for row in rows):
+        raise _forbidden()
+    return [by_id[invoice_id].Invoice for invoice_id in invoice_ids]
+
+
+def update_invoice(
+    invoice_id: uuid.UUID, changes: dict[str, Any], mailbox_ids: list[uuid.UUID]
+) -> dict[str, Any]:
+    with get_session() as session:
+        [row] = _owned_invoices(session, [invoice_id], mailbox_ids)
+        apply_edit(row, changes)
+        session.commit()
+        return _invoice(row)
+
+
+def set_invoices_paid(
+    invoice_ids: list[uuid.UUID], paid: bool, mailbox_ids: list[uuid.UUID]
+) -> list[dict[str, Any]]:
+    """Mark all or none: one unknown or foreign id changes nothing."""
+    with get_session() as session:
+        rows = _owned_invoices(session, invoice_ids, mailbox_ids)
+        now = datetime.now(UTC)
+        for row in rows:
+            set_paid(row, paid=paid, now=now)
+        session.commit()
+        return [_invoice(row) for row in rows]
 
 
 def get_attachment_file(

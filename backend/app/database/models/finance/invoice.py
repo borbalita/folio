@@ -25,6 +25,7 @@ from app.database.models.base import Base
 class InvoiceStatus(StrEnum):
     OPEN = "open"
     NEEDS_INFO = "needs_info"
+    PAID = "paid"
 
 
 class Invoice(Base):
@@ -58,6 +59,11 @@ class Invoice(Base):
     issues: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, default=list, server_default=text("'{}'")
     )
+    paid_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Who marked it paid: `owner` by hand.
+    paid_by: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # Fields the owner changed by hand; re-extraction leaves them alone.
     edited_fields: Mapped[list[str]] = mapped_column(
         ARRAY(Text), nullable=False, default=list, server_default=text("'{}'")
