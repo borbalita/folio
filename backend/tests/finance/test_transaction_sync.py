@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app.config import settings
-from app.database import bank_connections, transactions
+from app.database import bank_connections, matches, transactions
 from app.database.bank_connections import ConnectionState, SyncAccount
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
@@ -109,6 +109,18 @@ def state(bank: str, connection_id: uuid.UUID, days_left: float) -> ConnectionSt
     )
 
 
+@pytest.fixture(autouse=True)
+def matched(monkeypatch: pytest.MonkeyPatch) -> list[uuid.UUID]:
+    calls: list[uuid.UUID] = []
+
+    def match_for_user(user_id: uuid.UUID, now: datetime) -> dict[str, int]:
+        calls.append(user_id)
+        return {"linked": 2, "suggested": 1}
+
+    monkeypatch.setattr(matches, "match_for_user", match_for_user)
+    return calls
+
+
 @pytest.fixture
 def store(monkeypatch: pytest.MonkeyPatch) -> Store:
     fake = Store()
@@ -184,7 +196,7 @@ def test_pending_entries_are_not_stored(monkeypatch, store, pages) -> None:
 
     assert counts == {
         "accounts": 1, "fetched": 1, "added": 1, "skipped": 0, "unparsed": 0,
-        "expired": 0, "notices": 0,
+        "expired": 0, "notices": 0, "linked": 2, "suggested": 1,
     }
 
 
@@ -255,7 +267,7 @@ def test_skipped_connections_are_counted(monkeypatch, store, pages) -> None:
 
     assert run() == {
         "accounts": 0, "fetched": 0, "added": 0, "skipped": 1, "unparsed": 0,
-        "expired": 0, "notices": 0,
+        "expired": 0, "notices": 0, "linked": 2, "suggested": 1,
     }
 
 
@@ -399,3 +411,26 @@ def test_unsent_notice_is_not_recorded(monkeypatch, store, pages, notices) -> No
 
     assert run()["notices"] == 0
     assert notices.states[0].expiry_notice is None
+
+
+def test_matching_runs_after_storing_and_is_counted(store, pages, matched, monkeypatch) -> None:
+    targets(monkeypatch, [N26])
+    pages["n26-uid"] = [[entry("a")]]
+
+    counts = run()
+
+    assert matched == [USER_ID]
+    assert (counts["linked"], counts["suggested"]) == (2, 1)
+
+
+def test_matching_runs_even_when_a_bank_fails(monkeypatch, store, matched) -> None:
+    async def fetch(uid, date_from, *, psu_headers=None, client=None):
+        raise EnableBankingError(500, "down")
+
+    monkeypatch.setattr(enable_banking, "fetch_transactions", fetch)
+    targets(monkeypatch, [N26])
+
+    with pytest.raises(BankSyncFailed):
+        run()
+
+    assert matched == [USER_ID]

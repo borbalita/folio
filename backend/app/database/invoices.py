@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy import select
 
+from app.database import matches
 from app.database.engine import get_session
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.message import EmailMessage
@@ -66,9 +67,14 @@ def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
             .join(EmailMessage, EmailMessage.id == Invoice.email_id)
             .where(EmailMessage.mailbox_id.in_(mailbox_ids))
             .order_by(EmailMessage.sent_at.desc(), Invoice.position)
-        )
+        ).all()
+        found = matches.for_invoices(session, [row.Invoice.id for row in rows])
         return [
-            {**_invoice(row.Invoice), "email": _summary(row.EmailMessage)}
+            {
+                **_invoice(row.Invoice),
+                **found[row.Invoice.id],
+                "email": _summary(row.EmailMessage),
+            }
             for row in rows
         ]
 
@@ -106,12 +112,13 @@ def get_invoice(email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, 
             select(Invoice)
             .where(Invoice.email_id == email_id)
             .order_by(Invoice.position)
-        )
+        ).all()
+        found = matches.for_invoices(session, [row.id for row in rows])
         return {
             **_summary(email),
             "body": email.body,
             "attachments": attachments,
-            "invoices": [_invoice(row) for row in rows],
+            "invoices": [{**_invoice(row), **found[row.id]} for row in rows],
         }
 
 
@@ -144,6 +151,15 @@ def update_invoice(
         return _invoice(row)
 
 
+def get_invoice_item(
+    invoice_id: uuid.UUID, mailbox_ids: list[uuid.UUID]
+) -> dict[str, Any]:
+    """One invoice with its match and suggestions."""
+    with get_session() as session:
+        [row] = _owned_invoices(session, [invoice_id], mailbox_ids)
+        return {**_invoice(row), **matches.for_invoices(session, [row.id])[row.id]}
+
+
 def set_invoices_paid(
     invoice_ids: list[uuid.UUID], paid: bool, mailbox_ids: list[uuid.UUID]
 ) -> list[dict[str, Any]]:
@@ -153,8 +169,11 @@ def set_invoices_paid(
         now = datetime.now(UTC)
         for row in rows:
             set_paid(row, paid=paid, now=now)
+        if not paid:
+            matches.reject_links(session, invoice_ids)
         session.commit()
-        return [_invoice(row) for row in rows]
+        found = matches.for_invoices(session, invoice_ids)
+        return [{**_invoice(row), **found[row.id]} for row in rows]
 
 
 def get_attachment_file(

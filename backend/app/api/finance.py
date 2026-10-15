@@ -19,7 +19,7 @@ from pydantic.alias_generators import to_camel
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
 from app.auth.finance_access import require_finance_owner
-from app.database import bank_connections, invoices, job_runs, transactions
+from app.database import bank_connections, invoices, job_runs, matches, transactions
 from app.finance import enable_banking, transaction_sync
 
 log = structlog.get_logger(__name__)
@@ -107,9 +107,10 @@ async def update_invoice(
 ) -> dict[str, Any]:
     mailbox_ids = await require_email_access(user)
     changes = body.model_dump(exclude_unset=True)
-    return await asyncio.to_thread(
-        invoices.update_invoice, invoice_id, changes, mailbox_ids
-    )
+    await asyncio.to_thread(invoices.update_invoice, invoice_id, changes, mailbox_ids)
+    # An edited amount, IBAN or reference can make or break a match.
+    await asyncio.to_thread(matches.match_for_user, user.id)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
 
 @router.post("/invoices/items/paid")
@@ -121,6 +122,26 @@ async def set_invoices_paid(
     return await asyncio.to_thread(
         invoices.set_invoices_paid, body.ids, body.paid, mailbox_ids
     )
+
+
+@router.post("/matches/{match_id}/confirm")
+async def confirm_match(
+    match_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    invoice_id = await asyncio.to_thread(matches.confirm, match_id, mailbox_ids)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
+
+
+@router.post("/matches/{match_id}/reject")
+async def reject_match(
+    match_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    invoice_id = await asyncio.to_thread(matches.reject, match_id, mailbox_ids)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
 
 class CallbackBody(BaseModel):

@@ -12,6 +12,7 @@ from langfuse import propagate_attributes
 
 from app.config import settings
 from app.database.job_runs import run_job
+from app.database.matches import match_for_user
 from app.logging import configure_logging
 from app.observability import configure_tracing, shutdown_tracing
 from ingest.email.pipeline import ingest_fetched, open_session, upsert_yahoo_mailbox
@@ -57,6 +58,13 @@ def scheduled_since(last_synced_at: datetime | None, now: datetime) -> date:
     return (last_synced_at - timedelta(days=1)).astimezone(UTC).date()
 
 
+def _match_invoices() -> dict[str, int]:
+    """New invoices may already be paid by a synced transaction."""
+    matched = match_for_user(settings.email_agent_owner_user_id)
+    print(f"invoices matched: {matched['linked']}, suggested: {matched['suggested']}")
+    return matched
+
+
 def run_scheduled() -> None:
     def work() -> dict[str, Any]:
         adapter = YahooImapAdapter(
@@ -77,7 +85,7 @@ def run_scheduled() -> None:
         finally:
             session.close()
         print(summary.render())
-        return dataclasses.asdict(summary)
+        return {**dataclasses.asdict(summary), **_match_invoices()}
 
     run_job("email_ingest", work)
 
@@ -128,4 +136,5 @@ def _run(argv: list[str] | None) -> int:
     finally:
         session.close()
     print(summary.render())
+    _match_invoices()
     return 0

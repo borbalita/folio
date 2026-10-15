@@ -23,3 +23,6 @@ Open invoices are linked to the debits that paid them, automatically when the ma
 
 ## Dependencies
 001/06, 001/08.
+
+## Notes
+- Implementation plan: [09-matching.plan.md](09-matching.plan.md).

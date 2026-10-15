@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
+import { InvoicePayment } from '@/components/finance/InvoicePayment'
 import { Button } from '@/components/ui/button'
 import { api, type Invoice, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
@@ -150,7 +151,10 @@ export function InvoicePage() {
               key={invoice.id}
               className="grid grid-cols-1 gap-6 border-t border-border pt-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
             >
-              <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
+              <div className="flex flex-col gap-6">
+                <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
+                <InvoicePayment invoice={invoice} onChange={replaceInvoice} />
+              </div>
               {pdf ? (
                 <PdfViewer attachment={pdf} />
               ) : (

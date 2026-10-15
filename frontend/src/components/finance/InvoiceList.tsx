@@ -59,7 +59,19 @@ export function InvoiceList({ invoices, today, selected, onToggle }: Props) {
                   {overdue ? ' · overdue' : ''}
                 </td>
                 <td className="px-3 py-2">
-                  <InvoiceStatusBadge status={invoice.status} />
+                  <div className="flex flex-col items-start gap-0.5">
+                    <InvoiceStatusBadge status={invoice.status} />
+                    {invoice.match?.source === 'auto' ? (
+                      <span className="text-xs text-muted-foreground">Matched automatically</span>
+                    ) : null}
+                    {!invoice.match && invoice.suggestions.length > 0 ? (
+                      <span className="text-xs text-primary">
+                        {invoice.suggestions.length === 1
+                          ? 'Possible payment found'
+                          : `${invoice.suggestions.length} possible payments`}
+                      </span>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             )

@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 
-from app.database import invoices
+from app.database import invoices, matches
 from app.database.models.finance.invoice import Invoice
 
 OWN = uuid.UUID("00000000-0000-0000-0000-000000000010")
@@ -97,15 +97,29 @@ def test_two_invoices_are_marked_paid_and_back(
     session = _session([(open_row, OWN), (needs_info, OWN)])
     _patch(monkeypatch, session)
     ids = [open_row.id, needs_info.id]
+    rejected: list[list[uuid.UUID]] = []
+    monkeypatch.setattr(
+        matches,
+        "for_invoices",
+        lambda session, invoice_ids: {
+            i: {"match": None, "suggestions": []} for i in invoice_ids
+        },
+    )
+    monkeypatch.setattr(
+        matches, "reject_links", lambda session, invoice_ids: rejected.append(invoice_ids)
+    )
 
     paid = invoices.set_invoices_paid(ids, True, [OWN])
 
     assert [item["status"] for item in paid] == ["paid", "paid"]
     assert [item["paidBy"] for item in paid] == ["owner", "owner"]
+    assert rejected == []
 
     unpaid = invoices.set_invoices_paid(ids, False, [OWN])
 
     assert [item["status"] for item in unpaid] == ["open", "needs_info"]
+    # Un-marking by hand rejects any bank match, so matching won't link it again.
+    assert rejected == [ids]
     assert session.commit.call_count == 2
 
 

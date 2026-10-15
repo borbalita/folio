@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.database import invoices, mailboxes
+from app.database import invoices, mailboxes, matches
 from tests.conftest import TEST_USER_ID
 
 OWN_MAILBOX = uuid.UUID("00000000-0000-0000-0000-000000000010")
@@ -206,6 +206,13 @@ def test_owner_edits_only_the_fields_sent(
         return {"id": str(invoice_id), "status": "open"}
 
     monkeypatch.setattr(invoices, "update_invoice", update_invoice)
+    matched: list[uuid.UUID] = []
+    monkeypatch.setattr(matches, "match_for_user", matched.append)
+    monkeypatch.setattr(
+        invoices,
+        "get_invoice_item",
+        lambda invoice_id, mailbox_ids: {"id": str(invoice_id), "status": "paid"},
+    )
 
     response = authed_client.patch(
         f"/finance/invoices/items/{INVOICE_ID}",
@@ -213,7 +220,9 @@ def test_owner_edits_only_the_fields_sent(
     )
 
     assert response.status_code == 200
-    assert response.json()["status"] == "open"
+    # The edit is re-matched, and the answer shows the invoice after matching.
+    assert matched == [TEST_USER_ID]
+    assert response.json()["status"] == "paid"
     assert seen == [
         (
             INVOICE_ID,
@@ -267,3 +276,41 @@ def test_owner_marks_several_invoices_paid(
     assert response.status_code == 200
     assert [item["status"] for item in response.json()] == ["paid", "paid"]
     assert seen == [([INVOICE_ID, other], True, [OWN_MAILBOX])]
+
+
+@pytest.mark.parametrize("action", ["confirm", "reject"])
+def test_owner_confirms_or_rejects_a_match(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    action: str,
+) -> None:
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    match_id = uuid.uuid4()
+    seen: list[tuple[uuid.UUID, list[uuid.UUID]]] = []
+
+    def decide(mid: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> uuid.UUID:
+        seen.append((mid, mailbox_ids))
+        return INVOICE_ID
+
+    monkeypatch.setattr(matches, action, decide)
+    monkeypatch.setattr(
+        invoices,
+        "get_invoice_item",
+        lambda invoice_id, mailbox_ids: {"id": str(invoice_id)},
+    )
+
+    response = authed_client.post(f"/finance/matches/{match_id}/{action}")
+
+    assert response.status_code == 200
+    assert response.json() == {"id": str(INVOICE_ID)}
+    assert seen == [(match_id, [OWN_MAILBOX])]
+
+
+def test_match_routes_are_forbidden_for_another_user(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
+
+    response = authed_client.post(f"/finance/matches/{uuid.uuid4()}/confirm")
+
+    assert response.status_code == 403

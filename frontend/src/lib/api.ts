@@ -60,8 +60,30 @@ export interface Invoice {
   /** Names of the failed checks, e.g. `invalid_iban`. */
   issues: string[]
   paidAt: string | null
-  /** `owner` when marked by hand. */
+  /** `owner` when marked by hand, `match` when a bank transaction is linked. */
   paidBy: string | null
+  /** The linked payment, set when `paidBy` is `match`. */
+  match: InvoiceMatch | null
+  /** Possible payments for the owner to confirm or reject. */
+  suggestions: InvoiceMatch[]
+}
+
+export type MatchSignal = 'amount' | 'iban' | 'reference' | 'name'
+
+/** A bank transaction linked to, or suggested for, an invoice. `amount` is signed. */
+export interface InvoiceMatch {
+  id: string
+  /** `auto` when the rules linked it, `owner` when confirmed by hand. */
+  source: 'auto' | 'owner'
+  signals: MatchSignal[]
+  transaction: {
+    id: string
+    date: string
+    bank: BankName
+    counterparty: string | null
+    amount: string
+    currency: string
+  }
 }
 
 export interface InvoiceRow extends Invoice {
@@ -148,6 +170,10 @@ export const api = {
     http.post<Invoice[]>('/finance/invoices/items/paid', { ids, paid }),
 
   getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/finance/invoices/${emailId}`),
+
+  confirmMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/confirm`),
+
+  rejectMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/reject`),
 
   listBankConnections: () => http.get<BankConnection[]>('/finance/bank-connections'),
 
