@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation; 001/03, 001/04, 001/05 and 001/07 done
+- Current stage: Implementation; 001/03 to 001/07 done
 
 ## Approval state
 
@@ -100,7 +100,7 @@ Before 001/05: [eval plan 004 — content-free tracing](../../../02-evaluation/p
 - [x] [001/03 — Finance agent shell, owner only](tasks/03-finance-shell.md)
 - [x] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
 - [x] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
-- [ ] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
+- [x] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
 - [x] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03
 - [ ] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
 - [ ] [001/09 — Invoices matched to transactions](tasks/09-matching.md) — after 06, 08
