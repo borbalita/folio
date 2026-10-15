@@ -1,7 +1,7 @@
 """add invoice paid status
 
 Revision ID: 0cb48528ec95
-Revises: 7c9c88c7b7e2
+Revises: 2e8ef7b9c0f9
 Create Date: 2026-10-14 20:09:58.394539
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '0cb48528ec95'
-down_revision: str | Sequence[str] | None = '7c9c88c7b7e2'
+down_revision: str | Sequence[str] | None = '2e8ef7b9c0f9'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
