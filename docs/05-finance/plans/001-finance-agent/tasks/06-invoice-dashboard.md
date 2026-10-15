@@ -25,7 +25,7 @@ The owner sees, filters, corrects and marks invoices from the Finance invoices l
 
 ## Verified
 
-2026-10-15, branch `feat/invoice-dashboard`.
+2026-10-15, branch `feat/invoice-dashboard`, PR [borbalita/folio#28](https://github.com/borbalita/folio/pull/28).
 
 - Open, needs_info and paid invoices → list shows only open and needs_info, overdue first: browser, this branch run locally against the real database (6 invoices). Default filter showed 1 Open and 5 Needs info; the overdue Open invoice (due Oct 7) came first, marked overdue. The status filter and ordering logic is in `InvoicesPage.tsx`. Pass.
 - needs_info invoice + valid IBAN and amount → open: `test_valid_iban_and_amount_make_a_needs_info_invoice_open`, and through the database layer `test_update_rechecks_and_commits`. Pass.
