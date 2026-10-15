@@ -37,7 +37,6 @@ function PdfViewer({ attachment }: { attachment: InvoiceAttachment }) {
 
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="text-sm font-medium">{attachment.filename}</figcaption>
       {state === null ? <p className="text-sm text-muted-foreground">Loading PDF…</p> : null}
       {state && 'error' in state ? <p className="text-sm text-destructive">{state.error}</p> : null}
       {state && 'url' in state ? (
@@ -174,7 +173,7 @@ export function InvoicePage() {
         ) : null}
 
         <section className="flex flex-col gap-2 border-t border-border pt-6">
-          <h2 className="text-sm font-medium text-muted-foreground">Message</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">Email message</h2>
           <p className="whitespace-pre-wrap text-sm">{loaded.body}</p>
         </section>
       </article>

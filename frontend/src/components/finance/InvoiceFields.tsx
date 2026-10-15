@@ -111,6 +111,11 @@ export function InvoiceFields({ invoice, onChange }: Props) {
               type={type ?? 'text'}
               defaultValue={invoice[name] ?? ''}
               inputMode={name === 'amount' ? 'decimal' : undefined}
+              placeholder={
+                name === 'reference' && invoice.invoiceNumber
+                  ? `Invoice number ${invoice.invoiceNumber} will be used`
+                  : undefined
+              }
               className="text-foreground"
             />
           </Label>
