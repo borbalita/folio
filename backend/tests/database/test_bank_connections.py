@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import uuid
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.dialects import postgresql
 
 from app.database import bank_connections
+from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.finance.enable_banking import EbAccount, EbSession
 
@@ -104,6 +105,66 @@ def test_list_connections_lists_all_banks_in_order(
     result = bank_connections.list_connections(USER_ID)
 
     assert result == [
-        {"bank": bank, "connected": False, "validUntil": None, "accounts": []}
+        {"bank": bank, "connected": False, "validUntil": None, "status": None, "accounts": []}
         for bank in ("N26", "ING", "PayPal")
     ]
+
+
+def _row(hash_: str, iban: str | None) -> BankAccount:
+    return BankAccount(
+        id=uuid.uuid4(), connection_id=uuid.uuid4(), uid="old", identification_hash=hash_, iban=iban
+    )
+
+
+def test_reconnect_keeps_existing_account_rows() -> None:
+    same_hash = _row("h-a", "DE89370400440532013000")
+    new_hash_same_iban = _row("h-old", "DE02120300000000202051")
+    unrelated = _row("h-x", None)
+    incoming = [
+        _account("a", "DE89370400440532013000"),
+        EbAccount(
+            uid="b", identification_hash="h-new", iban="DE02120300000000202051",
+            name="b", currency="EUR",
+        ),
+    ]
+
+    bank_connections.rehash_by_iban([same_hash, new_hash_same_iban, unrelated], incoming)
+
+    # The upsert then matches both rows by hash, so their ids, and the
+    # transactions pointing at them, stay.
+    assert same_hash.identification_hash == "h-a"
+    assert new_hash_same_iban.identification_hash == "h-new"
+    assert unrelated.identification_hash == "h-x"
+
+
+def test_reconnect_clears_invalid_and_notice(monkeypatch: pytest.MonkeyPatch) -> None:
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=USER_ID, bank="ING", pending_state="state-1",
+        invalidated_at=datetime(2026, 10, 1, tzinfo=UTC), expiry_notice="expired",
+    )
+    session = MagicMock()
+    session.scalar.return_value = connection
+    session.scalars.return_value = []
+    _patch_session(monkeypatch, session)
+
+    bank_connections.complete_connection(
+        USER_ID, "state-1", EbSession("s2", datetime(2027, 4, 1, tzinfo=UTC), [])
+    )
+
+    assert connection.invalidated_at is None
+    assert connection.expiry_notice is None
+
+
+def test_list_connections_reports_status(monkeypatch: pytest.MonkeyPatch) -> None:
+    soon = datetime.now(UTC) + timedelta(days=5)
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=USER_ID, bank="ING", session_id="s", valid_until=soon,
+        invalidated_at=None,
+    )
+    session = MagicMock()
+    session.scalars.side_effect = [[connection], []]
+    _patch_session(monkeypatch, session)
+
+    ing = next(c for c in bank_connections.list_connections(USER_ID) if c["bank"] == "ING")
+
+    assert ing["status"] == "expiring"

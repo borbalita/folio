@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select, update
@@ -77,6 +77,23 @@ def account_upsert(connection_id: uuid.UUID, accounts: list[EbAccount]) -> Inser
     )
 
 
+def rehash_by_iban(existing: list[BankAccount], incoming: list[EbAccount]) -> None:
+    """Point an existing row at a new identification_hash when only the hash changed.
+
+    The upsert matches on the hash, so without this a bank that re-issues hashes on
+    reconnect would get a second account row and lose its transaction history.
+    """
+    hashes = {row.identification_hash for row in existing}
+    for account in incoming:
+        if account.identification_hash in hashes or not account.iban:
+            continue
+        for row in existing:
+            if row.iban == account.iban:
+                row.identification_hash = account.identification_hash
+                hashes.add(account.identification_hash)
+                break
+
+
 def begin_connection(user_id: uuid.UUID, bank: str, state: str) -> None:
     """Record the one-time state; an active session_id on the row is left alone."""
     stmt = insert(BankConnection).values(
@@ -115,8 +132,15 @@ def complete_connection(user_id: uuid.UUID, state: str, session: EbSession) -> N
         connection.session_id = session.session_id
         connection.valid_until = session.valid_until
         connection.pending_state = None
+        connection.invalidated_at = None
+        connection.expiry_notice = None
         accounts = keep_accounts(connection.bank, session.accounts)
         if accounts:
+            existing = list(
+                db.scalars(select(BankAccount).where(BankAccount.connection_id == connection.id))
+            )
+            rehash_by_iban(existing, accounts)
+            db.flush()
             db.execute(account_upsert(connection.id, accounts))
         db.commit()
 
@@ -154,6 +178,7 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
             ):
                 accounts.setdefault(account.connection_id, []).append(account)
 
+    now = datetime.now(UTC)
     result: list[dict[str, Any]] = []
     for bank in BANKS:
         connection = connections.get(bank)
@@ -165,6 +190,11 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
                 "validUntil": (
                     connection.valid_until.isoformat()
                     if connected and connection.valid_until
+                    else None
+                ),
+                "status": (
+                    connection_status(connection.valid_until, connection.invalidated_at, now)
+                    if connected
                     else None
                 ),
                 "accounts": [
