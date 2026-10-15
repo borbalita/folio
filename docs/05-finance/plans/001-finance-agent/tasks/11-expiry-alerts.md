@@ -19,3 +19,6 @@ The owner is warned before bank access expires and renews all connections in one
 
 ## Dependencies
 001/08.
+
+## Notes
+- Implementation plan: [11-expiry-alerts.plan.md](11-expiry-alerts.plan.md).
