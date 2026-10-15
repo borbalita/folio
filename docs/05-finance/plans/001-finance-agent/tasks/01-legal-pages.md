@@ -21,3 +21,10 @@ None.
 ## Notes
 - Follows up the placeholder noted in Open questions.
 - Implementation plan: [01-legal-pages.plan.md](01-legal-pages.plan.md).
+
+## Verified
+
+2026-10-15, PR https://github.com/borbalita/folio/pull/16.
+
+- Both pages render on GitHub: `docs/legal/privacy.md` and `docs/legal/terms.md` at their `blob/main` URLs answered 200 (checked 2026-10-09). Pass.
+- The owner replaced both URLs of the Portfolio application in the Enable Banking control panel; `GET /application` afterwards returned `active: true` with services `["AIS"]` (checked 2026-10-09). Pass.

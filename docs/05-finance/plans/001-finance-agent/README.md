@@ -95,8 +95,8 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 
 Before 001/05: [eval plan 004 — content-free tracing](../../../02-evaluation/plans/004-content-free-tracing/README.md), tasks 01–03.
 
-- [ ] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
-- [ ] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)
+- [x] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
+- [x] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)
 - [x] [001/03 — Finance agent shell, owner only](tasks/03-finance-shell.md)
 - [x] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
 - [x] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
