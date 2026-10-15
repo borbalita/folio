@@ -5,7 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api, type BankConnection, type BankName } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiErrorDetail } from '@/lib/http'
-import { expiryMessage, goToBank, needsReconnect, reconnectAll } from '@/lib/reconnect'
+import {
+  clearReconnectQueue,
+  expiryMessage,
+  goToBank,
+  needsReconnect,
+  reconnectAll,
+} from '@/lib/reconnect'
 
 type State = { connections: BankConnection[] } | { error: string } | null
 
@@ -42,6 +48,8 @@ export function AccountsPage() {
     function onPageShow(event: PageTransitionEvent) {
       if (event.persisted) {
         setStarting(null)
+        // Back from a bank page without its callback: Reconnect all was abandoned.
+        clearReconnectQueue()
       }
     }
     window.addEventListener('pageshow', onPageShow)
@@ -49,6 +57,8 @@ export function AccountsPage() {
   }, [])
 
   async function start(bank: BankName) {
+    // A single connect must not pick up banks left queued by an abandoned Reconnect all.
+    clearReconnectQueue()
     setStarting(bank)
     setStartError(null)
     try {

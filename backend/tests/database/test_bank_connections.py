@@ -168,3 +168,29 @@ def test_list_connections_reports_status(monkeypatch: pytest.MonkeyPatch) -> Non
     ing = next(c for c in bank_connections.list_connections(USER_ID) if c["bank"] == "ING")
 
     assert ing["status"] == "expiring"
+
+
+def test_complete_connection_rehashes_before_the_upsert(monkeypatch: pytest.MonkeyPatch) -> None:
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=USER_ID, bank="ING", pending_state="state-1"
+    )
+    existing = _row("h-old", "DE02120300000000202051")
+    session = MagicMock()
+    session.scalar.return_value = connection
+    session.scalars.return_value = [existing]
+    calls: list[str] = []
+    session.flush.side_effect = lambda: calls.append("flush")
+    session.execute.side_effect = lambda stmt: calls.append("upsert")
+    _patch_session(monkeypatch, session)
+    incoming = EbAccount(
+        uid="new-uid", identification_hash="h-new", iban="DE02120300000000202051",
+        name="ING", currency="EUR",
+    )
+
+    bank_connections.complete_connection(
+        USER_ID, "state-1", EbSession("s2", datetime(2027, 4, 1, tzinfo=UTC), [incoming])
+    )
+
+    # The existing row now carries the new hash, so the upsert updates it in place.
+    assert existing.identification_hash == "h-new"
+    assert calls == ["flush", "upsert"]
