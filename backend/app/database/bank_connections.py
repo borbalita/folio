@@ -14,6 +14,7 @@ from app.database.engine import get_session
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.finance.enable_banking import EbAccount, EbSession
+from app.finance.expiry import connection_status
 
 BANKS: tuple[str, ...] = ("N26", "ING", "PayPal")
 
@@ -23,6 +24,16 @@ class SyncAccount:
     id: uuid.UUID
     uid: str
     bank: str
+    connection_id: uuid.UUID
+
+
+@dataclass
+class ConnectionState:
+    id: uuid.UUID
+    bank: str
+    valid_until: datetime | None
+    invalidated_at: datetime | None
+    expiry_notice: str | None
 
 
 class UnknownState(Exception):
@@ -184,7 +195,8 @@ def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], 
         live = {
             c.id: c.bank
             for c in connections
-            if c.session_id and c.valid_until and c.valid_until > now
+            if c.session_id
+            and connection_status(c.valid_until, c.invalidated_at, now) != "expired"
         }
         accounts = (
             list(
@@ -198,6 +210,51 @@ def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], 
             else []
         )
     return (
-        [SyncAccount(id=a.id, uid=a.uid, bank=live[a.connection_id]) for a in accounts],
+        [
+            SyncAccount(
+                id=a.id, uid=a.uid, bank=live[a.connection_id], connection_id=a.connection_id
+            )
+            for a in accounts
+        ],
         len(connections) - len(live),
     )
+
+
+def connection_states(user_id: uuid.UUID) -> list[ConnectionState]:
+    """Every connection that has had a session, for expiry warnings."""
+    with get_session() as session:
+        return [
+            ConnectionState(
+                id=c.id,
+                bank=c.bank,
+                valid_until=c.valid_until,
+                invalidated_at=c.invalidated_at,
+                expiry_notice=c.expiry_notice,
+            )
+            for c in session.scalars(
+                select(BankConnection).where(
+                    BankConnection.user_id == user_id,
+                    BankConnection.session_id.is_not(None),
+                )
+            )
+        ]
+
+
+def mark_invalid(connection_id: uuid.UUID, now: datetime) -> None:
+    with get_session() as session:
+        session.execute(
+            update(BankConnection)
+            .where(BankConnection.id == connection_id)
+            .values(invalidated_at=now)
+        )
+        session.commit()
+
+
+def record_notice(connection_id: uuid.UUID, stage: str) -> None:
+    with get_session() as session:
+        session.execute(
+            update(BankConnection)
+            .where(BankConnection.id == connection_id)
+            .values(expiry_notice=stage)
+        )
+        session.commit()
