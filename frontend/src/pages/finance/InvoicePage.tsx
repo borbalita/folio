@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { InvoiceFields } from '@/components/finance/InvoiceFields'
 import { Button } from '@/components/ui/button'
-import { api, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
+import { api, type Invoice, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
 
@@ -36,7 +37,6 @@ function PdfViewer({ attachment }: { attachment: InvoiceAttachment }) {
 
   return (
     <figure className="flex flex-col gap-2">
-      <figcaption className="text-sm font-medium">{attachment.filename}</figcaption>
       {state === null ? <p className="text-sm text-muted-foreground">Loading PDF…</p> : null}
       {state && 'error' in state ? <p className="text-sm text-destructive">{state.error}</p> : null}
       {state && 'url' in state ? (
@@ -116,10 +116,25 @@ export function InvoicePage() {
   const sent = formatTimestamp(loaded.sentAt)
   const stored = loaded.attachments.filter((item) => item.skippedReason === null)
   const skipped = loaded.attachments.filter((item) => item.skippedReason !== null)
+  const linked = new Set(loaded.invoices.map((invoice) => invoice.attachmentId))
+  const unlinked = stored.filter((item) => !linked.has(item.id))
+
+  function replaceInvoice(updated: Invoice) {
+    setLoaded((current) =>
+      current
+        ? {
+            ...current,
+            invoices: current.invoices.map((invoice) =>
+              invoice.id === updated.id ? updated : invoice,
+            ),
+          }
+        : current,
+    )
+  }
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
-      <article className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+      <article className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
         <header className="flex flex-col gap-1">
           <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
           <p className="text-sm text-muted-foreground">
@@ -128,21 +143,37 @@ export function InvoicePage() {
           </p>
         </header>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-medium text-muted-foreground">Attachments</h2>
-          {loaded.attachments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No PDF attachments.</p>
-          ) : null}
-          {skipped.map((attachment) => (
-            <SkippedAttachment key={attachment.id} attachment={attachment} />
-          ))}
-          {stored.map((attachment) => (
-            <PdfViewer key={attachment.id} attachment={attachment} />
-          ))}
-        </section>
+        {loaded.invoices.map((invoice) => {
+          const pdf = stored.find((item) => item.id === invoice.attachmentId)
+          return (
+            <section
+              key={invoice.id}
+              className="grid grid-cols-1 gap-6 border-t border-border pt-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+            >
+              <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
+              {pdf ? (
+                <PdfViewer attachment={pdf} />
+              ) : (
+                <p className="text-sm text-muted-foreground">No PDF for this invoice.</p>
+              )}
+            </section>
+          )
+        })}
 
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Message</h2>
+        {unlinked.length > 0 || skipped.length > 0 ? (
+          <section className="flex flex-col gap-3 border-t border-border pt-6">
+            <h2 className="text-sm font-medium text-muted-foreground">Other attachments</h2>
+            {skipped.map((attachment) => (
+              <SkippedAttachment key={attachment.id} attachment={attachment} />
+            ))}
+            {unlinked.map((attachment) => (
+              <PdfViewer key={attachment.id} attachment={attachment} />
+            ))}
+          </section>
+        ) : null}
+
+        <section className="flex flex-col gap-2 border-t border-border pt-6">
+          <h2 className="text-sm font-medium text-muted-foreground">Email message</h2>
           <p className="whitespace-pre-wrap text-sm">{loaded.body}</p>
         </section>
       </article>

@@ -412,3 +412,26 @@ def test_extraction_call_is_traced_without_content(
     assert "invoice_extraction" in everything
     for secret in ("SECRET-", VALID_IBAN, "%PDF", "JVBER"):
         assert secret not in everything
+
+
+def test_reextraction_keeps_a_paid_invoice_paid() -> None:
+    email = _email()
+    paid = Invoice(
+        email_id=email.id,
+        position=0,
+        status="paid",
+        paid_by="owner",
+        issues=[],
+        edited_fields=[],
+    )
+    session = _Session([paid])
+
+    extract_invoices(
+        session,  # type: ignore[arg-type]
+        email,
+        [],
+        extract=lambda _source: [_invoice(iban=None)],
+    )
+
+    assert paid.status == "paid"
+    assert paid.issues == ["missing_iban"]

@@ -5,14 +5,16 @@ from __future__ import annotations
 import asyncio
 import secrets
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from typing import Annotated, Any
 from urllib.parse import quote
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
@@ -23,7 +25,9 @@ from app.finance import enable_banking, transaction_sync
 log = structlog.get_logger(__name__)
 
 
-def finance_owner(user: Annotated[CurrentUser, Depends(get_current_user)]) -> CurrentUser:
+def finance_owner(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CurrentUser:
     require_finance_owner(user)
     return user
 
@@ -71,6 +75,51 @@ async def get_attachment(
             "Content-Disposition": f"inline; filename*=UTF-8''{quote(file.filename)}",
             "Cache-Control": "private, no-store",
         },
+    )
+
+
+class InvoiceEdit(BaseModel):
+    """Fields the owner changes; only the ones sent are touched. Null clears a field."""
+
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid")
+
+    payee: str | None = None
+    iban: str | None = None
+    bic: str | None = None
+    amount: Decimal | None = None
+    currency: str | None = None
+    invoice_number: str | None = None
+    reference: str | None = None
+    invoice_date: date | None = None
+    due_date: date | None = None
+
+
+class InvoicesPaid(BaseModel):
+    ids: list[uuid.UUID]
+    paid: bool
+
+
+@router.patch("/invoices/items/{invoice_id}")
+async def update_invoice(
+    invoice_id: uuid.UUID,
+    body: InvoiceEdit,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    changes = body.model_dump(exclude_unset=True)
+    return await asyncio.to_thread(
+        invoices.update_invoice, invoice_id, changes, mailbox_ids
+    )
+
+
+@router.post("/invoices/items/paid")
+async def set_invoices_paid(
+    body: InvoicesPaid,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> list[dict[str, Any]]:
+    mailbox_ids = await require_email_access(user)
+    return await asyncio.to_thread(
+        invoices.set_invoices_paid, body.ids, body.paid, mailbox_ids
     )
 
 
