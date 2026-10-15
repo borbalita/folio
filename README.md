@@ -138,6 +138,7 @@ Railway deploys `main` from this repo as separate services, all defined in [`.ra
 | backend | `/backend` | uvicorn and the `/health` check |
 | frontend | `/frontend` | Vite build served by Caddy; no custom start command |
 | email-ingest (cron) | `/backend` | `python -m ingest.email --scheduled` every 30 minutes (UTC); its variables reference the backend's |
+| bank-sync (cron) | `/backend` | `python -m ingest.bank` at 04:00, 11:00 and 18:00 UTC; its variables reference the backend's |
 
 Service settings change only with `railway config plan` and then `railway config apply`, not on push. Variables are not in the file; set them in Railway.
 
