@@ -54,10 +54,14 @@ export interface BankAccount {
   currency: string | null
 }
 
+export type ConnectionStatus = 'active' | 'expiring' | 'expired'
+
 export interface BankConnection {
   bank: BankName
   connected: boolean
   validUntil: string | null
+  /** Null when the bank was never connected. */
+  status: ConnectionStatus | null
   accounts: BankAccount[]
 }
 
