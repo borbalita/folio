@@ -3,53 +3,11 @@ import { Link, useParams } from 'react-router-dom'
 
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
 import { InvoicePayment } from '@/components/finance/InvoicePayment'
+import { PdfViewer } from '@/components/finance/PdfViewer'
 import { Button } from '@/components/ui/button'
 import { api, type Invoice, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
-
-function PdfViewer({ attachment }: { attachment: InvoiceAttachment }) {
-  const [state, setState] = useState<{ url: string } | { error: string } | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    let url: string | null = null
-    api
-      .getAttachment(attachment.id)
-      .then((blob) => {
-        if (cancelled) {
-          return
-        }
-        url = URL.createObjectURL(blob)
-        setState({ url })
-      })
-      .catch((caught: unknown) => {
-        if (!cancelled) {
-          setState({ error: describeApiError(caught) })
-        }
-      })
-    return () => {
-      cancelled = true
-      if (url) {
-        URL.revokeObjectURL(url)
-      }
-    }
-  }, [attachment.id])
-
-  return (
-    <figure className="flex flex-col gap-2">
-      {state === null ? <p className="text-sm text-muted-foreground">Loading PDF…</p> : null}
-      {state && 'error' in state ? <p className="text-sm text-destructive">{state.error}</p> : null}
-      {state && 'url' in state ? (
-        <iframe
-          src={state.url}
-          title={attachment.filename}
-          className="h-[80vh] w-full rounded-md border border-border"
-        />
-      ) : null}
-    </figure>
-  )
-}
 
 function SkippedAttachment({ attachment }: { attachment: InvoiceAttachment }) {
   const reason =

@@ -25,4 +25,5 @@ The owner selects open invoices, picks an account, checks each payment against i
 001/09.
 
 ## Notes
+- Implementation plan: [10-qr-payments.plan.md](10-qr-payments.plan.md).
 - Decision: QR now; payment initiation only if Enable Banking enables `PIS`.

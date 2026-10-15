@@ -112,6 +112,36 @@ export interface InvoiceDetail extends InvoiceSummary {
 
 export type BankName = 'N26' | 'ING' | 'PayPal'
 
+export type PaymentDraftStatus = 'draft' | 'approved' | 'completed' | 'cancelled'
+
+/** A payment prepared for an invoice; payee, IBAN, amount and reference are frozen. */
+export interface PaymentDraft {
+  id: string
+  invoiceId: string
+  emailId: string
+  attachmentId: string | null
+  payee: string
+  iban: string
+  bic: string | null
+  amount: string
+  currency: string
+  reference: string | null
+  status: PaymentDraftStatus
+  account: { id: string; bank: BankName; name: string | null }
+}
+
+export interface ApprovedPayment extends PaymentDraft {
+  /** The EPC069-12 text the QR code carries. */
+  payload: string
+  /** The QR code as an SVG data URI. */
+  qr: string
+}
+
+export interface PaymentDraftsResult {
+  drafts: PaymentDraft[]
+  skipped: { invoiceId: string; reason: string }[]
+}
+
 export interface BankAccount {
   id: string
   name: string | null
@@ -174,6 +204,20 @@ export const api = {
   confirmMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/confirm`),
 
   rejectMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/reject`),
+
+  createPaymentDrafts: (invoiceIds: string[], accountId: string) =>
+    http.post<PaymentDraftsResult>('/finance/payment-drafts', { invoiceIds, accountId }),
+
+  getPaymentDrafts: (ids: string[]) =>
+    http.get<PaymentDraft[]>(
+      `/finance/payment-drafts?${ids.map((id) => `ids=${encodeURIComponent(id)}`).join('&')}`,
+    ),
+
+  approvePaymentDraft: (id: string) =>
+    http.post<ApprovedPayment>(`/finance/payment-drafts/${id}/approve`),
+
+  cancelPaymentDraft: (id: string) =>
+    http.post<PaymentDraft>(`/finance/payment-drafts/${id}/cancel`),
 
   listBankConnections: () => http.get<BankConnection[]>('/finance/bank-connections'),
 
