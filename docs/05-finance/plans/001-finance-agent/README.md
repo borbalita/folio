@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation; 001/03 to 001/07 done
+- Current stage: Implementation; 001/03 to 001/08 done
 
 ## Approval state
 
@@ -102,10 +102,10 @@ Before 001/05: [eval plan 004 — content-free tracing](../../../02-evaluation/p
 - [x] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
 - [x] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
 - [x] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03
-- [ ] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
+- [x] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
 - [ ] [001/09 — Invoices matched to transactions](tasks/09-matching.md) — after 06, 08
 - [ ] [001/10 — Pay invoices with a GiroCode QR](tasks/10-qr-payments.md) — after 09
-- [ ] [001/11 — Consent expiry alerts and Reconnect all](tasks/11-expiry-alerts.md) — after 08
+- [ ] [001/11 — Consent expiry alerts and Reconnect all](tasks/11-expiry-alerts.md) — after 08; merged, manual Reconnect all check skipped at the owner's request
 - [ ] [001/12 — Finance chat with cards](tasks/12-finance-chat.md) — after 10, tracing change
 - [ ] [001/13 — Finance overview and end-to-end check](tasks/13-overview.md) — after all
 
@@ -123,7 +123,7 @@ Critical path: 03 → 07 → 08 → 09 → 10 → 12 → 13. The invoice line (0
 
 - **Wrong extracted amounts,** guarded only by the owner's tick. Next action: the hand test in 001/13; add the second extraction if it finds errors.
 - **Enable Banking's free mode changes or ends.** Next action: none until it happens; the client is the only provider-specific code.
-- **Duplicates where banks give no id:** the fallback key assumes banks return a day's rows in a stable order. Next action: 001/08's second-run check.
+- **Duplicates where banks give no id:** the fallback key assumes banks return a day's rows in a stable order. 001/08's second runs, locally and the first Railway cron run, added nothing (2026-10-15).
 - **Consent friction:** three approvals every 180 days; one ING attempt failed with `invalid_grant` and a fresh link worked. Next action: 001/11.
 - **False-alarm invoice emails** (receipts, already-paid notices) stay `needs_info` with `no_invoice_found`; the first backfill gave 5 of 6. Next action: after 001/06, plan a "Not an invoice" action (relabel the email, drop its invoices) and per-sender rules (ignore, or always paid by direct debit), shaped by how the list feels in use.
 - **Highlighting extracted values in the PDF** would speed up the owner's tick before Approve. Text PDFs only (pdf.js text layer plus per-field format matching); scans can't be highlighted. About a day. Next action: decide in 001/10, for the payment card.
