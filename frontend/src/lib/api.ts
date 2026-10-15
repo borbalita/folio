@@ -61,6 +61,26 @@ export interface BankConnection {
   accounts: BankAccount[]
 }
 
+export interface Transaction {
+  id: string
+  /** Booking day, `YYYY-MM-DD`. */
+  date: string
+  bank: BankName
+  accountName: string | null
+  counterparty: string | null
+  /** Signed decimal string; negative when money left the account. */
+  amount: string
+  currency: string
+}
+
+export interface BankSyncCounts {
+  accounts: number
+  fetched: number
+  added: number
+  skipped: number
+  unparsed: number
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -83,6 +103,10 @@ export const api = {
 
   completeBankConnection: (code: string, state: string) =>
     http.post<BankConnection[]>('/finance/bank-connections/callback', { code, state }),
+
+  syncBanks: () => http.post<BankSyncCounts>('/finance/bank-sync'),
+
+  listTransactions: () => http.get<Transaction[]>('/finance/transactions'),
 
   getAttachment: (attachmentId: string) => http.getBlob(`/finance/attachments/${attachmentId}`),
 }

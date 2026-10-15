@@ -24,8 +24,16 @@ export default defineRailway(() => {
     networking: { privateNetworkEndpoint: "folio" },
   });
 
+  const bankSync = service("bank-sync", {
+    source: folio,
+    start: "python -m ingest.bank",
+    replicas: { "ams": 1 },
+    // UTC; three runs stay inside the bank's four unattended reads per account a day.
+    deploy: { cronSchedule: "0 4,11,18 * * *", restartPolicyType: "NEVER" },
+  });
+
   return project("brave-energy", {
     variables: { managed: false },
-    resources: [backend, frontend, emailIngest],
+    resources: [backend, frontend, emailIngest, bankSync],
   });
 });

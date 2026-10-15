@@ -12,6 +12,10 @@ export function AccountsPage() {
   const [state, setState] = useState<State>(null)
   const [starting, setStarting] = useState<BankName | null>(null)
   const [startError, setStartError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ message: string; failed: boolean } | null>(
+    null,
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -55,9 +59,39 @@ export function AccountsPage() {
     }
   }
 
+  async function syncNow() {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const { added } = await api.syncBanks()
+      setSyncResult({
+        message: `Added ${added} ${added === 1 ? 'transaction' : 'transactions'}.`,
+        failed: false,
+      })
+    } catch (caught: unknown) {
+      setSyncResult({ message: describeApiErrorDetail(caught), failed: true })
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-      <h1 className="text-lg font-semibold">Accounts</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-lg font-semibold">Accounts</h1>
+        <Button variant="outline" disabled={syncing} onClick={() => void syncNow()}>
+          {syncing ? 'Syncing…' : 'Sync now'}
+        </Button>
+      </div>
+      {syncResult ? (
+        <p
+          className={
+            syncResult.failed ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'
+          }
+        >
+          {syncResult.message}
+        </p>
+      ) : null}
       {state === null ? <p className="text-sm text-muted-foreground">Loading accounts…</p> : null}
       {state && 'error' in state ? (
         <p className="text-sm text-destructive">{state.error}</p>

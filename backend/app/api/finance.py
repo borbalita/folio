@@ -5,19 +5,20 @@ from __future__ import annotations
 import asyncio
 import secrets
 import uuid
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 from urllib.parse import quote
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
 from app.auth.finance_access import require_finance_owner
-from app.database import bank_connections, invoices
-from app.finance import enable_banking
+from app.database import bank_connections, invoices, job_runs, transactions
+from app.finance import enable_banking, transaction_sync
 
 log = structlog.get_logger(__name__)
 
@@ -26,6 +27,8 @@ def finance_owner(user: Annotated[CurrentUser, Depends(get_current_user)]) -> Cu
     require_finance_owner(user)
     return user
 
+
+SYNC_COOLDOWN = timedelta(minutes=10)
 
 router = APIRouter(
     prefix="/finance", tags=["finance"], dependencies=[Depends(finance_owner)]
@@ -137,3 +140,42 @@ async def start_bank_connection(
             ) from exc
         raise HTTPException(502, "Could not reach the bank; try again.") from exc
     return {"url": url}
+
+
+def _psu_headers(request: Request) -> dict[str, str]:
+    """Tell the bank the owner is present, so Sync now spends no unattended read."""
+    forwarded = request.headers.get("x-forwarded-for")
+    ip = forwarded.split(",")[0].strip() if forwarded else None
+    if not ip and request.client:
+        ip = request.client.host
+    headers = {"Psu-User-Agent": request.headers.get("user-agent", "")}
+    if ip:
+        headers["Psu-Ip-Address"] = ip
+    return headers
+
+
+@router.post("/bank-sync")
+async def sync_banks(
+    request: Request,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, int]:
+    last = await asyncio.to_thread(job_runs.last_started, "bank_sync")
+    if last is not None and datetime.now(UTC) - last < SYNC_COOLDOWN:
+        raise HTTPException(429, "Synced less than 10 minutes ago; try again later.")
+    try:
+        return await asyncio.to_thread(
+            transaction_sync.run_bank_sync, user.id, _psu_headers(request)
+        )
+    except enable_banking.EnableBankingNotConfigured as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except transaction_sync.BankSyncFailed as exc:
+        raise HTTPException(
+            502, "Some banks could not be synced; see the job log."
+        ) from exc
+
+
+@router.get("/transactions")
+async def list_transactions(
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> list[dict[str, Any]]:
+    return await asyncio.to_thread(transactions.list_transactions, user.id)
