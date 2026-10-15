@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import smtplib
 import uuid
 from datetime import UTC, date, datetime, timedelta
 
@@ -10,7 +11,8 @@ import structlog
 
 from app.database import bank_connections, transactions
 from app.database.job_runs import run_job
-from app.finance import enable_banking
+from app.finance import enable_banking, notify
+from app.finance.expiry import due_notice
 
 log = structlog.get_logger(__name__)
 
@@ -38,8 +40,11 @@ async def sync_all(
         "added": 0,
         "skipped": skipped,
         "unparsed": 0,
+        "expired": 0,
+        "notices": 0,
     }
     failures: list[str] = []
+    invalidated: set[uuid.UUID] = set()
     for account in accounts:
         since = latest[account.id] - OVERLAP if account.id in latest else today - FIRST_SYNC
         try:
@@ -47,15 +52,46 @@ async def sync_all(
                 account.uid, since, psu_headers=psu_headers
             )
         except enable_banking.EnableBankingError as exc:
-            log.warning("bank_sync_account_failed", bank=account.bank, status=exc.status)
+            if exc.session_invalid:
+                # Expected once consent lapses or is revoked: only a reconnect helps.
+                log.warning("bank_session_invalid", bank=account.bank, code=exc.code)
+                if account.connection_id not in invalidated:
+                    bank_connections.mark_invalid(account.connection_id, now)
+                    invalidated.add(account.connection_id)
+                continue
+            log.warning(
+                "bank_sync_account_failed", bank=account.bank, status=exc.status, code=exc.code
+            )
             failures.append(f"{account.bank}: {exc}")
             continue
         counts["fetched"] += len(txs)
         counts["unparsed"] += unparsed
         counts["added"] += transactions.store(account.id, txs)
+    counts["expired"] = len(invalidated)
+    counts["notices"] = send_due_notices(user_id, now)
     if failures:
         raise BankSyncFailed("; ".join(failures))
     return counts
+
+
+def send_due_notices(user_id: uuid.UUID, now: datetime) -> int:
+    """Email each warning stage once; a failed send is retried on the next sync."""
+    sent = 0
+    for state in bank_connections.connection_states(user_id):
+        stage = due_notice(state.valid_until, state.invalidated_at, state.expiry_notice, now)
+        if stage is None:
+            continue
+        try:
+            delivered = notify.send_expiry_notice(state.bank, stage, state.valid_until, now)
+        except (smtplib.SMTPException, OSError) as exc:
+            log.warning(
+                "expiry_notice_failed", bank=state.bank, stage=stage, error=type(exc).__name__
+            )
+            continue
+        if delivered:
+            bank_connections.record_notice(state.id, stage)
+            sent += 1
+    return sent
 
 
 def run_bank_sync(

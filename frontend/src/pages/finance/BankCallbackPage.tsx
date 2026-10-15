@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { api } from '@/lib/api'
 import { describeApiErrorDetail } from '@/lib/http'
+import { clearReconnectQueue, goToBank, takeNextQueued } from '@/lib/reconnect'
 
 export function BankCallbackPage() {
   const [params] = useSearchParams()
@@ -16,14 +17,29 @@ export function BankCallbackPage() {
 
   useEffect(() => {
     // The code is single-use: guard against the StrictMode double effect.
-    if (bankError || !code || !state || started.current) {
+    if (started.current) {
+      return
+    }
+    if (bankError || !code || !state) {
+      // A cancelled or failed approval ends Reconnect all; the owner starts it again.
+      clearReconnectQueue()
       return
     }
     started.current = true
     api
       .completeBankConnection(code, state)
-      .then(() => navigate('/finance/accounts', { replace: true }))
-      .catch((caught: unknown) => setApiError(describeApiErrorDetail(caught)))
+      .then(async () => {
+        const next = takeNextQueued()
+        if (next) {
+          await goToBank(next)
+        } else {
+          navigate('/finance/accounts', { replace: true })
+        }
+      })
+      .catch((caught: unknown) => {
+        clearReconnectQueue()
+        setApiError(describeApiErrorDetail(caught))
+      })
   }, [bankError, code, state, navigate])
 
   const error = bankError ?? apiError ?? (!code || !state ? 'Missing bank response.' : null)

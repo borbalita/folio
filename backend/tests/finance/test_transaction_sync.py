@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import smtplib
 import uuid
 from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
@@ -14,17 +15,17 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 
 from app.config import settings
 from app.database import bank_connections, transactions
-from app.database.bank_connections import SyncAccount
+from app.database.bank_connections import ConnectionState, SyncAccount
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
-from app.finance import enable_banking, transaction_sync
+from app.finance import enable_banking, notify, transaction_sync
 from app.finance.enable_banking import EnableBankingError
 from app.finance.transaction_sync import BankSyncFailed, sync_all
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 TODAY = date(2026, 10, 14)
-N26 = SyncAccount(id=uuid.uuid4(), uid="n26-uid", bank="N26")
-ING = SyncAccount(id=uuid.uuid4(), uid="ing-uid", bank="ING")
+N26 = SyncAccount(id=uuid.uuid4(), uid="n26-uid", bank="N26", connection_id=uuid.uuid4())
+ING = SyncAccount(id=uuid.uuid4(), uid="ing-uid", bank="ING", connection_id=uuid.uuid4())
 
 
 def entry(ref: str | None = None, *, status: str = "BOOK", **overrides) -> dict:
@@ -59,6 +60,53 @@ class Store:
             if account_id in account_ids:
                 latest[account_id] = max(booked, latest.get(account_id, booked))
         return latest
+
+
+class Notices:
+    """Connection states the sync reads, and the emails it sends."""
+
+    def __init__(self) -> None:
+        self.states: list[ConnectionState] = []
+        self.sent: list[tuple[str, str]] = []
+        self.invalid: list[uuid.UUID] = []
+        self.smtp_error: Exception | None = None
+
+    def send(self, bank, stage, valid_until, now) -> bool:
+        if self.smtp_error is not None:
+            raise self.smtp_error
+        self.sent.append((bank, stage))
+        return True
+
+    def record(self, connection_id, stage) -> None:
+        for state in self.states:
+            if state.id == connection_id:
+                state.expiry_notice = stage
+
+    def mark_invalid(self, connection_id, now) -> None:
+        self.invalid.append(connection_id)
+        for state in self.states:
+            if state.id == connection_id:
+                state.invalidated_at = now
+
+
+@pytest.fixture(autouse=True)
+def notices(monkeypatch: pytest.MonkeyPatch) -> Notices:
+    fake = Notices()
+    monkeypatch.setattr(bank_connections, "connection_states", lambda user_id: fake.states)
+    monkeypatch.setattr(bank_connections, "record_notice", fake.record)
+    monkeypatch.setattr(bank_connections, "mark_invalid", fake.mark_invalid)
+    monkeypatch.setattr(notify, "send_expiry_notice", fake.send)
+    return fake
+
+
+def state(bank: str, connection_id: uuid.UUID, days_left: float) -> ConnectionState:
+    return ConnectionState(
+        id=connection_id,
+        bank=bank,
+        valid_until=datetime.now(UTC) + timedelta(days=days_left),
+        invalidated_at=None,
+        expiry_notice=None,
+    )
 
 
 @pytest.fixture
@@ -134,7 +182,10 @@ def test_pending_entries_are_not_stored(monkeypatch, store, pages) -> None:
 
     counts = run()
 
-    assert counts == {"accounts": 1, "fetched": 1, "added": 1, "skipped": 0, "unparsed": 0}
+    assert counts == {
+        "accounts": 1, "fetched": 1, "added": 1, "skipped": 0, "unparsed": 0,
+        "expired": 0, "notices": 0,
+    }
 
 
 def test_second_run_over_overlap_adds_nothing(monkeypatch, store, pages) -> None:
@@ -203,7 +254,8 @@ def test_skipped_connections_are_counted(monkeypatch, store, pages) -> None:
     targets(monkeypatch, [], skipped=1)
 
     assert run() == {
-        "accounts": 0, "fetched": 0, "added": 0, "skipped": 1, "unparsed": 0
+        "accounts": 0, "fetched": 0, "added": 0, "skipped": 1, "unparsed": 0,
+        "expired": 0, "notices": 0,
     }
 
 
@@ -249,7 +301,9 @@ def test_expired_connection_is_skipped_without_a_call(
 
     accounts, skipped = bank_connections.sync_targets(USER_ID, now)
 
-    assert accounts == [SyncAccount(id=account.id, uid="n26-uid", bank="N26")]
+    assert accounts == [
+        SyncAccount(id=account.id, uid="n26-uid", bank="N26", connection_id=live.id)
+    ]
     assert skipped == 2
 
 
@@ -281,3 +335,67 @@ def test_an_unreadable_entry_is_counted_and_the_rest_stored(
 
     assert counts["added"] == 1
     assert counts["unparsed"] == 1
+
+
+def test_expiring_connection_sends_one_email_and_a_second_run_none(
+    monkeypatch, store, pages, notices
+) -> None:
+    targets(monkeypatch, [N26])
+    notices.states = [state("N26", N26.connection_id, 13)]
+
+    first = run()
+    second = run()
+
+    assert notices.sent == [("N26", "14d")]
+    assert first["notices"] == 1
+    assert second["notices"] == 0
+
+
+def test_invalid_session_marks_expired_and_others_still_sync(
+    monkeypatch, store, notices
+) -> None:
+    async def fetch(uid, date_from, *, psu_headers=None, client=None):
+        if uid == "ing-uid":
+            raise EnableBankingError(401, '{"error":"SESSION_DOES_NOT_EXIST"}')
+        return enable_banking.parse_page([entry("ok")])
+
+    monkeypatch.setattr(enable_banking, "fetch_transactions", fetch)
+    targets(monkeypatch, [ING, N26])
+    notices.states = [
+        state("ING", ING.connection_id, 120),
+        state("N26", N26.connection_id, 120),
+    ]
+
+    counts = run()
+
+    assert counts["expired"] == 1
+    assert notices.invalid == [ING.connection_id]
+    assert list(store.rows) == [(N26.id, "ref:DBIT:ok")]
+    assert notices.sent == [("ING", "expired")]
+
+
+def test_smtp_failure_is_logged_and_retried_next_run(
+    monkeypatch, store, pages, notices
+) -> None:
+    targets(monkeypatch, [N26])
+    pages["n26-uid"] = [[entry("a")]]
+    notices.states = [state("N26", N26.connection_id, 2)]
+    notices.smtp_error = smtplib.SMTPException("down")
+
+    first = run()
+    notices.smtp_error = None
+    second = run()
+
+    assert first["added"] == 1
+    assert first["notices"] == 0
+    assert notices.sent == [("N26", "3d")]
+    assert second["notices"] == 1
+
+
+def test_unsent_notice_is_not_recorded(monkeypatch, store, pages, notices) -> None:
+    targets(monkeypatch, [N26])
+    notices.states = [state("N26", N26.connection_id, 2)]
+    monkeypatch.setattr(notify, "send_expiry_notice", lambda *args: False)
+
+    assert run()["notices"] == 0
+    assert notices.states[0].expiry_notice is None

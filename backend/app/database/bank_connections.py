@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select, update
@@ -14,6 +14,7 @@ from app.database.engine import get_session
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.finance.enable_banking import EbAccount, EbSession
+from app.finance.expiry import connection_status
 
 BANKS: tuple[str, ...] = ("N26", "ING", "PayPal")
 
@@ -23,6 +24,16 @@ class SyncAccount:
     id: uuid.UUID
     uid: str
     bank: str
+    connection_id: uuid.UUID
+
+
+@dataclass
+class ConnectionState:
+    id: uuid.UUID
+    bank: str
+    valid_until: datetime | None
+    invalidated_at: datetime | None
+    expiry_notice: str | None
 
 
 class UnknownState(Exception):
@@ -66,6 +77,23 @@ def account_upsert(connection_id: uuid.UUID, accounts: list[EbAccount]) -> Inser
     )
 
 
+def rehash_by_iban(existing: list[BankAccount], incoming: list[EbAccount]) -> None:
+    """Point an existing row at a new identification_hash when only the hash changed.
+
+    The upsert matches on the hash, so without this a bank that re-issues hashes on
+    reconnect would get a second account row and lose its transaction history.
+    """
+    hashes = {row.identification_hash for row in existing}
+    for account in incoming:
+        if account.identification_hash in hashes or not account.iban:
+            continue
+        for row in existing:
+            if row.iban == account.iban:
+                row.identification_hash = account.identification_hash
+                hashes.add(account.identification_hash)
+                break
+
+
 def begin_connection(user_id: uuid.UUID, bank: str, state: str) -> None:
     """Record the one-time state; an active session_id on the row is left alone."""
     stmt = insert(BankConnection).values(
@@ -104,8 +132,15 @@ def complete_connection(user_id: uuid.UUID, state: str, session: EbSession) -> N
         connection.session_id = session.session_id
         connection.valid_until = session.valid_until
         connection.pending_state = None
+        connection.invalidated_at = None
+        connection.expiry_notice = None
         accounts = keep_accounts(connection.bank, session.accounts)
         if accounts:
+            existing = list(
+                db.scalars(select(BankAccount).where(BankAccount.connection_id == connection.id))
+            )
+            rehash_by_iban(existing, accounts)
+            db.flush()
             db.execute(account_upsert(connection.id, accounts))
         db.commit()
 
@@ -143,6 +178,7 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
             ):
                 accounts.setdefault(account.connection_id, []).append(account)
 
+    now = datetime.now(UTC)
     result: list[dict[str, Any]] = []
     for bank in BANKS:
         connection = connections.get(bank)
@@ -154,6 +190,11 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
                 "validUntil": (
                     connection.valid_until.isoformat()
                     if connected and connection.valid_until
+                    else None
+                ),
+                "status": (
+                    connection_status(connection.valid_until, connection.invalidated_at, now)
+                    if connected
                     else None
                 ),
                 "accounts": [
@@ -184,7 +225,8 @@ def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], 
         live = {
             c.id: c.bank
             for c in connections
-            if c.session_id and c.valid_until and c.valid_until > now
+            if c.session_id
+            and connection_status(c.valid_until, c.invalidated_at, now) != "expired"
         }
         accounts = (
             list(
@@ -198,6 +240,51 @@ def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], 
             else []
         )
     return (
-        [SyncAccount(id=a.id, uid=a.uid, bank=live[a.connection_id]) for a in accounts],
+        [
+            SyncAccount(
+                id=a.id, uid=a.uid, bank=live[a.connection_id], connection_id=a.connection_id
+            )
+            for a in accounts
+        ],
         len(connections) - len(live),
     )
+
+
+def connection_states(user_id: uuid.UUID) -> list[ConnectionState]:
+    """Every connection that has had a session, for expiry warnings."""
+    with get_session() as session:
+        return [
+            ConnectionState(
+                id=c.id,
+                bank=c.bank,
+                valid_until=c.valid_until,
+                invalidated_at=c.invalidated_at,
+                expiry_notice=c.expiry_notice,
+            )
+            for c in session.scalars(
+                select(BankConnection).where(
+                    BankConnection.user_id == user_id,
+                    BankConnection.session_id.is_not(None),
+                )
+            )
+        ]
+
+
+def mark_invalid(connection_id: uuid.UUID, now: datetime) -> None:
+    with get_session() as session:
+        session.execute(
+            update(BankConnection)
+            .where(BankConnection.id == connection_id)
+            .values(invalidated_at=now)
+        )
+        session.commit()
+
+
+def record_notice(connection_id: uuid.UUID, stage: str) -> None:
+    with get_session() as session:
+        session.execute(
+            update(BankConnection)
+            .where(BankConnection.id == connection_id)
+            .values(expiry_notice=stage)
+        )
+        session.commit()
