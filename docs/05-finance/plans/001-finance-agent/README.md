@@ -126,4 +126,5 @@ Critical path: 03 → 07 → 08 → 09 → 10 → 12 → 13. The invoice line (0
 - **Duplicates where banks give no id:** the fallback key assumes banks return a day's rows in a stable order. Next action: 001/08's second-run check.
 - **Consent friction:** three approvals every 180 days; one ING attempt failed with `invalid_grant` and a fresh link worked. Next action: 001/11.
 - **False-alarm invoice emails** (receipts, already-paid notices) stay `needs_info` with `no_invoice_found`; the first backfill gave 5 of 6. Next action: after 001/06, plan a "Not an invoice" action (relabel the email, drop its invoices) and per-sender rules (ignore, or always paid by direct debit), shaped by how the list feels in use.
+- **Highlighting extracted values in the PDF** would speed up the owner's tick before Approve. Text PDFs only (pdf.js text layer plus per-field format matching); scans can't be highlighted. About a day. Next action: decide in 001/10, for the payment card.
 - **For plan 002:** paying "from a Space" is a move to the main account and then a payment from it; plan 002 chooses between Spaces as budgets and suggesting the Space's category for the next matching payment.
