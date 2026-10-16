@@ -25,7 +25,11 @@ export function PayInvoices({ invoiceIds, label, disabled = false }: Props) {
     try {
       const result = await api.createPaymentDrafts(invoiceIds)
       if (result.drafts.length === 0) {
-        setError('None of these invoices is open, so there is nothing to pay.')
+        setError(
+          result.skipped.some((skip) => skip.reason === 'already_approved')
+            ? 'A payment is already approved and waits for the bank; the invoice turns paid once the bank sync matches it.'
+            : 'None of these invoices is open, so there is nothing to pay.',
+        )
         return
       }
       navigate(`/finance/payments?drafts=${result.drafts.map((draft) => draft.id).join(',')}`)

@@ -115,3 +115,45 @@ def list_transactions(user_id: uuid.UUID, limit: int = 1000) -> list[dict[str, A
         }
         for tx, account_name, bank in rows
     ]
+
+
+def search_transactions(
+    user_id: uuid.UUID,
+    *,
+    text: str | None,
+    since: date | None,
+    until: date | None,
+    limit: int,
+) -> list[dict[str, Any]]:
+    """The owner's transactions, newest first; text matches counterparty or remittance."""
+    stmt = (
+        select(Transaction, BankConnection.bank)
+        .join(BankAccount, Transaction.account_id == BankAccount.id)
+        .join(BankConnection, BankAccount.connection_id == BankConnection.id)
+        .where(BankConnection.user_id == user_id)
+    )
+    if text:
+        pattern = f"%{text}%"
+        stmt = stmt.where(
+            Transaction.counterparty_name.ilike(pattern) | Transaction.remittance.ilike(pattern)
+        )
+    if since:
+        stmt = stmt.where(Transaction.booking_date >= since)
+    if until:
+        stmt = stmt.where(Transaction.booking_date <= until)
+    stmt = stmt.order_by(Transaction.booking_date.desc(), Transaction.created_at.desc()).limit(
+        limit
+    )
+    with get_session() as session:
+        rows = session.execute(stmt).all()
+    return [
+        {
+            "date": tx.booking_date.isoformat(),
+            "bank": bank,
+            "counterparty": tx.counterparty_name,
+            "amount": str(tx.amount),
+            "currency": tx.currency,
+            "remittance": tx.remittance,
+        }
+        for tx, bank in rows
+    ]
