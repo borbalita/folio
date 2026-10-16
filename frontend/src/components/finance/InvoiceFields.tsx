@@ -135,9 +135,6 @@ export function InvoiceFields({ invoice, onChange }: Props) {
           // Pay and mark only what was saved: unsaved edits would be lost.
           <PayInvoices invoiceIds={[invoice.id]} label="Pay" disabled={edited} />
         ) : null}
-        <Button type="submit" size="sm" variant={edited ? 'default' : 'outline'} disabled={saving}>
-          Save
-        </Button>
         {invoice.status === 'paid' ? (
           <Button
             type="button"
@@ -160,6 +157,16 @@ export function InvoiceFields({ invoice, onChange }: Props) {
           </Button>
         )}
         {error ? <span className="text-sm text-destructive">{error}</span> : null}
+        {/* Apart from the payment actions: Save is about the fields above. */}
+        <Button
+          type="submit"
+          size="sm"
+          variant={edited ? 'default' : 'outline'}
+          disabled={saving}
+          className="ml-auto"
+        >
+          Save
+        </Button>
       </div>
     </form>
   )
