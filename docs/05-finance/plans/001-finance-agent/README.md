@@ -87,7 +87,7 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 2. An invoice paid through its QR turns paid on its own after the next bank sync.
 3. A spot check of the last 90 days shows every invoice as matched, suggested, or genuinely open.
 4. An expiring connection triggers emails at 14 and 3 days and a warning, and Reconnect all restores every connection without losing history.
-5. In chat, "what do I still need to pay?" and "pay them all from N26" show invoice and payment cards, and nothing can be approved there.
+5. In chat, "what do I still need to pay?" and "pay them all" show invoice and payment cards, and nothing can be approved there.
 6. Nobody but the owner can reach a Finance route or see the Finance card.
 7. The owner's hand test of real invoices finds the extracted values correct.
 
