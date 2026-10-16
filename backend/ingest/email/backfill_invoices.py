@@ -1,6 +1,6 @@
 """Extract invoices for invoice emails already stored.
 
-Run from backend/: uv run python -m ingest.email.backfill_invoices [--all]
+Run from backend/: uv run python -m ingest.email.backfill_invoices [--all] [--detect]
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.finance.invoice import Invoice
 from app.logging import configure_logging
 from app.observability import configure_tracing, shutdown_tracing
-from ingest.email.invoices import Extractor, extract_invoices
+from ingest.email.invoices import Extractor, detect_invoices, extract_invoices
 from ingest.email.pipeline import open_session
 
 
@@ -51,12 +51,45 @@ def backfill(
     return counts
 
 
+def detect(session: Session, *, extract: Extractor | None = None) -> dict[str, Any]:
+    """Look for invoices in the PDFs of stored mail the labeller did not call an invoice."""
+    skip = {EmailLabel.INVOICE.value, EmailLabel.AI_NEWSLETTER.value}
+    emails = session.scalars(
+        select(EmailMessage)
+        .where(EmailMessage.label.not_in(skip))
+        .order_by(EmailMessage.sent_at)
+    )
+    counts = {"checked": 0, "relabelled": 0, "invoices": 0}
+    for email in [e for e in emails if e.label not in skip]:
+        attachments = list(
+            session.scalars(
+                select(EmailAttachment)
+                .where(EmailAttachment.email_id == email.id)
+                .order_by(EmailAttachment.filename)
+            )
+        )
+        if not any(a.content is not None for a in attachments):
+            continue
+        counts["checked"] += 1
+        outcome = detect_invoices(session, email, attachments, extract=extract)
+        if outcome is not None:
+            counts["relabelled"] += 1
+            counts["invoices"] += outcome.invoices
+        session.commit()
+    return counts
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--all",
         action="store_true",
         help="Re-extract every invoice email, not only those without invoices",
+    )
+    parser.add_argument(
+        "--detect",
+        action="store_true",
+        help="Also look for invoices in the PDFs of mail not labelled as an invoice",
     )
     args = parser.parse_args(argv)
     configure_logging()
@@ -67,7 +100,10 @@ def main(argv: list[str] | None = None) -> int:
             def work() -> dict[str, Any]:
                 session = open_session()
                 try:
-                    return backfill(session, everything=args.all)
+                    counts = backfill(session, everything=args.all)
+                    if args.detect:
+                        counts |= {f"detect_{k}": v for k, v in detect(session).items()}
+                    return counts
                 finally:
                     session.close()
 

@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database.models.email.attachment import EmailAttachment
-from app.database.models.email.message import EmailMessage
+from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.finance.invoice import Invoice, InvoiceStatus
 from app.finance.invoice_checks import (
     FIELD_NAMES,
@@ -35,7 +35,9 @@ INSTRUCTIONS = (
     "Extract every invoice in this email and its attached PDF files. "
     "One email can hold several invoices, usually one per PDF; return one entry each. "
     "Copy values exactly as printed; leave a field empty when the invoice does not show it. "
-    "The payee is whoever is to be paid. The reference is the text to put on the transfer "
+    "The payee is the account holder named with the bank details (Kontoinhaber, Empfänger, "
+    "account name), since the bank checks that name against the IBAN; use the issuer's name "
+    "only when the bank details name no one. The reference is the text to put on the transfer "
     "(Verwendungszweck), if the invoice asks for one. "
     "Return nothing for emails that hold no invoice, such as receipts already paid."
 )
@@ -44,7 +46,13 @@ PDF_MEDIA_TYPE = "application/pdf"
 
 
 class ExtractedInvoice(BaseModel):
-    payee: str | None = Field(default=None, description="Name of who is to be paid.")
+    payee: str | None = Field(
+        default=None,
+        description=(
+            "Account holder of the IBAN, as printed with the bank details; "
+            "the issuer's name only when the bank details name no one."
+        ),
+    )
     iban: str | None = Field(default=None, description="The payee's IBAN.")
     bic: str | None = Field(default=None, description="The payee's BIC, if shown.")
     amount: float | None = Field(
@@ -143,6 +151,38 @@ def extract_invoices(
             session.add(row)
         _apply(row, _clean(item), _attachment_for(item, pdfs))
     _replace_unedited(session, existing, extracted)
+    return InvoiceOutcome(invoices=len(extracted), failed=False)
+
+
+def detect_invoices(
+    session: Session,
+    email: EmailMessage,
+    attachments: list[EmailAttachment],
+    *,
+    extract: Extractor | None = None,
+) -> InvoiceOutcome | None:
+    """For mail not labelled as an invoice: if a stored PDF holds one, relabel and store it.
+
+    The labeller sees only filenames and text, so an invoice in `document.pdf` under a
+    short note would be missed. Nothing is stored when no invoice is found.
+    """
+    pdfs = [attachment for attachment in attachments if _is_stored_pdf(attachment)]
+    if not pdfs:
+        return None
+    source = InvoiceSource(
+        subject=email.subject,
+        body=email.body,
+        files=[(pdf.filename, pdf.content) for pdf in pdfs if pdf.content is not None],
+    )
+    extracted = _call_with_retry(extract or extract_with_model, source, email.id)
+    if not extracted:
+        return None
+    email.label = EmailLabel.INVOICE
+    for position, item in enumerate(extracted):
+        row = Invoice(email_id=email.id, position=position, edited_fields=[])
+        session.add(row)
+        _apply(row, _clean(item), _attachment_for(item, pdfs))
+    log.info("invoice_detected_in_pdf", email_id=str(email.id), invoices=len(extracted))
     return InvoiceOutcome(invoices=len(extracted), failed=False)
 
 

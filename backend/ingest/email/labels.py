@@ -99,6 +99,16 @@ def label(
     return EmailLabel.OTHER
 
 
+# "Invoice" in the languages the owner's mail arrives in.
+_INVOICE_WORDS = ("rechnung", "invoice", "faktura", "factura", "facture", "számla", "szamla")
+
+
+def invoice_filename(name: str) -> bool:
+    """A PDF named as an invoice, e.g. `Rechnung_2026-10.pdf`; the PDF itself is not read."""
+    lowered = name.lower()
+    return lowered.endswith(".pdf") and any(word in lowered for word in _INVOICE_WORDS)
+
+
 def label_message(
     parsed: ParsedMessage,
     *,
@@ -107,6 +117,8 @@ def label_message(
     source = newsletter_match(parsed.from_address)
     if source is not None:
         return EmailLabel.AI_NEWSLETTER, source
+    if any(invoice_filename(name) for name in parsed.attachment_filenames):
+        return EmailLabel.INVOICE, None
     return label(parsed, classifier=classifier), None
 
 

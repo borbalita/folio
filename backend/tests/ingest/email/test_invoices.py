@@ -435,3 +435,69 @@ def test_reextraction_keeps_a_paid_invoice_paid() -> None:
 
     assert paid.status == "paid"
     assert paid.issues == ["missing_iban"]
+
+
+def test_payee_is_the_account_holder_from_the_bank_details() -> None:
+    from ingest.email.invoices import INSTRUCTIONS
+
+    payee = ExtractedInvoice.model_fields["payee"].description or ""
+    for text in (INSTRUCTIONS, payee):
+        assert "account holder" in text.lower()
+        assert "bank details" in text.lower()
+
+
+def test_detection_labels_an_email_whose_pdf_holds_an_invoice() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+    pdf = _pdf(email, "document.pdf")
+    session = _Session()
+
+    outcome = detect_invoices(session, email, [pdf], extract=lambda _s: [_invoice()])
+
+    assert email.label == EmailLabel.INVOICE
+    assert outcome is not None and outcome.invoices == 1
+    [row] = _rows(session)
+    assert (row.status, row.attachment_id) == ("open", pdf.id)
+
+
+def test_detection_leaves_an_email_without_an_invoice_alone() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+    session = _Session()
+
+    outcome = detect_invoices(session, email, [_pdf(email, "agb.pdf")], extract=lambda _s: [])
+
+    assert outcome is None
+    assert email.label == EmailLabel.OTHER
+    assert session.invoices == []
+
+
+def test_detection_skips_emails_without_a_stored_pdf() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+
+    def fail(_source: InvoiceSource) -> list[ExtractedInvoice]:
+        raise AssertionError("no PDF, no call")
+
+    assert detect_invoices(_Session(), email, [], extract=fail) is None
+
+
+def test_detection_after_two_failures_stores_nothing() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+
+    def broken(_source: InvoiceSource) -> list[ExtractedInvoice]:
+        raise UnexpectedModelBehavior("bad output")
+
+    session = _Session()
+    assert detect_invoices(session, email, [_pdf(email, "doc.pdf")], extract=broken) is None
+    assert email.label == EmailLabel.OTHER
+    assert session.invoices == []

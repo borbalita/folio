@@ -20,7 +20,7 @@ from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.user import User
 from ingest.email.invoices import Extractor as InvoiceExtractor
-from ingest.email.invoices import InvoiceOutcome, extract_invoices
+from ingest.email.invoices import InvoiceOutcome, detect_invoices, extract_invoices
 from ingest.email.labels import label_message
 from ingest.email.news import edition_date, embed_text, extract_news_items
 from ingest.email.parse import ParsedMessage, content_hash
@@ -253,6 +253,12 @@ def _store_one(
         invoices = extract_invoices(
             session, stored_row, attachments, extract=invoice_extract
         )
+    elif label != EmailLabel.AI_NEWSLETTER and saved:
+        # The labeller never reads PDFs; an invoice in one turns the email into an invoice.
+        session.flush()
+        invoices = detect_invoices(session, stored_row, attachments, extract=invoice_extract)
+        if invoices is not None:
+            label = EmailLabel.INVOICE
     return action, label, saved, skipped, news_count, edition, invoices
 
 
