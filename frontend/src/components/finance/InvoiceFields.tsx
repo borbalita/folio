@@ -132,7 +132,7 @@ export function InvoiceFields({ invoice, onChange }: Props) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {invoice.status === 'open' ? (
-          // Pay what was saved: unsaved edits would not reach the payment.
+          // Pay and mark only what was saved: unsaved edits would be lost.
           <PayInvoices invoiceIds={[invoice.id]} label="Pay" disabled={edited} />
         ) : null}
         <Button type="submit" size="sm" variant={edited ? 'default' : 'outline'} disabled={saving}>
@@ -143,7 +143,7 @@ export function InvoiceFields({ invoice, onChange }: Props) {
             type="button"
             size="sm"
             variant="outline"
-            disabled={saving}
+            disabled={saving || edited}
             onClick={() => setPaid(false)}
           >
             Mark unpaid
@@ -153,7 +153,7 @@ export function InvoiceFields({ invoice, onChange }: Props) {
             type="button"
             size="sm"
             variant="outline"
-            disabled={saving}
+            disabled={saving || edited}
             onClick={() => setPaid(true)}
           >
             Mark paid
