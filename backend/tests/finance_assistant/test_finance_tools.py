@@ -4,6 +4,7 @@ import uuid
 from datetime import date
 
 import pytest
+from fastapi import HTTPException
 
 from app.database import bank_connections, invoices, payments, transactions
 from app.finance_assistant import agent, tools
@@ -140,3 +141,44 @@ def test_no_tool_can_approve() -> None:
         "list_accounts",
         "prepare_payments",
     }
+
+
+def test_unknown_invoice_is_told_to_the_model_not_raised(monkeypatch: pytest.MonkeyPatch) -> None:
+    def missing(invoice_id, mailbox_ids):
+        raise HTTPException(404, "Invoice not found")
+
+    monkeypatch.setattr(invoices, "get_invoice_item", missing)
+    d = deps()
+    unknown = uuid.uuid4()
+
+    text = tools.execute_get_invoice(d, unknown)
+
+    assert text == f"Invoice {unknown} was not found. List the invoices to get valid ids."
+    assert d.seen_invoice_ids == set()
+
+
+def test_prepare_payments_with_a_bad_id_is_told_to_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    def refuse(invoice_ids, mailbox_ids):
+        raise HTTPException(404, "Invoice not found")
+
+    monkeypatch.setattr(payments, "create_drafts", refuse)
+    d = deps()
+
+    text = tools.execute_prepare_payments(d, [uuid.uuid4()])
+
+    assert "No payments were prepared" in text
+    assert "await" not in text.lower()
+    assert d.seen_draft_ids == set()
+
+
+def test_all_skipped_says_nothing_awaits_approval(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        payments,
+        "create_drafts",
+        lambda invoice_ids, mailbox_ids: {"drafts": [], "skipped": [{"invoiceId": PAID_ID, "reason": "not_open"}]},
+    )
+
+    text = tools.execute_prepare_payments(deps(), [uuid.UUID(PAID_ID)])
+
+    assert "No payments were prepared." in text
+    assert "await" not in text.lower()

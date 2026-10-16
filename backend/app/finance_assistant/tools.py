@@ -7,6 +7,7 @@ from datetime import date
 from typing import Any, Literal
 from uuid import UUID
 
+from fastapi import HTTPException
 from pydantic_ai import RunContext
 
 from app.database import bank_connections, invoices, payments, transactions
@@ -48,7 +49,11 @@ def execute_list_invoices(deps: FinanceAgentDeps, status: InvoiceStatus | None) 
 
 
 def execute_get_invoice(deps: FinanceAgentDeps, invoice_id: UUID) -> str:
-    row = invoices.get_invoice_item(invoice_id, deps.mailbox_ids)
+    # The model can pass a mistyped or invented id; tell it, rather than failing the turn.
+    try:
+        row = invoices.get_invoice_item(invoice_id, deps.mailbox_ids)
+    except HTTPException:
+        return f"Invoice {invoice_id} was not found. List the invoices to get valid ids."
     deps.seen_invoice_ids.add(UUID(row["id"]))
     return f"{_invoice_line(row)}, IBAN {row.get('iban') or 'unknown'}"
 
@@ -86,7 +91,13 @@ def execute_list_accounts(deps: FinanceAgentDeps) -> str:
 
 
 def execute_prepare_payments(deps: FinanceAgentDeps, invoice_ids: list[UUID]) -> str:
-    result = payments.create_drafts(invoice_ids, deps.mailbox_ids)
+    try:
+        result = payments.create_drafts(invoice_ids, deps.mailbox_ids)
+    except HTTPException:
+        return (
+            "No payments were prepared: at least one invoice id was not found. "
+            "List the open invoices and use their ids."
+        )
     deps.seen_draft_ids.update(UUID(draft["id"]) for draft in result["drafts"])
     lines = [
         f"Prepared [{draft['id']}] for invoice {draft['invoiceId']}: "
@@ -96,7 +107,10 @@ def execute_prepare_payments(deps: FinanceAgentDeps, invoice_ids: list[UUID]) ->
     lines += [
         f"Skipped invoice {skip['invoiceId']}: {skip['reason']}" for skip in result["skipped"]
     ]
-    lines.append("These payments await the owner's approval on their cards.")
+    if result["drafts"]:
+        lines.append("These payments await the owner's approval on their cards.")
+    else:
+        lines.append("No payments were prepared.")
     return "\n".join(lines)
 
 
