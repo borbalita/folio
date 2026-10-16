@@ -2,7 +2,7 @@ import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { ChatIcon } from '@/components/chat/ChatIcon'
+import { AgentIcon } from '@/components/AgentIcon'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { AGENTS, type AgentInfo } from '@/lib/agents'
@@ -33,7 +33,6 @@ function AgentCard({
   disabled: boolean
   onOpen: () => void
 }) {
-  const Icon = agent.icon
   return (
     <button
       type="button"
@@ -42,9 +41,7 @@ function AgentCard({
       className="flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-150 outline-none hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       <span className="flex items-start justify-between">
-        <span className="flex size-11 items-center justify-center rounded-lg bg-ring/12 text-ring">
-          <Icon className="size-5" aria-hidden />
-        </span>
+        <AgentIcon agent={agent} className="size-11 rounded-lg" />
         {opening ? (
           <LoaderCircle className="size-4 animate-spin text-muted-foreground" aria-label="Opening" />
         ) : null}
@@ -84,10 +81,7 @@ export function AgentPickerPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2">
-          <ChatIcon className="size-8" />
-          <span className="font-heading text-base font-semibold">Borbfolio</span>
-        </div>
+        <span className="font-heading text-base font-semibold">Borbfolio</span>
         <div className="flex items-center gap-2">
           <span className="hidden text-sm text-muted-foreground sm:inline">{email}</span>
           <Button

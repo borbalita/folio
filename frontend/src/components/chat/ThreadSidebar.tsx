@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router-dom'
 import { ChevronLeft, Plus } from 'lucide-react'
 
-import { ChatIcon } from '@/components/chat/ChatIcon'
+import { AgentIcon } from '@/components/AgentIcon'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -37,7 +37,7 @@ export function ThreadSidebar({
           aria-label={`${agent.title}. Back to all assistants`}
           className="group flex items-center gap-2 rounded-md p-1 outline-none hover:bg-sidebar-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <ChatIcon className="size-8" />
+          <AgentIcon agent={agent} />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{agent.title}</p>
             <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
