@@ -6,6 +6,7 @@
 ## Scope
 - Overview: invoices and extraction, bank sync and its limits, matching, QR payments, schedules, expiry handling, owner-only access and tracing, what plan 002 adds. Linked from `docs/README.md`.
 - The owner's hand test of real invoices and the other success criteria.
+- Checks moved here from 001/09 and 001/10: undoing an automatic match in the browser, the 90-day spot check of matches, and a QR-paid invoice turning paid after the next bank sync.
 
 ## Out of scope
 - New behaviour.

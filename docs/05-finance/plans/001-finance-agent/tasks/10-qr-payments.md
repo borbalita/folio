@@ -36,4 +36,4 @@ The owner selects open invoices, checks each payment against its invoice, and pa
 - A new draft replaces the invoice's open one: `test_a_new_draft_replaces_the_invoices_open_one`. Pass.
 - Approve refused for an invoice paid in the meantime: `test_approve_is_refused_when_the_invoice_was_paid_meanwhile`, `test_approve_is_refused_for_an_invoice_paid_in_the_meantime`. Pass.
 - Approve shows the QR code and copy buttons (browser): the owner prepared a payment for a real open invoice from N26, pressed Approve, and the QR and copy buttons showed beside the invoice PDF. Pass.
-- Real payment (manual): the owner scanned the QR in the N26 app and it filled the transfer (2026-10-16). **Pending:** the invoice turning paid after the next bank sync.
+- Real payment (manual): the owner scanned the QR in the N26 app and it filled the transfer (2026-10-16). **Moved to 001/13** at the owner's request (2026-10-16): the invoice turning paid after the next bank sync.
