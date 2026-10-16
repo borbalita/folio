@@ -18,12 +18,22 @@ from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.finance.invoice import Invoice
 from app.logging import configure_logging
 from app.observability import configure_tracing, shutdown_tracing
-from ingest.email.invoices import Extractor, detect_invoices, extract_invoices
+from ingest.email.invoices import (
+    Checker,
+    Extractor,
+    check_with_model,
+    detect_invoices,
+    extract_invoices,
+)
 from ingest.email.pipeline import open_session
 
 
 def backfill(
-    session: Session, *, everything: bool, extract: Extractor | None = None
+    session: Session,
+    *,
+    everything: bool,
+    extract: Extractor | None = None,
+    check: Checker = check_with_model,
 ) -> dict[str, Any]:
     """Extract emails that have no invoices yet, or all with `everything`. Owner edits survive."""
     extracted = set(session.scalars(select(Invoice.email_id)))
@@ -43,7 +53,7 @@ def backfill(
                 .order_by(EmailAttachment.filename)
             )
         )
-        outcome = extract_invoices(session, email, attachments, extract=extract)
+        outcome = extract_invoices(session, email, attachments, extract=extract, check=check)
         session.commit()
         counts["emails"] += 1
         counts["invoices"] += outcome.invoices
@@ -51,7 +61,12 @@ def backfill(
     return counts
 
 
-def detect(session: Session, *, extract: Extractor | None = None) -> dict[str, Any]:
+def detect(
+    session: Session,
+    *,
+    extract: Extractor | None = None,
+    check: Checker = check_with_model,
+) -> dict[str, Any]:
     """Look for invoices in the PDFs of stored mail the labeller did not call an invoice."""
     skip = {EmailLabel.INVOICE.value, EmailLabel.AI_NEWSLETTER.value}
     emails = session.scalars(
@@ -71,7 +86,7 @@ def detect(session: Session, *, extract: Extractor | None = None) -> dict[str, A
         if not any(a.content is not None for a in attachments):
             continue
         counts["checked"] += 1
-        outcome = detect_invoices(session, email, attachments, extract=extract)
+        outcome = detect_invoices(session, email, attachments, extract=extract, check=check)
         if outcome is not None:
             counts["relabelled"] += 1
             counts["invoices"] += outcome.invoices

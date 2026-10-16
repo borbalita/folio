@@ -501,3 +501,90 @@ def test_detection_after_two_failures_stores_nothing() -> None:
     assert detect_invoices(session, email, [_pdf(email, "doc.pdf")], extract=broken) is None
     assert email.label == EmailLabel.OTHER
     assert session.invoices == []
+
+
+def _must_not_extract(_source: InvoiceSource) -> list[ExtractedInvoice]:
+    raise AssertionError("extraction should not run")
+
+
+def test_invoice_email_the_check_rejects_is_not_extracted() -> None:
+    email = _email()
+    session = _Session()
+
+    outcome = extract_invoices(
+        session, email, [_pdf(email, "notice.pdf")], extract=_must_not_extract, check=lambda _s: False
+    )
+
+    # Shown as an invoice email that needs info, like "your bill is ready online".
+    [row] = _rows(session)
+    assert (row.status, row.issues) == ("needs_info", ["no_invoice_found"])
+    assert outcome.failed is False
+
+
+def test_invoice_email_the_check_accepts_is_extracted() -> None:
+    email = _email()
+    session = _Session()
+
+    extract_invoices(
+        session, email, [_pdf(email, "bill.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: True
+    )
+
+    [row] = _rows(session)
+    assert row.status == "open"
+
+
+def test_invoice_email_without_pdf_is_checked_from_its_text() -> None:
+    email = _email()
+    seen: list[InvoiceSource] = []
+
+    def check(source: InvoiceSource) -> bool:
+        seen.append(source)
+        return False
+
+    extract_invoices(_Session(), email, [], extract=_must_not_extract, check=check)
+
+    assert [(s.body, s.files) for s in seen] == [(email.body, [])]
+
+
+def test_a_failing_check_does_not_block_an_invoice_email() -> None:
+    email = _email()
+
+    def broken(_source: InvoiceSource) -> bool:
+        raise UnexpectedModelBehavior("bad output")
+
+    session = _Session()
+    extract_invoices(
+        session, email, [_pdf(email, "bill.pdf")], extract=lambda _s: [_invoice()], check=broken
+    )
+
+    assert [row.status for row in _rows(session)] == ["open"]
+
+
+def test_detection_extracts_only_after_the_check_says_yes() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+
+    assert detect_invoices(
+        _Session(), email, [_pdf(email, "agb.pdf")], extract=_must_not_extract, check=lambda _s: False
+    ) is None
+    outcome = detect_invoices(
+        _Session(), email, [_pdf(email, "doc.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: True
+    )
+    assert outcome is not None and email.label == EmailLabel.INVOICE
+
+
+def test_detection_with_a_failing_check_stores_nothing() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+
+    def broken(_source: InvoiceSource) -> bool:
+        raise UnexpectedModelBehavior("bad output")
+
+    assert detect_invoices(
+        _Session(), email, [_pdf(email, "doc.pdf")], extract=_must_not_extract, check=broken
+    ) is None
+    assert email.label == EmailLabel.OTHER

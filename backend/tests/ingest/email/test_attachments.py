@@ -49,6 +49,7 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
         ],
         classifier=lambda _prompt: "other",
         invoice_extract=lambda _source: [],
+        invoice_check=lambda _source: False,
     )
     stored = [row for row in session.added if isinstance(row, EmailAttachment)]
     by_name = {row.filename: row for row in stored}
@@ -132,6 +133,7 @@ def test_invoice_email_gets_its_invoices_extracted(
         ],
         classifier=lambda _prompt: "invoice",
         invoice_extract=extract,
+        invoice_check=lambda _source: True,
     )
 
     assert [source.files for source in seen] == [[("invoice.pdf", b"%PDF-1")]]
@@ -173,6 +175,7 @@ def test_other_email_is_not_sent_for_invoice_extraction(
         ],
         classifier=lambda _prompt: "other",
         invoice_extract=lambda _source: pytest.fail("not an invoice"),
+        invoice_check=lambda _source: pytest.fail("no PDF to check"),
     )
 
     assert summary.invoices == 0
@@ -202,6 +205,7 @@ def _ingest(session, parsed, extract):
         embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
         classifier=lambda _prompt: "other",
         invoice_extract=extract,
+        invoice_check=lambda _source: True,
     )
 
 
@@ -238,4 +242,25 @@ def test_other_mail_whose_pdf_holds_no_invoice_stays_other(monkeypatch) -> None:
     email = next(row for row in session.added if getattr(row, "message_id", None))
     assert email.label == EmailLabel.OTHER
     assert not [row for row in session.added if isinstance(row, Invoice)]
+    assert summary.invoices == 0
+
+
+def test_check_saying_no_keeps_other_mail_from_extraction(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com")
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", uuid.uuid4()
+    )
+    session = _MemorySession()
+
+    summary = ingest_fetched(
+        session,
+        [_other_with_pdf()],
+        uidvalidity=1,
+        highest_uid=7,
+        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        classifier=lambda _prompt: "other",
+        invoice_extract=lambda _source: pytest.fail("the check said no"),
+        invoice_check=lambda _source: False,
+    )
+
     assert summary.invoices == 0

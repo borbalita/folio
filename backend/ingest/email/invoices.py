@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent, BinaryContent
 from pydantic_ai.exceptions import AgentRunError
 from pydantic_ai.models import Model
-from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.models.openai import OpenAIResponsesModel, OpenAIResponsesModelSettings
 from pydantic_ai.providers.openai import OpenAIProvider
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -42,7 +42,20 @@ INSTRUCTIONS = (
     "Return nothing for emails that hold no invoice, such as receipts already paid."
 )
 
+CHECK_INSTRUCTIONS = (
+    "Decide whether this email or one of its attached files holds an invoice or bill that "
+    "asks the reader to pay an amount. Answer no for receipts of payments already made, "
+    "order or booking confirmations, account statements, newsletters, terms and conditions, "
+    "and notices that an invoice is ready elsewhere without showing it."
+)
+
 PDF_MEDIA_TYPE = "application/pdf"
+
+
+class InvoiceCheck(BaseModel):
+    is_invoice: bool = Field(
+        description="True when the email or a file holds an invoice that asks for payment."
+    )
 
 
 class ExtractedInvoice(BaseModel):
@@ -90,6 +103,7 @@ class InvoiceOutcome:
 
 
 Extractor = Callable[[InvoiceSource], list[ExtractedInvoice]]
+Checker = Callable[[InvoiceSource], bool]
 
 
 def _model() -> Model:
@@ -97,6 +111,14 @@ def _model() -> Model:
         settings.invoice_extraction_model,
         provider=OpenAIProvider(api_key=settings.openai_api_key),
     )
+
+
+def _prompt(source: InvoiceSource) -> list[str | BinaryContent]:
+    prompt: list[str | BinaryContent] = [f"Subject: {source.subject}\n\n{source.body}"]
+    for number, (filename, content) in enumerate(source.files, start=1):
+        prompt.append(f"File {number}: {filename}")
+        prompt.append(BinaryContent(data=content, media_type=PDF_MEDIA_TYPE))
+    return prompt
 
 
 def extract_with_model(source: InvoiceSource) -> list[ExtractedInvoice]:
@@ -107,11 +129,25 @@ def extract_with_model(source: InvoiceSource) -> list[ExtractedInvoice]:
         instructions=INSTRUCTIONS,
         output_type=InvoiceExtraction,
     )
-    prompt: list[str | BinaryContent] = [f"Subject: {source.subject}\n\n{source.body}"]
-    for number, (filename, content) in enumerate(source.files, start=1):
-        prompt.append(f"File {number}: {filename}")
-        prompt.append(BinaryContent(data=content, media_type=PDF_MEDIA_TYPE))
-    return agent.run_sync(prompt).output.invoices
+    return agent.run_sync(_prompt(source)).output.invoices
+
+
+def check_with_model(source: InvoiceSource) -> bool:
+    """The cheap model reads the same email and PDFs and only says yes or no."""
+    effort = settings.invoice_check_reasoning_effort
+    agent = Agent(
+        OpenAIResponsesModel(
+            settings.invoice_check_model,
+            provider=OpenAIProvider(api_key=settings.openai_api_key),
+        ),
+        name="invoice_check",
+        instructions=CHECK_INSTRUCTIONS,
+        output_type=InvoiceCheck,
+        model_settings=(
+            OpenAIResponsesModelSettings(openai_reasoning_effort=effort) if effort else None
+        ),
+    )
+    return agent.run_sync(_prompt(source)).output.is_invoice
 
 
 def extract_invoices(
@@ -120,8 +156,13 @@ def extract_invoices(
     attachments: list[EmailAttachment],
     *,
     extract: Extractor | None = None,
+    check: Checker | None = None,
 ) -> InvoiceOutcome:
-    """Extract, check and store this email's invoices. Fields the owner edited are kept."""
+    """Extract, check and store this email's invoices. Fields the owner edited are kept.
+
+    With `check`, a cheap model first decides whether there is an invoice to pay at all;
+    a no stores the email as `no_invoice_found`. A failed check extracts anyway.
+    """
     pdfs = [attachment for attachment in attachments if _is_stored_pdf(attachment)]
     source = InvoiceSource(
         subject=email.subject,
@@ -135,6 +176,8 @@ def extract_invoices(
             .order_by(Invoice.position)
         )
     )
+    if check is not None and _check_with_retry(check, source, email.id) is False:
+        return _no_invoice_found(session, email.id, existing)
     extracted = _call_with_retry(extract or extract_with_model, source, email.id)
     if extracted is None:
         if not existing:
@@ -160,6 +203,7 @@ def detect_invoices(
     attachments: list[EmailAttachment],
     *,
     extract: Extractor | None = None,
+    check: Checker | None = None,
 ) -> InvoiceOutcome | None:
     """For mail not labelled as an invoice: if a stored PDF holds one, relabel and store it.
 
@@ -174,6 +218,9 @@ def detect_invoices(
         body=email.body,
         files=[(pdf.filename, pdf.content) for pdf in pdfs if pdf.content is not None],
     )
+    # Only a clear yes from the check spends the extraction call here.
+    if check is not None and _check_with_retry(check, source, email.id) is not True:
+        return None
     extracted = _call_with_retry(extract or extract_with_model, source, email.id)
     if not extracted:
         return None
@@ -184,6 +231,23 @@ def detect_invoices(
         _apply(row, _clean(item), _attachment_for(item, pdfs))
     log.info("invoice_detected_in_pdf", email_id=str(email.id), invoices=len(extracted))
     return InvoiceOutcome(invoices=len(extracted), failed=False)
+
+
+def _check_with_retry(
+    check: Checker, source: InvoiceSource, email_id: uuid.UUID
+) -> bool | None:
+    for attempt in (1, 2):
+        try:
+            found = check(source)
+        except AgentRunError as exc:
+            error = type(exc).__name__
+            if attempt == 1:
+                log.info("invoice_check_retry", email_id=str(email_id), error=error)
+            continue
+        log.info("invoice_checked", email_id=str(email_id), is_invoice=found)
+        return found
+    log.warning("invoice_check_failed", email_id=str(email_id), error=error)
+    return None
 
 
 def _call_with_retry(

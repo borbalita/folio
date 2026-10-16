@@ -79,7 +79,7 @@ def test_default_run_extracts_only_emails_without_invoices() -> None:
         assert source.files == [("r.pdf", b"%PDF-1")]
         return [ExtractedInvoice(payee="Stadtwerke", amount=5)]
 
-    counts = backfill(session, everything=False, extract=extract)  # type: ignore[arg-type]
+    counts = backfill(session, everything=False, extract=extract, check=lambda _s: True)  # type: ignore[arg-type]
 
     assert seen == ["todo"]
     assert counts == {"emails": 1, "invoices": 1, "invoice_failures": 0}
@@ -106,6 +106,7 @@ def test_rerun_of_all_keeps_edited_fields() -> None:
     counts = backfill(
         session,  # type: ignore[arg-type]
         everything=True,
+        check=lambda _source: True,
         extract=lambda _source: [
             ExtractedInvoice(payee="Model", iban="XX00", amount=1, currency="USD")
         ],
@@ -148,7 +149,7 @@ def test_detect_relabels_stored_mail_whose_pdf_holds_an_invoice() -> None:
         seen.append(source.subject)
         return [ExtractedInvoice(payee="Praxis", amount=45.0)] if source.subject == "praxis" else []
 
-    counts = detect(session, extract=extract)
+    counts = detect(session, extract=extract, check=lambda _s: True)
 
     # Invoices and AI newsletters are never sent; only mail with a PDF is checked.
     assert seen == ["praxis", "letter"]
@@ -163,6 +164,6 @@ def test_detect_skips_mail_whose_pdfs_were_not_stored() -> None:
     big.label = EmailLabel.OTHER
     session = _Session([big], [_pdf(big, content=None)], [])
 
-    counts = detect(session, extract=lambda _s: [ExtractedInvoice(payee="X", amount=1.0)])
+    counts = detect(session, check=lambda _s: True, extract=lambda _s: [ExtractedInvoice(payee="X", amount=1.0)])
 
     assert counts == {"checked": 0, "relabelled": 0, "invoices": 0}
