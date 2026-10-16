@@ -62,8 +62,9 @@ def format_error(message: str) -> str:
     return _sse({"type": "error", "errorText": message})
 
 
-def format_citation_part(payload: dict) -> str:
-    return _sse({"type": "data-citation", "data": payload})
+def format_data_part(part: dict) -> str:
+    """A data part as given, e.g. {"type": "data-citation", "data": {...}}."""
+    return _sse(part)
 
 
 def format_status_part(label: str) -> str:
@@ -91,11 +92,11 @@ async def iter_canned_text_stream(text: str) -> AsyncIterator[str]:
 
 async def iter_grounded_stream(
     text: str,
-    citations: list[dict],
+    parts: list[dict],
     *,
     include_envelope: bool = True,
 ) -> AsyncIterator[str]:
-    """Yield SSE frames for a grounded answer, then citation parts."""
+    """Yield SSE frames for a grounded answer, then its data parts (citations, cards)."""
     if include_envelope:
         yield format_stream_start()
         yield format_start_step()
@@ -103,8 +104,8 @@ async def iter_grounded_stream(
     for piece in chunk_text(text):
         yield format_text_delta(piece)
     yield format_text_end()
-    for citation in citations:
-        yield format_citation_part(citation)
+    for part in parts:
+        yield format_data_part(part)
     yield format_finish_step()
     yield format_stream_finish()
     yield format_done()
