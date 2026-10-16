@@ -1,4 +1,4 @@
-import { ArrowRight, LoaderCircle } from 'lucide-react'
+import { LoaderCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -39,30 +39,19 @@ function AgentCard({
       type="button"
       disabled={disabled}
       onClick={onOpen}
-      className="group flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-150 outline-none hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+      className="flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-[transform,box-shadow,border-color] duration-150 outline-none hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-60 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
-      <span className="flex size-11 items-center justify-center rounded-lg bg-ring/12 text-ring">
-        <Icon className="size-5" aria-hidden />
+      <span className="flex items-start justify-between">
+        <span className="flex size-11 items-center justify-center rounded-lg bg-ring/12 text-ring">
+          <Icon className="size-5" aria-hidden />
+        </span>
+        {opening ? (
+          <LoaderCircle className="size-4 animate-spin text-muted-foreground" aria-label="Opening" />
+        ) : null}
       </span>
       <span className="flex flex-1 flex-col gap-1">
         <span className="font-heading text-base font-semibold">{agent.title}</span>
         <span className="text-sm text-muted-foreground">{agent.description}</span>
-      </span>
-      <span className="flex items-center gap-1.5 text-sm font-medium text-foreground/80 group-hover:text-foreground">
-        {opening ? (
-          <>
-            <LoaderCircle className="size-4 animate-spin" aria-hidden />
-            Opening…
-          </>
-        ) : (
-          <>
-            Open
-            <ArrowRight
-              className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
-              aria-hidden
-            />
-          </>
-        )}
       </span>
     </button>
   )
