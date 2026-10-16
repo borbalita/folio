@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth'
 import { expiryMessage } from '@/lib/reconnect'
 
 const SECTIONS = [
+  { to: '/finance/chat', label: 'Chat' },
   { to: '/finance/invoices', label: 'Invoices' },
   { to: '/finance/transactions', label: 'Transactions' },
   { to: '/finance/accounts', label: 'Accounts' },
@@ -87,7 +88,14 @@ export function FinanceLayout() {
           <ThemeToggle />
         </div>
       </aside>
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto p-6">
+      <main
+        className={
+          // The chat fills the pane and scrolls its own message list.
+          pathname.startsWith('/finance/chat')
+            ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+            : 'flex min-h-0 min-w-0 flex-1 flex-col overflow-auto p-6'
+        }
+      >
         {warnings.length > 0 ? (
           <div
             role="status"

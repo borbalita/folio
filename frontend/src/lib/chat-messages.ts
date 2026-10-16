@@ -53,7 +53,16 @@ export type StatusData = {
   label: string
 }
 
-export type CopilotUIMessage = UIMessage<unknown, { citation: CitationData; status: StatusData }>
+/** Invoices or payment drafts an answer points at; the card loads their current state. */
+export type FinanceCardData = {
+  kind: 'invoices' | 'payments'
+  ids: string[]
+}
+
+export type CopilotUIMessage = UIMessage<
+  unknown,
+  { citation: CitationData; status: StatusData; 'finance-card': FinanceCardData }
+>
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -72,6 +81,15 @@ function isCitationData(value: unknown): value is CitationData {
   return value.excerpt === undefined || value.excerpt === null || typeof value.excerpt === 'string'
 }
 
+function isFinanceCardData(value: unknown): value is FinanceCardData {
+  return (
+    isRecord(value) &&
+    (value.kind === 'invoices' || value.kind === 'payments') &&
+    Array.isArray(value.ids) &&
+    value.ids.every((id) => typeof id === 'string')
+  )
+}
+
 function messagePartsFromMessage(message: unknown): CopilotUIMessage['parts'] {
   if (!isRecord(message)) {
     return [{ type: 'text', text: '' }]
@@ -86,6 +104,9 @@ function messagePartsFromMessage(message: unknown): CopilotUIMessage['parts'] {
       }
       if (isRecord(part) && part.type === 'data-citation' && isCitationData(part.data)) {
         kept.push({ type: 'data-citation', data: part.data })
+      }
+      if (isRecord(part) && part.type === 'data-finance-card' && isFinanceCardData(part.data)) {
+        kept.push({ type: 'data-finance-card', data: part.data })
       }
     }
     if (kept.length > 0) {
@@ -133,6 +154,12 @@ export function textOf(message: CopilotUIMessage): string {
 export function citationsOf(message: CopilotUIMessage): CitationData[] {
   return message.parts
     .filter((part) => part.type === 'data-citation')
+    .map((part) => part.data)
+}
+
+export function financeCardsOf(message: CopilotUIMessage): FinanceCardData[] {
+  return message.parts
+    .filter((part) => part.type === 'data-finance-card')
     .map((part) => part.data)
 }
 
