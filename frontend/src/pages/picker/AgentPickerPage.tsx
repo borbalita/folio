@@ -11,17 +11,6 @@ import { useAuth } from '@/lib/auth'
 import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
-function greeting(now: Date): string {
-  const hour = now.getHours()
-  if (hour < 12) {
-    return 'Good morning'
-  }
-  if (hour < 18) {
-    return 'Good afternoon'
-  }
-  return 'Good evening'
-}
-
 function AgentCard({
   agent,
   opening,
@@ -80,8 +69,7 @@ export function AgentPickerPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <span className="font-heading text-base font-semibold">Borbfolio</span>
+      <header className="flex items-center justify-end gap-4 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2">
           <span className="hidden text-sm text-muted-foreground sm:inline">{email}</span>
           <Button
@@ -98,7 +86,7 @@ export function AgentPickerPage() {
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pt-6 pb-16 sm:px-6">
         <div className="flex max-w-xl flex-col items-center gap-2 text-center">
           <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
-            {greeting(new Date())}
+            Welcome to Borbfolio
           </h1>
           <p className="text-sm text-muted-foreground sm:text-base">
             Which assistant do you want to work with?
