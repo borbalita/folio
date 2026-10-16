@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-ai[typesafe]==2.46.0",
     "pydantic-settings==2.14.2",
     "pyjwt==2.13.0",
+    "segno==1.6.6",
     "sqlalchemy==2.0.51",
     "structlog==26.1.0",
     "supabase==2.31.0",

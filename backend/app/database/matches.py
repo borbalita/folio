@@ -22,6 +22,7 @@ from app.database.models.finance.invoice_match import (
     MatchStatus,
 )
 from app.database.models.finance.transaction import Transaction
+from app.database.payments import complete_for_invoices
 from app.finance.invoice_edits import mark_matched, set_paid
 from app.finance.matching import Debit, InvoiceFacts, Proposal, propose
 
@@ -141,6 +142,7 @@ def match_for_user(user_id: uuid.UUID, now: datetime | None = None) -> dict[str,
         ).all()
         existing = {(m.invoice_id, m.transaction_id): m for m in rows}
         taken = {m.transaction_id for m in rows if m.status == MatchStatus.LINKED}
+        paid: list[uuid.UUID] = []
         for row, fact in facts:
             rejected = {
                 tx_id
@@ -154,6 +156,9 @@ def match_for_user(user_id: uuid.UUID, now: datetime | None = None) -> dict[str,
             counts["linked"] += linked
             counts["suggested"] += suggested
             taken.update(p.transaction_id for p in proposals if p.status == "linked")
+            if linked:
+                paid.append(row.id)
+        complete_for_invoices(session, paid)
         session.commit()
     return counts
 
@@ -202,6 +207,7 @@ def confirm(match_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> uuid.UUID:
                 | (InvoiceMatch.transaction_id == match.transaction_id),
             )
         )
+        complete_for_invoices(session, [invoice.id])
         session.commit()
         return invoice.id
 

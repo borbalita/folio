@@ -11,16 +11,24 @@ interface Props {
   today: string
   selected: Set<string>
   onToggle: (id: string, checked: boolean) => void
+  onToggleAll: (checked: boolean) => void
 }
 
-export function InvoiceList({ invoices, today, selected, onToggle }: Props) {
+export function InvoiceList({ invoices, today, selected, onToggle, onToggleAll }: Props) {
+  const chosen = invoices.filter((invoice) => selected.has(invoice.id)).length
+  const all = chosen > 0 && chosen === invoices.length
   return (
     <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-muted-foreground">
           <tr className="border-b border-border">
             <th className="w-8 px-3 py-2">
-              <span className="sr-only">Select</span>
+              <Checkbox
+                aria-label="Select all shown invoices"
+                checked={all}
+                indeterminate={chosen > 0 && !all}
+                onCheckedChange={(checked) => onToggleAll(checked)}
+              />
             </th>
             <th className="px-3 py-2 font-medium">Payee</th>
             <th className="px-3 py-2 font-medium">Invoice no.</th>

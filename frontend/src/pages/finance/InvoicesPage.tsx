@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { InvoiceFilters } from '@/components/finance/InvoiceFilters'
 import { InvoiceList } from '@/components/finance/InvoiceList'
+import { PayInvoices } from '@/components/finance/PayInvoices'
 import { Button } from '@/components/ui/button'
 import { api, type InvoiceRow } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
@@ -61,6 +62,10 @@ export function InvoicesPage() {
   const shown = useMemo(() => (all ? visible(all, filters, today) : []), [all, filters, today])
   const chosen = shown.filter((invoice) => selected.has(invoice.id))
 
+  function toggleAll(checked: boolean) {
+    setSelected(checked ? new Set(shown.map((invoice) => invoice.id)) : new Set())
+  }
+
   function toggle(id: string, checked: boolean) {
     setSelected((current) => {
       const next = new Set(current)
@@ -100,13 +105,21 @@ export function InvoicesPage() {
     }
   }
 
+  const openChosen = chosen.filter((invoice) => invoice.status === 'open')
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4">
       <h1 className="text-lg font-semibold">Invoices</h1>
       <InvoiceFilters filters={filters} onChange={setFilters} />
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <PayInvoices
+          invoiceIds={openChosen.map((invoice) => invoice.id)}
+          label="Pay selected"
+          skipped={chosen.length - openChosen.length}
+        />
         <Button
           size="sm"
+          variant="outline"
           disabled={saving || chosen.length === 0}
           onClick={() => void markPaid(true)}
         >
@@ -133,7 +146,13 @@ export function InvoicesPage() {
         <p className="text-sm text-muted-foreground">No invoices match.</p>
       ) : null}
       {shown.length > 0 ? (
-        <InvoiceList invoices={shown} today={today} selected={selected} onToggle={toggle} />
+        <InvoiceList
+          invoices={shown}
+          today={today}
+          selected={selected}
+          onToggle={toggle}
+          onToggleAll={toggleAll}
+        />
       ) : null}
     </div>
   )

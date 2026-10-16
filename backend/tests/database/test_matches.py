@@ -108,7 +108,7 @@ def _owned_session(match: InvoiceMatch, invoice: Invoice, mailbox: uuid.UUID) ->
     )
     free = MagicMock()
     free.first.return_value = None
-    session.execute.side_effect = [owned, free, MagicMock()]
+    session.execute.side_effect = [owned, free, MagicMock(), MagicMock()]
     return session
 
 
@@ -159,9 +159,16 @@ def test_confirming_a_suggestion_links_it_as_the_owner(monkeypatch) -> None:
     session = _owned_session(match, invoice, OWN)
     _patch(monkeypatch, session)
 
+    completed: list[list[uuid.UUID]] = []
+    monkeypatch.setattr(
+        matches, "complete_for_invoices", lambda session, ids: completed.append(ids)
+    )
+
     matches.confirm(match.id, [OWN])
 
     assert (match.status, match.source) == ("linked", "owner")
+    # An approved QR payment for this invoice is now done.
+    assert completed == [[invoice.id]]
     assert (invoice.status, invoice.paid_by) == ("paid", "match")
     session.commit.assert_called_once()
 
