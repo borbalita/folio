@@ -14,6 +14,12 @@ from app.database import bank_connections, invoices, payments, transactions
 from app.finance_assistant.deps import FinanceAgentDeps
 
 LOOKING = "Looking at your finances"
+SKIP_REASONS = {
+    "not_open": "not open (paid, or it lacks payment data)",
+    "already_approved": (
+        "a payment is already approved and waits for the bank; it turns paid once matched"
+    ),
+}
 InvoiceStatus = Literal["open", "needs_info", "paid"]
 
 
@@ -105,7 +111,8 @@ def execute_prepare_payments(deps: FinanceAgentDeps, invoice_ids: list[UUID]) ->
         for draft in result["drafts"]
     ]
     lines += [
-        f"Skipped invoice {skip['invoiceId']}: {skip['reason']}" for skip in result["skipped"]
+        f"Skipped invoice {skip['invoiceId']}: {SKIP_REASONS.get(skip['reason'], skip['reason'])}"
+        for skip in result["skipped"]
     ]
     if result["drafts"]:
         lines.append("These payments await the owner's approval on their cards.")

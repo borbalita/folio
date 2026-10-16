@@ -61,7 +61,8 @@ def test_a_new_draft_replaces_the_invoices_open_one(monkeypatch) -> None:
     cancel = _sql(session.execute.call_args_list[1].args[0])
     assert cancel.startswith("UPDATE payment_drafts SET status='cancelled'")
     assert str(invoice.id) in cancel
-    assert "status IN ('draft', 'approved')" in cancel
+    # Only unapproved drafts are replaced; an approved one may already have been paid.
+    assert "payment_drafts.status = 'draft'" in cancel
     [added] = [call.args[0] for call in session.add.call_args_list]
     assert isinstance(added, PaymentDraft)
     assert (added.status, added.amount, added.reference) == ("draft", Decimal("49.90"), "RE-1")
@@ -92,6 +93,26 @@ def test_paid_and_needs_info_invoices_are_skipped(monkeypatch) -> None:
         ],
     }
     session.add.assert_not_called()
+
+
+def test_an_invoice_with_an_approved_payment_is_left_alone(monkeypatch) -> None:
+    approved, fresh = _invoice(), _invoice()
+    session = MagicMock()
+    rows = MagicMock()
+    rows.all.return_value = [
+        SimpleNamespace(Invoice=approved, mailbox_id=OWN),
+        SimpleNamespace(Invoice=fresh, mailbox_id=OWN),
+    ]
+    session.execute.side_effect = [rows, MagicMock()]
+    session.scalars.return_value = [approved.id]
+    _patch(monkeypatch, session)
+
+    result = payments.create_drafts([approved.id, fresh.id], [OWN])
+
+    assert result["skipped"] == [{"invoiceId": str(approved.id), "reason": "already_approved"}]
+    assert [draft["invoiceId"] for draft in result["drafts"]] == [str(fresh.id)]
+    cancel = _sql(session.execute.call_args_list[1].args[0])
+    assert str(approved.id) not in cancel
 
 
 def _draft_row(invoice: Invoice) -> SimpleNamespace:

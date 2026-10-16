@@ -93,7 +93,7 @@ def test_prepare_payments_records_drafts_and_reports_skipped(
 
     assert calls == [[uuid.UUID(OPEN_ID), uuid.UUID(PAID_ID)]]
     assert draft_id in text and "await" in text.lower()
-    assert PAID_ID in text and "not_open" in text
+    assert f"Skipped invoice {PAID_ID}: not open" in text
     assert d.seen_draft_ids == {uuid.UUID(draft_id)}
 
 
@@ -182,3 +182,19 @@ def test_all_skipped_says_nothing_awaits_approval(monkeypatch: pytest.MonkeyPatc
 
     assert "No payments were prepared." in text
     assert "await" not in text.lower()
+
+
+def test_already_approved_is_explained(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        payments,
+        "create_drafts",
+        lambda invoice_ids, mailbox_ids: {
+            "drafts": [],
+            "skipped": [{"invoiceId": OPEN_ID, "reason": "already_approved"}],
+        },
+    )
+
+    text = tools.execute_prepare_payments(deps(), [uuid.UUID(OPEN_ID)])
+
+    assert f"Skipped invoice {OPEN_ID}: a payment is already approved" in text
+    assert "No payments were prepared." in text

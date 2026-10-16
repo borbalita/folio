@@ -47,7 +47,7 @@ def _draft(row: PaymentDraft, invoice: Invoice) -> dict[str, Any]:
 def create_drafts(
     invoice_ids: list[uuid.UUID], mailbox_ids: list[uuid.UUID]
 ) -> dict[str, Any]:
-    """A fresh draft per open invoice, replacing its open one; the rest are skipped.
+    """A fresh draft per open invoice, replacing an unapproved one; the rest are skipped.
 
     No paying account is chosen: the QR code carries none, and the banking app that scans
     it pays from its own account.
@@ -64,18 +64,32 @@ def create_drafts(
         if any(row.mailbox_id not in mailbox_ids for row in rows):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Forbidden")
         invoices = [by_id[i].Invoice for i in invoice_ids]
-        payable = [inv for inv in invoices if skip_reason(inv) is None]
-        skipped = [
-            {"invoiceId": str(inv.id), "reason": skip_reason(inv)}
+        # An approved payment may already have been sent from the banking app; a second
+        # QR code for the same invoice invites paying twice. The owner cancels it first.
+        approved = set(
+            session.scalars(
+                select(PaymentDraft.invoice_id).where(
+                    PaymentDraft.invoice_id.in_(invoice_ids),
+                    PaymentDraft.status == DraftStatus.APPROVED,
+                )
+            )
+        )
+        reasons = {
+            inv.id: skip_reason(inv) or ("already_approved" if inv.id in approved else None)
             for inv in invoices
-            if skip_reason(inv) is not None
+        }
+        payable = [inv for inv in invoices if reasons[inv.id] is None]
+        skipped = [
+            {"invoiceId": str(inv.id), "reason": reasons[inv.id]}
+            for inv in invoices
+            if reasons[inv.id] is not None
         ]
         if payable:
             session.execute(
                 update(PaymentDraft)
                 .where(
                     PaymentDraft.invoice_id.in_([inv.id for inv in payable]),
-                    PaymentDraft.status.in_(OPEN_STATUSES),
+                    PaymentDraft.status == DraftStatus.DRAFT,
                 )
                 .values(status=DraftStatus.CANCELLED)
             )
