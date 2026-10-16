@@ -60,7 +60,10 @@ export interface Invoice {
   /** Names of the failed checks, e.g. `invalid_iban`. */
   issues: string[]
   paidAt: string | null
-  /** `owner` when marked by hand, `match` when a bank transaction is linked. */
+  /**
+   * `owner` when marked by hand, `match` when a bank transaction is linked,
+   * `invoice` when the invoice itself says it is paid.
+   */
   paidBy: string | null
   /** The linked payment, set when `paidBy` is `match`. */
   match: InvoiceMatch | null

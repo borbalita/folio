@@ -49,7 +49,7 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
         ],
         classifier=lambda _prompt: "other",
         invoice_extract=lambda _source: [],
-        invoice_check=lambda _source: False,
+        invoice_check=lambda _source: "none",
     )
     stored = [row for row in session.added if isinstance(row, EmailAttachment)]
     by_name = {row.filename: row for row in stored}
@@ -133,7 +133,7 @@ def test_invoice_email_gets_its_invoices_extracted(
         ],
         classifier=lambda _prompt: "invoice",
         invoice_extract=extract,
-        invoice_check=lambda _source: True,
+        invoice_check=lambda _source: "to_pay",
     )
 
     assert [source.files for source in seen] == [[("invoice.pdf", b"%PDF-1")]]
@@ -205,7 +205,7 @@ def _ingest(session, parsed, extract):
         embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
         classifier=lambda _prompt: "other",
         invoice_extract=extract,
-        invoice_check=lambda _source: True,
+        invoice_check=lambda _source: "to_pay",
     )
 
 
@@ -260,7 +260,7 @@ def test_check_saying_no_keeps_other_mail_from_extraction(monkeypatch) -> None:
         embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
         classifier=lambda _prompt: "other",
         invoice_extract=lambda _source: pytest.fail("the check said no"),
-        invoice_check=lambda _source: False,
+        invoice_check=lambda _source: "none",
     )
 
     assert summary.invoices == 0
