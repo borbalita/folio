@@ -1,3 +1,5 @@
+import { FileText, Mail, Wallet, type LucideIcon } from 'lucide-react'
+
 import type { AgentName } from '@/lib/api'
 
 export interface AgentInfo {
@@ -10,6 +12,7 @@ export interface AgentInfo {
   placeholder: string
   /** False for agents that open a workspace instead of a chat thread. */
   hasThreads: boolean
+  icon: LucideIcon
 }
 
 export const AGENTS: Record<AgentName, AgentInfo> = {
@@ -22,6 +25,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     emptyHint: 'Pick a conversation from the sidebar, or start a new chat.',
     placeholder: 'Ask about a filing…',
     hasThreads: true,
+    icon: FileText,
   },
   email: {
     name: 'email',
@@ -33,6 +37,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
       'Start a new chat to search messages or see the big AI news of the week.',
     placeholder: 'Ask about your mail or AI news…',
     hasThreads: true,
+    icon: Mail,
   },
   finance: {
     name: 'finance',
@@ -43,5 +48,6 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     emptyHint: 'Finance is just getting started.',
     placeholder: 'Ask about your finances…',
     hasThreads: false,
+    icon: Wallet,
   },
 }

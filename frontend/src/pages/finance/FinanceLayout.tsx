@@ -2,7 +2,7 @@ import { ChevronLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { ChatIcon } from '@/components/chat/ChatIcon'
+import { AgentIcon } from '@/components/AgentIcon'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { AGENTS } from '@/lib/agents'
@@ -48,7 +48,7 @@ export function FinanceLayout() {
             aria-label={`${AGENTS.finance.title}. Back to all assistants`}
             className="group flex items-center gap-2 rounded-md p-1 outline-none hover:bg-sidebar-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <ChatIcon className="size-8" />
+            <AgentIcon agent={AGENTS.finance} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{AGENTS.finance.title}</p>
               <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
