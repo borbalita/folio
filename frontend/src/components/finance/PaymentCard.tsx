@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { api, type ApprovedPayment, type PaymentDraft } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
 import { formatAmount } from '@/lib/invoices'
@@ -33,7 +32,6 @@ interface Props {
 
 /** One payment to check against its invoice, then pay by scanning the QR code. */
 export function PaymentCard({ draft, onChange }: Props) {
-  const [checked, setChecked] = useState(false)
   const [approved, setApproved] = useState<ApprovedPayment | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,17 +81,9 @@ export function PaymentCard({ draft, onChange }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <label className="flex items-start gap-2 text-sm">
-            <Checkbox
-              checked={checked}
-              onCheckedChange={(value) => setChecked(value)}
-              aria-label="I checked payee, IBAN, amount and reference against the invoice"
-            />
-            <span>I checked payee, IBAN, amount and reference against the invoice.</span>
-          </label>
           <div className="flex gap-2">
             <Button
-              disabled={!checked || busy}
+              disabled={busy}
               onClick={() => void run(() => api.approvePaymentDraft(draft.id), setApproved)}
             >
               Approve

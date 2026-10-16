@@ -21,8 +21,8 @@ Task: [10-qr-payments.md](10-qr-payments.md). Spec: [README](../README.md), Deci
 - **API:** `POST /finance/payment-drafts` (`invoiceIds`, `accountId`) → drafts and skipped; `POST /finance/payment-drafts/{id}/approve` → draft, payload, QR; `POST /finance/payment-drafts/{id}/cancel`.
 - **UI:**
   - **Pay selected** on the invoice list asks for an account with an IBAN, creates drafts, and opens `/finance/payments?drafts=…`, which shows one card at a time ("2 of 5").
-  - Each card: the amount largest, payee, IBAN, BIC, reference and the from-account, with the invoice PDF beside it, and a checkbox "I checked payee, IBAN, amount and reference against the invoice".
-  - **Approve** is enabled only when ticked; it shows the QR and copy buttons. **Next** moves on, **Cancel** discards the draft.
+  - Each card: the amount largest, payee, IBAN, BIC, reference and the from-account, with the invoice PDF beside it,.
+  - **Approve** shows the QR and copy buttons. **Next** moves on, **Cancel** discards the draft.
 
 ## Steps
 
@@ -32,4 +32,4 @@ Task: [10-qr-payments.md](10-qr-payments.md). Spec: [README](../README.md), Deci
 4. `segno` dependency; QR rendering test (SVG data URI).
 5. API routes and route tests.
 6. Frontend: Pay selected, payments page with cards; `pnpm tsc --noEmit`, `pnpm lint`.
-7. Browser check of the tick and the QR; the owner's real payment check.
+7. Browser check of Approve and the QR; the owner's real payment check.
