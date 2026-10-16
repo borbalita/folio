@@ -12,6 +12,8 @@ from app.finance.invoice_checks import FIELD_NAMES, normalize_iban, recheck
 PAID_BY_OWNER = "owner"
 # Paid because a bank transaction was linked to it, by the rules or by the owner.
 PAID_BY_MATCH = "match"
+# Paid before it arrived: the invoice itself says so (prepaid, received, debited).
+PAID_BY_INVOICE = "invoice"
 
 
 def apply_edit(row: Invoice, changes: dict[str, Any]) -> None:
@@ -37,6 +39,12 @@ def set_paid(row: Invoice, *, paid: bool, now: datetime) -> None:
     row.paid_at = None
     row.paid_by = None
     recheck(row)
+
+
+def mark_paid_per_invoice(row: Invoice, *, paid_at: datetime) -> None:
+    row.status = InvoiceStatus.PAID
+    row.paid_at = paid_at
+    row.paid_by = PAID_BY_INVOICE
 
 
 def mark_matched(row: Invoice, *, now: datetime) -> None:

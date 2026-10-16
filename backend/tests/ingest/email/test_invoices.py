@@ -512,7 +512,7 @@ def test_invoice_email_the_check_rejects_is_not_extracted() -> None:
     session = _Session()
 
     outcome = extract_invoices(
-        session, email, [_pdf(email, "notice.pdf")], extract=_must_not_extract, check=lambda _s: False
+        session, email, [_pdf(email, "notice.pdf")], extract=_must_not_extract, check=lambda _s: "none"
     )
 
     # Shown as an invoice email that needs info, like "your bill is ready online".
@@ -526,7 +526,7 @@ def test_invoice_email_the_check_accepts_is_extracted() -> None:
     session = _Session()
 
     extract_invoices(
-        session, email, [_pdf(email, "bill.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: True
+        session, email, [_pdf(email, "bill.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: "to_pay"
     )
 
     [row] = _rows(session)
@@ -537,9 +537,9 @@ def test_invoice_email_without_pdf_is_checked_from_its_text() -> None:
     email = _email()
     seen: list[InvoiceSource] = []
 
-    def check(source: InvoiceSource) -> bool:
+    def check(source: InvoiceSource) -> str:
         seen.append(source)
-        return False
+        return "none"
 
     extract_invoices(_Session(), email, [], extract=_must_not_extract, check=check)
 
@@ -549,7 +549,7 @@ def test_invoice_email_without_pdf_is_checked_from_its_text() -> None:
 def test_a_failing_check_does_not_block_an_invoice_email() -> None:
     email = _email()
 
-    def broken(_source: InvoiceSource) -> bool:
+    def broken(_source: InvoiceSource) -> str:
         raise UnexpectedModelBehavior("bad output")
 
     session = _Session()
@@ -567,10 +567,10 @@ def test_detection_extracts_only_after_the_check_says_yes() -> None:
     email.label = EmailLabel.OTHER
 
     assert detect_invoices(
-        _Session(), email, [_pdf(email, "agb.pdf")], extract=_must_not_extract, check=lambda _s: False
+        _Session(), email, [_pdf(email, "agb.pdf")], extract=_must_not_extract, check=lambda _s: "none"
     ) is None
     outcome = detect_invoices(
-        _Session(), email, [_pdf(email, "doc.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: True
+        _Session(), email, [_pdf(email, "doc.pdf")], extract=lambda _s: [_invoice()], check=lambda _s: "to_pay"
     )
     assert outcome is not None and email.label == EmailLabel.INVOICE
 
@@ -581,10 +581,74 @@ def test_detection_with_a_failing_check_stores_nothing() -> None:
     email = _email()
     email.label = EmailLabel.OTHER
 
-    def broken(_source: InvoiceSource) -> bool:
+    def broken(_source: InvoiceSource) -> str:
         raise UnexpectedModelBehavior("bad output")
 
     assert detect_invoices(
         _Session(), email, [_pdf(email, "doc.pdf")], extract=_must_not_extract, check=broken
+    ) is None
+    assert email.label == EmailLabel.OTHER
+
+
+def test_already_paid_invoice_is_extracted_and_recorded_as_paid() -> None:
+    email = _email()
+    session = _Session()
+
+    extract_invoices(
+        session,
+        email,
+        [_pdf(email, "rechnung.pdf")],
+        extract=lambda _s: [_invoice()],
+        check=lambda _s: "already_paid",
+    )
+
+    [row] = _rows(session)
+    assert (row.status, row.paid_by, row.paid_at) == ("paid", "invoice", email.sent_at)
+    assert row.payee == "Stadtwerke Lindenstrom"
+
+
+def test_invoice_only_online_needs_info_without_extraction() -> None:
+    email = _email()
+    session = _Session()
+
+    extract_invoices(
+        session, email, [], extract=_must_not_extract, check=lambda _s: "online_only"
+    )
+
+    [row] = _rows(session)
+    assert (row.status, row.issues) == ("needs_info", ["invoice_online"])
+
+
+def test_detection_records_an_already_paid_invoice_as_paid() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+    session = _Session()
+
+    detect_invoices(
+        session,
+        email,
+        [_pdf(email, "beleg.pdf")],
+        extract=lambda _s: [_invoice()],
+        check=lambda _s: "already_paid",
+    )
+
+    assert email.label == EmailLabel.INVOICE
+    assert [row.paid_by for row in _rows(session)] == ["invoice"]
+
+
+def test_detection_leaves_online_only_notices_out() -> None:
+    from ingest.email.invoices import detect_invoices
+
+    email = _email()
+    email.label = EmailLabel.OTHER
+
+    assert detect_invoices(
+        _Session(),
+        email,
+        [_pdf(email, "flyer.pdf")],
+        extract=_must_not_extract,
+        check=lambda _s: "online_only",
     ) is None
     assert email.label == EmailLabel.OTHER

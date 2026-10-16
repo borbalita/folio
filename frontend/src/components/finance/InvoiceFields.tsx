@@ -103,6 +103,11 @@ export function InvoiceFields({ invoice, onChange }: Props) {
             Marked paid by you{paidOn ? ` on ${paidOn}` : ''}
           </span>
         ) : null}
+        {invoice.status === 'paid' && invoice.paidBy === 'invoice' ? (
+          <span className="text-xs text-muted-foreground">
+            Paid before it arrived, according to the invoice
+          </span>
+        ) : null}
       </div>
       {invoice.issues.length > 0 ? (
         <ul className="list-disc pl-5 text-sm text-amber-700 dark:text-amber-400">

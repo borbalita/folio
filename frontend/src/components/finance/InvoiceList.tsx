@@ -72,6 +72,9 @@ export function InvoiceList({ invoices, today, selected, onToggle, onToggleAll }
                     {invoice.match?.source === 'auto' ? (
                       <span className="text-xs text-muted-foreground">Matched automatically</span>
                     ) : null}
+                    {invoice.paidBy === 'invoice' ? (
+                      <span className="text-xs text-muted-foreground">Paid before it arrived</span>
+                    ) : null}
                     {!invoice.match && invoice.suggestions.length > 0 ? (
                       <span className="text-xs text-primary">
                         {invoice.suggestions.length === 1
