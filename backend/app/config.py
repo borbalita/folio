@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     news_extraction_model: str | None = None
     news_extraction_reasoning_effort: ReasoningEffort | None = None
     invoice_extraction_model: str = "gpt-6.1-sol"
+    # A cheap first look: is there an invoice to pay at all? Extraction runs only on a yes.
+    invoice_check_model: str = "gpt-6-luna"
+    invoice_check_reasoning_effort: ReasoningEffort | None = "none"
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")

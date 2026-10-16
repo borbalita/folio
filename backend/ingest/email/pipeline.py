@@ -19,8 +19,14 @@ from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.user import User
+from ingest.email.invoices import (
+    Checker,
+    InvoiceOutcome,
+    check_with_model,
+    detect_invoices,
+    extract_invoices,
+)
 from ingest.email.invoices import Extractor as InvoiceExtractor
-from ingest.email.invoices import InvoiceOutcome, extract_invoices
 from ingest.email.labels import label_message
 from ingest.email.news import edition_date, embed_text, extract_news_items
 from ingest.email.parse import ParsedMessage, content_hash
@@ -108,6 +114,7 @@ def ingest_messages(
     classifier=None,
     extract=None,
     invoice_extract: InvoiceExtractor | None = None,
+    invoice_check: Checker = check_with_model,
 ) -> IngestSummary:
     summary = IngestSummary(fetched=len(messages))
     editions: set[date] = set()
@@ -121,7 +128,14 @@ def ingest_messages(
             )
             continue
         action, label, saved, skipped, news_count, edition, invoices = _store_one(
-            session, mailbox_id, parsed, embed, classifier, extract, invoice_extract
+            session,
+            mailbox_id,
+            parsed,
+            embed,
+            classifier,
+            extract,
+            invoice_extract,
+            invoice_check,
         )
         if edition is not None:
             editions.add(edition)
@@ -155,6 +169,7 @@ def _store_one(
     classifier,
     extract,
     invoice_extract: InvoiceExtractor | None = None,
+    invoice_check: Checker = check_with_model,
 ) -> tuple[str, str, int, int, int, date | None, InvoiceOutcome | None]:
     stored_row = session.scalar(
         select(EmailMessage).where(
@@ -251,8 +266,16 @@ def _store_one(
     if label == EmailLabel.INVOICE:
         session.flush()
         invoices = extract_invoices(
-            session, stored_row, attachments, extract=invoice_extract
+            session, stored_row, attachments, extract=invoice_extract, check=invoice_check
         )
+    elif label != EmailLabel.AI_NEWSLETTER and saved:
+        # The labeller never reads PDFs; an invoice in one turns the email into an invoice.
+        session.flush()
+        invoices = detect_invoices(
+            session, stored_row, attachments, extract=invoice_extract, check=invoice_check
+        )
+        if invoices is not None:
+            label = EmailLabel.INVOICE
     return action, label, saved, skipped, news_count, edition, invoices
 
 
@@ -371,6 +394,7 @@ def ingest_fetched(
     classifier=None,
     extract=None,
     invoice_extract: InvoiceExtractor | None = None,
+    invoice_check: Checker = check_with_model,
 ) -> IngestSummary:
     mailbox = upsert_yahoo_mailbox(session)
     session.commit()
@@ -382,6 +406,7 @@ def ingest_fetched(
         classifier=classifier,
         extract=extract,
         invoice_extract=invoice_extract,
+        invoice_check=invoice_check,
     )
     record_sync(session, mailbox, uidvalidity=uidvalidity, highest_uid=highest_uid)
     return summary
