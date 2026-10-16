@@ -65,6 +65,10 @@ export function InvoicesPage() {
   const shown = useMemo(() => (all ? visible(all, filters, today) : []), [all, filters, today])
   const chosen = shown.filter((invoice) => selected.has(invoice.id))
 
+  function toggleAll(checked: boolean) {
+    setSelected(checked ? new Set(shown.map((invoice) => invoice.id)) : new Set())
+  }
+
   function toggle(id: string, checked: boolean) {
     setSelected((current) => {
       const next = new Set(current)
@@ -222,7 +226,13 @@ export function InvoicesPage() {
         <p className="text-sm text-muted-foreground">No invoices match.</p>
       ) : null}
       {shown.length > 0 ? (
-        <InvoiceList invoices={shown} today={today} selected={selected} onToggle={toggle} />
+        <InvoiceList
+          invoices={shown}
+          today={today}
+          selected={selected}
+          onToggle={toggle}
+          onToggleAll={toggleAll}
+        />
       ) : null}
     </div>
   )
