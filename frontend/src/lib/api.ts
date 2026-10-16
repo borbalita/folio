@@ -127,7 +127,6 @@ export interface PaymentDraft {
   currency: string
   reference: string | null
   status: PaymentDraftStatus
-  account: { id: string; bank: BankName; name: string | null }
 }
 
 export interface ApprovedPayment extends PaymentDraft {
@@ -205,8 +204,8 @@ export const api = {
 
   rejectMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/reject`),
 
-  createPaymentDrafts: (invoiceIds: string[], accountId: string) =>
-    http.post<PaymentDraftsResult>('/finance/payment-drafts', { invoiceIds, accountId }),
+  createPaymentDrafts: (invoiceIds: string[]) =>
+    http.post<PaymentDraftsResult>('/finance/payment-drafts', { invoiceIds }),
 
   getPaymentDrafts: (ids: string[]) =>
     http.get<PaymentDraft[]>(

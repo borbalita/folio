@@ -51,7 +51,6 @@ export function PaymentCard({ draft, onChange }: Props) {
   }
 
   const amount = formatAmount(draft.amount, draft.currency) ?? draft.amount
-  const from = `${draft.account.bank}${draft.account.name ? ` · ${draft.account.name}` : ''}`
   const closed = draft.status === 'cancelled' || draft.status === 'completed'
 
   return (
@@ -63,10 +62,6 @@ export function PaymentCard({ draft, onChange }: Props) {
         <Field label="BIC" value={draft.bic} />
         <Field label="Amount" value={draft.amount} />
         <Field label="Reference" value={draft.reference} />
-        <div className="flex items-center justify-between gap-3">
-          <dt className="text-xs text-muted-foreground">From</dt>
-          <dd className="text-sm">{from}</dd>
-        </div>
       </dl>
 
       {closed ? (
@@ -75,7 +70,7 @@ export function PaymentCard({ draft, onChange }: Props) {
         <div className="flex flex-col items-center gap-2">
           <img src={approved.qr} alt="GiroCode for this payment" className="size-56" />
           <p className="text-center text-xs text-muted-foreground">
-            Scan this in your {draft.account.bank} app and confirm the transfer there. The invoice
+            Scan this in your banking app and confirm the transfer there. The invoice
             turns paid when the payment shows up in the next bank sync.
           </p>
         </div>

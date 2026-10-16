@@ -32,7 +32,7 @@ Goals:
 - Every invoice email has its payment data extracted, checked, and editable.
 - Transactions from the N26 main account, ING and PayPal arrive on a schedule.
 - An invoice turns paid when a matching debit appears, or when the owner marks it.
-- The owner selects open invoices, picks an account, checks each payment beside its invoice, and pays it by QR in the bank app.
+- The owner selects open invoices, checks each payment beside its invoice, and pays it by QR in the banking app, which pays from its own account (no account is picked in Finance, changed on 2026-10-16 at the owner's request: the QR code names none).
 - The Finance chat answers "what do I still need to pay?" and prepares payments, but cannot approve them.
 - Email ingest runs on a schedule.
 

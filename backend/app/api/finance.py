@@ -155,7 +155,6 @@ class DraftsRequest(BaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid")
 
     invoice_ids: list[uuid.UUID]
-    account_id: uuid.UUID
 
 
 @router.post("/payment-drafts")
@@ -165,7 +164,7 @@ async def create_payment_drafts(
 ) -> dict[str, Any]:
     mailbox_ids = await require_email_access(user)
     return await asyncio.to_thread(
-        payments.create_drafts, body.invoice_ids, body.account_id, user.id, mailbox_ids
+        payments.create_drafts, body.invoice_ids, mailbox_ids
     )
 
 

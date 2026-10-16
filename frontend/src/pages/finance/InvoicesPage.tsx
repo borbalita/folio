@@ -112,11 +112,7 @@ export function InvoicesPage() {
       <h1 className="text-lg font-semibold">Invoices</h1>
       <InvoiceFilters filters={filters} onChange={setFilters} />
       <div className="flex flex-wrap items-center gap-2">
-        <PayInvoices
-          invoiceIds={openChosen.map((invoice) => invoice.id)}
-          label="Pay selected"
-          skipped={chosen.length - openChosen.length}
-        />
+        <PayInvoices invoiceIds={openChosen.map((invoice) => invoice.id)} label="Pay selected" />
         <Button
           size="sm"
           variant="outline"

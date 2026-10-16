@@ -41,10 +41,12 @@ class PaymentDraft(Base):
     invoice_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("invoices.id", ondelete="CASCADE"), nullable=False
     )
-    account_id: Mapped[uuid.UUID] = mapped_column(
+    # Unused while payments go by QR code, which names no paying account; kept for
+    # payment initiation through the bank API, which would need one.
+    account_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("bank_accounts.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
     payee: Mapped[str] = mapped_column(Text, nullable=False)
     iban: Mapped[str] = mapped_column(Text, nullable=False)
