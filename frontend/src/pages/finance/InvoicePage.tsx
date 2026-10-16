@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 
+import { Breadcrumb } from '@/components/finance/Breadcrumb'
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
 import { InvoicePayment } from '@/components/finance/InvoicePayment'
 import { PdfViewer } from '@/components/finance/PdfViewer'
@@ -24,11 +25,6 @@ function SkippedAttachment({ attachment }: { attachment: InvoiceAttachment }) {
 
 export function InvoicePage() {
   const { emailId } = useParams<{ emailId: string }>()
-  const navigate = useNavigate()
-  const location = useLocation()
-  // Back keeps the list's filters when we came from it; a direct link goes to the list.
-  const back = () =>
-    location.key === 'default' ? navigate('/finance/invoices') : navigate(-1)
   const [loaded, setLoaded] = useState<InvoiceDetail | null>(null)
   const [error, setError] = useState<{ emailId: string; message: string } | null>(null)
 
@@ -100,11 +96,7 @@ export function InvoicePage() {
     <div className="min-h-0 flex-1 overflow-y-auto">
       <article className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
         <header className="flex flex-col gap-1">
-          <div>
-            <Button variant="ghost" size="sm" onClick={back}>
-              ← Back to invoices
-            </Button>
-          </div>
+          <Breadcrumb trail={[loaded.subject || '(no subject)']} />
           <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
           <p className="text-sm text-muted-foreground">
             From {loaded.from}
