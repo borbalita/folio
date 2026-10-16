@@ -11,8 +11,8 @@ import { useAuth } from '@/lib/auth'
 import { expiryMessage } from '@/lib/reconnect'
 
 const SECTIONS = [
-  { to: '/finance/chat', label: 'Chat' },
   { to: '/finance/invoices', label: 'Invoices' },
+  { to: '/finance/chat', label: 'Chat' },
   { to: '/finance/transactions', label: 'Transactions' },
   { to: '/finance/accounts', label: 'Accounts' },
 ]
