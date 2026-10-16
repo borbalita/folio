@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
-import { Breadcrumb } from '@/components/finance/Breadcrumb'
 import { PaymentCard } from '@/components/finance/PaymentCard'
 import { PdfViewer } from '@/components/finance/PdfViewer'
 import { Button } from '@/components/ui/button'
@@ -71,7 +70,6 @@ export function PaymentsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Breadcrumb trail={[drafts.length === 1 ? 'Payment' : 'Payments']} />
       <header className="flex items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">
           Payment {index + 1} of {drafts.length}

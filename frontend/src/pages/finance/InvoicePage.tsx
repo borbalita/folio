@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
-import { Breadcrumb } from '@/components/finance/Breadcrumb'
+import { CloseInvoice } from '@/components/finance/CloseInvoice'
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
 import { InvoicePayment } from '@/components/finance/InvoicePayment'
 import { PdfViewer } from '@/components/finance/PdfViewer'
@@ -95,13 +95,15 @@ export function InvoicePage() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <article className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
-        <header className="flex flex-col gap-1">
-          <Breadcrumb trail={[loaded.subject || '(no subject)']} />
-          <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
-          <p className="text-sm text-muted-foreground">
-            From {loaded.from}
-            {sent ? ` · ${sent}` : ''}
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
+            <p className="text-sm text-muted-foreground">
+              From {loaded.from}
+              {sent ? ` · ${sent}` : ''}
+            </p>
+          </div>
+          <CloseInvoice />
         </header>
 
         {loaded.invoices.map((invoice) => {
