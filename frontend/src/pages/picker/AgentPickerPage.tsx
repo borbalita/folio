@@ -11,6 +11,9 @@ import { useAuth } from '@/lib/auth'
 import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
+// The everyday assistants first; Document Copilot is the original demo.
+const PICKER_ORDER: AgentName[] = ['finance', 'email', 'documents']
+
 function AgentCard({
   agent,
   opening,
@@ -49,7 +52,7 @@ export function AgentPickerPage() {
   const navigate = useNavigate()
   const [opening, setOpening] = useState<AgentName | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const available = Object.values(AGENTS).filter((agent) => agents.includes(agent.name))
+  const available = PICKER_ORDER.filter((name) => agents.includes(name)).map((name) => AGENTS[name])
 
   async function open(agent: AgentInfo) {
     if (!agent.hasThreads) {
