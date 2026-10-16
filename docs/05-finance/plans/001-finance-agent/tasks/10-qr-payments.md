@@ -1,12 +1,12 @@
 # 001/10 — Pay invoices with a GiroCode QR
 
 ## Goal
-The owner selects open invoices, picks an account, checks each payment against its invoice, and pays it by scanning a QR code in the bank app.
+The owner selects open invoices, checks each payment against its invoice, and pays it by scanning a QR code in the banking app.
 
 ## Scope
-- Payment drafts table with RLS: a frozen copy of payee, IBAN, BIC, amount, reference, from-account; at most one open draft per invoice.
+- Payment drafts table with RLS: a frozen copy of payee, IBAN, BIC, amount, reference; at most one open draft per invoice. The paying account is left empty: the QR code names none, and the scanning app pays from its own account (owner, 2026-10-16); the column stays for payment initiation.
 - The draft's reference is the invoice's requested reference, or its invoice number when it has none (owner's choice, 2026-10-15; extraction keeps `reference` to what the invoice asks for).
-- Pay selected on the invoice list (open invoices only) with the account choice; skipped invoices listed with the reason.
+- Pay selected on the invoice list (open invoices only), and Pay on the invoice page.
 - Payment card beside the invoice PDF: amount most prominent; pressing Approve confirms that payee, IBAN, amount and reference match the invoice (no separate tick, owner's choice, 2026-10-16).
 - Approve re-checks the invoice (still open, valid IBAN, same amount), then shows an EPC QR code (EPC069-12, rendered with `segno`) and copy buttons. Batches step through cards one by one.
 - An approved draft completes when matching links its invoice.

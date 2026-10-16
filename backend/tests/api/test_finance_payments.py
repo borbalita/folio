@@ -16,25 +16,24 @@ def finance_owner(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [OWN_MAILBOX])
 
 
-def test_owner_creates_drafts_for_the_chosen_account(
+def test_owner_creates_drafts_without_choosing_an_account(
     authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    invoice_id, account_id = uuid.uuid4(), uuid.uuid4()
+    invoice_id = uuid.uuid4()
     seen = []
 
-    def create_drafts(invoice_ids, account, user_id, mailbox_ids):
-        seen.append((invoice_ids, account, user_id, mailbox_ids))
+    def create_drafts(invoice_ids, mailbox_ids):
+        seen.append((invoice_ids, mailbox_ids))
         return {"drafts": [], "skipped": []}
 
     monkeypatch.setattr(payments, "create_drafts", create_drafts)
 
     response = authed_client.post(
-        "/finance/payment-drafts",
-        json={"invoiceIds": [str(invoice_id)], "accountId": str(account_id)},
+        "/finance/payment-drafts", json={"invoiceIds": [str(invoice_id)]}
     )
 
     assert response.status_code == 200
-    assert seen == [([invoice_id], account_id, TEST_USER_ID, [OWN_MAILBOX])]
+    assert seen == [([invoice_id], [OWN_MAILBOX])]
 
 
 @pytest.mark.parametrize("action", ["approve", "cancel"])
