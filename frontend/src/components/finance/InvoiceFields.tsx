@@ -156,17 +156,10 @@ export function InvoiceFields({ invoice, onChange }: Props) {
             Mark paid
           </Button>
         )}
-        {error ? <span className="text-sm text-destructive">{error}</span> : null}
-        {/* Apart from the payment actions: Save is about the fields above. */}
-        <Button
-          type="submit"
-          size="sm"
-          variant={edited ? 'default' : 'outline'}
-          disabled={saving}
-          className="ml-auto"
-        >
+        <Button type="submit" size="sm" variant={edited ? 'default' : 'outline'} disabled={saving}>
           Save
         </Button>
+        {error ? <span className="text-sm text-destructive">{error}</span> : null}
       </div>
     </form>
   )
