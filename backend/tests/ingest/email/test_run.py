@@ -58,6 +58,9 @@ class _FakeIngestSession:
     def commit(self) -> None:
         self.commits += 1
 
+    def rollback(self) -> None:
+        self.rolled_back = True
+
     def close(self) -> None:
         self.closed = True
 
@@ -143,6 +146,15 @@ def scheduled_env(monkeypatch):
         return {"linked": 1, "suggested": 0}
 
     monkeypatch.setattr("ingest.email.run.match_for_user", fake_match)
+    env.notify_calls = []
+    monkeypatch.setattr(
+        "ingest.email.run.record_notifications",
+        lambda session, now: env.notify_calls.append("record") or 2,
+    )
+    monkeypatch.setattr(
+        "ingest.email.run.send_pending",
+        lambda session, now: env.notify_calls.append("send") or {"sent": 1, "failed": 1, "held": 0},
+    )
     monkeypatch.setattr("ingest.email.run.YahooImapAdapter", _FakeAdapter)
     monkeypatch.setattr("ingest.email.run.open_session", lambda: ingest_session)
     monkeypatch.setattr("ingest.email.run.ingest_fetched", lambda *a, **k: env.summary)
@@ -247,3 +259,31 @@ def test_scheduled_run_records_match_counts(scheduled_env) -> None:
 
     (row,) = scheduled_env.job_session.added
     assert (row.counts["linked"], row.counts["suggested"]) == (1, 0)
+
+
+def test_scheduled_run_records_then_sends_notifications(scheduled_env) -> None:
+    scheduled_env.use_real_run_job()
+
+    assert main(["--scheduled"]) == 0
+
+    assert scheduled_env.notify_calls == ["record", "send"]
+    (row,) = scheduled_env.job_session.added
+    assert row.status == "ok"
+    assert row.counts["notifications_new"] == 2
+    assert row.counts["notifications_sent"] == 1
+    assert row.counts["notifications_failed"] == 1
+
+
+def test_notification_errors_never_fail_the_run(scheduled_env, monkeypatch) -> None:
+    scheduled_env.use_real_run_job()
+
+    def broken(session, now):
+        raise RuntimeError("telegram down")
+
+    monkeypatch.setattr("ingest.email.run.record_notifications", broken)
+
+    assert main(["--scheduled"]) == 0
+
+    (row,) = scheduled_env.job_session.added
+    assert row.status == "ok"
+    assert row.counts["notifications_error"] == 1
