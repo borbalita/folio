@@ -1,12 +1,13 @@
 # 001 — Telegram notifications: invoices and big AI news
 
 - Created: 2026-10-19
-- Status: Draft
-- Current stage: Spec written; awaiting the owner's review
+- Status: Ready
+- Current stage: Implementation; 001/01 next
 
 ## Approval state
 
 - 2026-10-19: in chat, the owner chose push only, instant messages, new-invoice and due-soon events, big news only, and payee, amount and due date in messages. They approved the assumptions (3 days, quiet hours 22:00–07:00 Berlin, no flood at launch) and the outbox approach. Big-news messages carry a summary of both newsletters (owner's addition).
+- 2026-10-19: the owner approved the written spec; the plan is Ready.
 
 ## Problem
 
