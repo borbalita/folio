@@ -124,7 +124,6 @@ def ingest_messages(
             log.warning(
                 "email_missing_message_id",
                 provider_message_id=parsed.provider_message_id,
-                subject=parsed.subject,
             )
             continue
         action, label, saved, skipped, news_count, edition, invoices = _store_one(
