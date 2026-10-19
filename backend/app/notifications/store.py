@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -15,6 +16,7 @@ from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
 from app.database.models.finance.invoice import Invoice
 from app.database.models.notification import Notification
+from app.notifications import summary
 from app.notifications.detect import (
     InvoiceFacts,
     NewNotification,
@@ -97,6 +99,12 @@ def record_notifications(session: Session, now: datetime) -> int:
         app_url=settings.app_url or "",
         enabled=telegram_enabled(),
     )
+    rows = [
+        replace(row, text=summary.news_text(list(row.story)))
+        if row.story and row.status == "pending"
+        else row
+        for row in rows
+    ]
     insert_rows(session, rows)
     session.commit()
     return len(rows)

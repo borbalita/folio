@@ -2,7 +2,7 @@
 
 - Created: 2026-10-19
 - Status: Ready
-- Current stage: Implementation; 001/01 done
+- Current stage: Implementation; 001/01 and 001/02 done
 
 ## Approval state
 
@@ -95,7 +95,7 @@ Email ingest (cron, 30 min)
 ## Tasks
 
 - [x] [001/01 — Notifications table, event detection and launch baseline](tasks/01-detection.md)
-- [ ] [001/02 — Big-news summaries](tasks/02-news-summary.md) — after 01
+- [x] [001/02 — Big-news summaries](tasks/02-news-summary.md) — after 01
 - [ ] [001/03 — Telegram sender with quiet hours and retries](tasks/03-sender.md) — after 01
 - [ ] [001/04 — Wire into email ingest; settings and setup command](tasks/04-wiring.md) — after 02, 03
 - [ ] [001/05 — Overview and end-to-end check](tasks/05-overview.md) — after 04

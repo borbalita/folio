@@ -49,6 +49,8 @@ class NewNotification:
     kind: Kind
     status: Status
     text: str
+    # A pending big-news row's story, for the summary written before it is stored.
+    story: tuple[NewsItemFacts, ...] = ()
 
 
 def format_amount(amount: Decimal | None, currency: str | None) -> str:
@@ -121,11 +123,13 @@ def plan_notifications(
     """New rows for events not yet recorded. Each event's key is recorded once, ever."""
     rows: list[NewNotification] = []
 
-    def add(key: str, kind: Kind, status: Status, text: str) -> None:
+    def add(
+        key: str, kind: Kind, status: Status, text: str, story: tuple[NewsItemFacts, ...] = ()
+    ) -> None:
         if key in known_keys:
             return
         known_keys.add(key)
-        rows.append(NewNotification(key, kind, status if enabled else "skipped", text))
+        rows.append(NewNotification(key, kind, status if enabled else "skipped", text, story))
 
     for invoice in invoices:
         new_key = f"invoice_new:{invoice.id}"
@@ -145,7 +149,13 @@ def plan_notifications(
         announced = any(f"news:{item.id}" in known_keys for item in story.items)
         for index, item in enumerate(story.items):
             if index == 0 and not announced:
-                add(f"news:{item.id}", "news_big", "pending", news_fallback_text(story.items))
+                add(
+                    f"news:{item.id}",
+                    "news_big",
+                    "pending",
+                    news_fallback_text(story.items),
+                    tuple(story.items),
+                )
             else:
                 add(f"news:{item.id}", "news_big", "skipped", "")
     return rows
