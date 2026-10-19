@@ -20,3 +20,16 @@ Pending notifications reach the owner's Telegram chat, never at night, and failu
 
 ## Dependencies
 001/01.
+
+## Notes
+- Implementation plan: [03-sender.plan.md](03-sender.plan.md).
+
+## Verified
+
+2026-10-19, branch `feat/telegram-detection`.
+
+- Pending rows go out oldest first and become `sent` with `sent_at`: `test_pending_rows_are_sent_oldest_first`. Pass.
+- 21:59 sends, 22:00 holds, 06:59 holds, 07:00 sends (Berlin): `test_quiet_hours`. Pass.
+- A 429 or 5xx keeps the row pending with one more attempt, and the fifth makes it `failed`: `test_retryable_answer_keeps_the_row_pending_until_five_attempts`, `test_network_error_counts_an_attempt`. Pass.
+- A 401 fails the row, logs `telegram_misconfigured` without the text, and stops the run: `test_bad_token_fails_the_row_and_stops`. Pass.
+- Also: Telegram off sends nothing (`test_off_sends_nothing`); the bot token, which is part of the request URL, is redacted from httpx's request log (`test_the_token_never_reaches_the_logs`). Found while building: httpx logs every URL at INFO, so without the filter the token would reach Railway's logs.
