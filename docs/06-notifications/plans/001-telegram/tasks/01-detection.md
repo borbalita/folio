@@ -24,3 +24,6 @@ Each ingest run records one notification row per new invoice, due-soon invoice a
 
 ## Dependencies
 None.
+
+## Notes
+- Implementation plan: [01-detection.plan.md](01-detection.plan.md).
