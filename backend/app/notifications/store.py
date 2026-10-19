@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -24,6 +24,8 @@ from app.notifications.detect import (
     StoryFacts,
     plan_notifications,
 )
+
+NEWS_LOOKBACK = timedelta(days=2)
 
 
 def telegram_enabled() -> bool:
@@ -52,11 +54,12 @@ def load_invoices(session: Session) -> list[InvoiceFacts]:
     return [invoice_facts(row.Invoice, row.from_address) for row in rows]
 
 
-def load_big_stories(session: Session) -> list[StoryFacts]:
+def load_big_stories(session: Session, since: date) -> list[StoryFacts]:
+    """Big stories seen since `since`: a backfill of old mail never announces old news."""
     rows = session.execute(
         select(NewsItem)
         .join(NewsStory, NewsStory.id == NewsItem.story_id)
-        .where(NewsStory.is_big.is_(True))
+        .where(NewsStory.is_big.is_(True), NewsStory.last_seen >= since)
         .order_by(NewsStory.first_seen, NewsItem.edition_date, NewsItem.position)
     ).scalars()
     stories: dict[object, list[NewsItemFacts]] = {}
@@ -93,7 +96,7 @@ def record_notifications(session: Session, now: datetime) -> int:
     today = now.astimezone(ZoneInfo(settings.email_timezone)).date()
     rows = plan_notifications(
         load_invoices(session),
-        load_big_stories(session),
+        load_big_stories(session, since=today - NEWS_LOOKBACK),
         known_keys(session),
         today=today,
         app_url=settings.app_url or "",

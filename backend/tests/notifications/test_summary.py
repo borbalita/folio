@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import structlog
-from openai import APIConnectionError
+from openai import APIConnectionError, LengthFinishReasonError
 
 from app.notifications import store, summary
 from app.notifications.detect import NewsItemFacts, StoryFacts
@@ -54,6 +54,26 @@ def test_model_error_falls_back_to_the_first_title(monkeypatch: pytest.MonkeyPat
     assert {"event": "news_summary_failed", "error": "APIConnectionError", "log_level": "warning"} in logs
 
 
+@pytest.mark.parametrize(
+    "error",
+    [
+        LengthFinishReasonError(completion=MagicMock()),
+        ValueError("model returned something unparseable"),
+    ],
+)
+def test_any_model_error_falls_back(monkeypatch: pytest.MonkeyPatch, error: Exception) -> None:
+    def fail(items):
+        raise error
+
+    monkeypatch.setattr(summary, "request_summary", fail)
+
+    with structlog.testing.capture_logs() as logs:
+        text = summary.news_text(ITEMS)
+
+    assert text.startswith("📰 Lab ships model X\n")
+    assert [e["error"] for e in logs if e["event"] == "news_summary_failed"] == [type(error).__name__]
+
+
 def test_the_prompt_sees_only_titles_and_blurbs() -> None:
     messages = summary.summary_messages(ITEMS)
 
@@ -66,7 +86,7 @@ def _record(monkeypatch, *, known: set[str], enabled: bool) -> list[str]:
     asked: list[str] = []
     monkeypatch.setattr(summary, "news_text", lambda items: asked.append("asked") or "summary text")
     monkeypatch.setattr(store, "load_invoices", lambda session: [])
-    monkeypatch.setattr(store, "load_big_stories", lambda session: [StoryFacts(items=ITEMS)])
+    monkeypatch.setattr(store, "load_big_stories", lambda session, since: [StoryFacts(items=ITEMS)])
     monkeypatch.setattr(store, "known_keys", lambda session: set(known))
     monkeypatch.setattr(store, "telegram_enabled", lambda: enabled)
     inserted: list = []
@@ -84,7 +104,11 @@ def test_new_big_story_is_summarised_once(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_already_announced_story_never_calls_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
-    asked, _ = _record(monkeypatch, known={f"news:{ITEMS[0].id}", f"news:{ITEMS[1].id}"}, enabled=True)
+    asked, _ = _record(
+        monkeypatch,
+        known={f"news:{i.source}:{i.url}" for i in ITEMS},
+        enabled=True,
+    )
 
     assert asked == []
 

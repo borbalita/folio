@@ -30,8 +30,14 @@ def invoice(**overrides) -> InvoiceFacts:
     return InvoiceFacts(**values)
 
 
-def item(source: str, title: str = "Model X ships") -> NewsItemFacts:
-    return NewsItemFacts(id=uuid.uuid4(), source=source, title=title, blurb="b", url=f"https://{source}.test/x")
+def item(source: str, title: str = "Model X ships", url: str | None = None) -> NewsItemFacts:
+    return NewsItemFacts(
+        id=uuid.uuid4(), source=source, title=title, blurb="b", url=url or f"https://{source}.test/x"
+    )
+
+
+def news_key(it: NewsItemFacts) -> str:
+    return f"news:{it.source}:{it.url}"
 
 
 def plan(invoices=(), stories=(), known=frozenset(), enabled=True):
@@ -114,7 +120,7 @@ def test_big_story_announced_once_by_its_items() -> None:
     rows = plan(stories=[story])
     pending = [row for row in rows if row.status == "pending"]
 
-    assert {row.key for row in rows} == {f"news:{tldr.id}", f"news:{alpha.id}"}
+    assert {row.key for row in rows} == {news_key(tldr), news_key(alpha)}
     [message] = pending
     assert message.kind == "news_big"
     assert message.text == (
@@ -123,12 +129,22 @@ def test_big_story_announced_once_by_its_items() -> None:
 
 
 def test_rebuilt_or_grown_story_is_not_announced_again() -> None:
-    tldr, alpha, later = item("tldr"), item("alpha_signal"), item("tldr", "More on X")
-    known = {f"news:{tldr.id}", f"news:{alpha.id}"}
+    tldr, alpha = item("tldr"), item("alpha_signal")
+    later = item("tldr", "More on X", "https://tldr.test/more")
+    known = {news_key(tldr), news_key(alpha)}
 
     rows = plan(stories=[StoryFacts(items=[tldr, alpha, later])], known=known)
 
-    assert [(row.key, row.status) for row in rows] == [(f"news:{later.id}", "skipped")]
+    assert [(row.key, row.status) for row in rows] == [(news_key(later), "skipped")]
+
+
+def test_reembedded_items_with_new_ids_are_not_announced_again() -> None:
+    tldr, alpha = item("tldr"), item("alpha_signal")
+    known = {news_key(tldr), news_key(alpha)}
+    # Re-embedding deletes and recreates news items: same articles, new ids.
+    again = [item("tldr", url=tldr.url), item("alpha_signal", url=alpha.url)]
+
+    assert plan(stories=[StoryFacts(items=again)], known=known) == []
 
 
 def test_disabled_settings_skip_every_new_row() -> None:

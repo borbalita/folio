@@ -146,3 +146,19 @@ def test_the_token_never_reaches_the_logs(caplog: pytest.LogCaptureFixture) -> N
 
     assert any("sendMessage" in record.getMessage() for record in caplog.records)
     assert not any("123:abc" in record.getMessage() for record in caplog.records)
+
+
+
+def test_rate_limit_stops_the_run_without_burning_the_others() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(429, json={"ok": False, "parameters": {"retry_after": 30}})
+
+    pending = rows("a", "b", "c")
+    telegram.send_pending(session_with(pending), NOON, client=client(handler))
+
+    assert calls == [1]
+    assert [r.attempts for r in pending] == [1, 0, 0]
+    assert all(r.status == "pending" for r in pending)

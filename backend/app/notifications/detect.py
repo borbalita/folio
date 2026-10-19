@@ -99,6 +99,10 @@ def due_soon_text(invoice: InvoiceFacts, today: date, app_url: str) -> str:
     )
 
 
+def news_key(item: NewsItemFacts) -> str:
+    return f"news:{item.source}:{item.url}"
+
+
 def news_links(items: list[NewsItemFacts]) -> str:
     """One link per newsletter, in the order the items came."""
     seen: dict[str, str] = {}
@@ -145,17 +149,18 @@ def plan_notifications(
             add(due_key, "invoice_due", "pending", due_soon_text(invoice, today, app_url))
 
     for story in stories:
-        # Stories are rebuilt with new ids, so "announced" is remembered per news item.
-        announced = any(f"news:{item.id}" in known_keys for item in story.items)
+        # Stories are rebuilt with new ids on every run, and news items get new ids when they
+        # are re-embedded, so "announced" is remembered per article: newsletter and link.
+        announced = any(news_key(item) in known_keys for item in story.items)
         for index, item in enumerate(story.items):
             if index == 0 and not announced:
                 add(
-                    f"news:{item.id}",
+                    news_key(item),
                     "news_big",
                     "pending",
                     news_fallback_text(story.items),
                     tuple(story.items),
                 )
             else:
-                add(f"news:{item.id}", "news_big", "skipped", "")
+                add(news_key(item), "news_big", "skipped", "")
     return rows

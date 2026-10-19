@@ -287,3 +287,22 @@ def test_notification_errors_never_fail_the_run(scheduled_env, monkeypatch) -> N
     (row,) = scheduled_env.job_session.added
     assert row.status == "ok"
     assert row.counts["notifications_error"] == 1
+
+
+
+def test_notification_error_log_has_no_content(scheduled_env, monkeypatch) -> None:
+    import structlog
+
+    scheduled_env.use_real_run_job()
+
+    def broken(session, now):
+        raise RuntimeError("Stadtwerke 49.90 secret")
+
+    monkeypatch.setattr("ingest.email.run.record_notifications", broken)
+
+    with structlog.testing.capture_logs() as logs:
+        main(["--scheduled"])
+
+    [entry] = [e for e in logs if e["event"] == "notifications_failed"]
+    assert entry["error"] == "RuntimeError"
+    assert "secret" not in str(logs)

@@ -8,6 +8,7 @@
 
 - 2026-10-19: in chat, the owner chose push only, instant messages, new-invoice and due-soon events, big news only, and payee, amount and due date in messages. They approved the assumptions (3 days, quiet hours 22:00–07:00 Berlin, no flood at launch) and the outbox approach. Big-news messages carry a summary of both newsletters (owner's addition).
 - 2026-10-19: the owner approved the written spec; the plan is Ready.
+- 2026-10-19: after the code review, news is keyed per article with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner to confirm).
 
 ## Problem
 
@@ -55,7 +56,7 @@ Non-goals: buttons or commands in Telegram; asking the assistants from Telegram;
 Email ingest (cron, 30 min)
   ├─ extract invoices, rebuild stories (existing)
   ├─ detect events ──► notifications (unique key per event)
-  │     invoice_new:<invoice id>   invoice_due:<invoice id>   news:<news item id>
+  │     invoice_new:<invoice id>   invoice_due:<invoice id>   news:<newsletter>:<url>
   └─ send due rows ──► Telegram sendMessage   (held 22:00–07:00 Berlin, retried next run)
 ```
 
@@ -63,7 +64,7 @@ Email ingest (cron, 30 min)
 - **Detection** runs after extraction and story building in each ingest run, and records rows only:
   - **New invoice:** any invoice without an `invoice_new` row. Wording for `open`: "🧾 New invoice: {payee}, {amount}, due {date}". When it is due within 3 days, "· due soon" is added and its `invoice_due` row is recorded as `skipped`, so it gets one message. Wording for `needs_info`: "🧾 New invoice from {sender}: details missing, check it in Folio".
   - **Due soon:** an `open` invoice with a due date at most 3 days ahead (Berlin dates) and no `invoice_due` row. Wording: "⏰ Due in {n} days: {payee}, {amount} ({date})".
-  - **Big news:** a big story whose items have no `news:` row yet gets one message; a row is recorded for each of its items, so the message is attached to the first one and the others are `skipped`. A rebuilt story (new id) or one that gains an item is not announced again.
+  - **Big news:** a big story seen in the last 2 days whose articles have no `news:` row yet gets one message; a row is recorded per article (`news:<newsletter>:<url>`), so the message is attached to the first one and the others are `skipped`. Keys are per article, not per story or news item, because stories are rebuilt and items re-embedded with new ids. A rebuilt story, a re-embedded item or a story that gains an item is not announced again, and a backfill of old mail never announces old news.
   - Each invoice message links to `{APP_URL}/finance/invoices/{email id}`.
 - **News summary:** a structured model call on the story's items (title and blurb only) returns a headline and 2–3 sentences. Message:
   ```text
@@ -71,16 +72,16 @@ Email ingest (cron, 30 min)
   {summary}
   TLDR: {url} · Alpha Signal: {url}
   ```
-  A failed call (any model error) falls back to the first item's title and both links; the error type is logged.
+  A failed call (an API error, a content filter or length stop, or unparseable output) falls back to the first item's title and both links; the error type is logged.
 - **Sending** happens after detection: pending rows, oldest first, through `sendMessage` (`httpx`, 10 s timeout), one at a time.
   - **Quiet hours:** between 22:00 and 07:00 Berlin nothing is sent.
-  - **Failure:** a `429`, a `5xx` or a network error counts an attempt and keeps the row pending; 5 attempts mark it `failed`.
+  - **Failure:** a `5xx` or a network error counts an attempt and keeps the row pending; 5 attempts mark it `failed`. A `429` counts an attempt for that row and stops the run, so the rest keep their attempts.
   - A `4xx` other than `429` (a bad token or chat id) marks the row `failed` at once, and the run logs `telegram_misconfigured`.
   - Sending never fails the ingest job. `job_runs.counts` gains `notifications_new`, `notifications_sent` and `notifications_failed`.
 - **Configuration:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and `APP_URL` in `config.py`. With any of them missing, new rows are recorded as `skipped`, so turning Telegram on later doesn't send old events. The `email-ingest` Railway service already references every backend variable.
 - **Setup command:** `python -m ingest.notify --chat-id` prints the chat ids from the bot's `getUpdates`, after the owner has messaged the bot.
-- **Migration:** creates the table and records a `sent` row for every existing invoice, every open invoice due within 3 days, and every item of an existing big story.
-- **Privacy:** Telegram sees payees, amounts, due dates, news headlines and summaries. Message texts live only in `notifications` (RLS). Logs carry kinds, counts and error types, never text. The summary call uses the existing content-free tracing.
+- **Migration:** creates the table and records a `sent` row for every existing invoice, every open invoice due within 3 days, and every article of an existing big story.
+- **Privacy:** Telegram sees payees, amounts, due dates, news headlines and summaries. Message texts live only in `notifications` (RLS). Logs carry kinds, counts and error types, never text. The summary call, like newsletter extraction, calls the OpenAI SDK directly and is not traced. A notification error is logged by type only: database errors carry bound parameters.
 - **Dependencies:** none new (`httpx`, PydanticAI and the OpenAI SDK are already used).
 
 ## Success criteria

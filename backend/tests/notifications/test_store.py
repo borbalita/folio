@@ -53,7 +53,7 @@ def test_record_uses_berlin_date_and_commits(monkeypatch: pytest.MonkeyPatch) ->
         amount=Decimal("1.00"), currency="EUR", due_date=date(2026, 10, 20),
     )
     monkeypatch.setattr(store, "load_invoices", lambda session: [store.invoice_facts(inv, "s@x")])
-    monkeypatch.setattr(store, "load_big_stories", lambda session: [])
+    monkeypatch.setattr(store, "load_big_stories", lambda session, since: seen.setdefault("since", since) and [])
     monkeypatch.setattr(store, "known_keys", lambda session: set())
 
     def plan(invoices, stories, known, *, today, app_url, enabled):
@@ -67,5 +67,18 @@ def test_record_uses_berlin_date_and_commits(monkeypatch: pytest.MonkeyPatch) ->
     added = store.record_notifications(session, datetime(2026, 10, 19, 23, 30, tzinfo=UTC))
 
     assert seen["today"] == date(2026, 10, 20)
+    assert seen["since"] == date(2026, 10, 18)
     assert added == 1
     session.commit.assert_called_once()
+
+
+
+def test_only_recent_big_stories_are_read() -> None:
+    session = MagicMock()
+    session.execute.return_value.scalars.return_value = []
+
+    store.load_big_stories(session, since=date(2026, 10, 17))
+
+    sql = _sql(session.execute.call_args.args[0])
+    assert "news_stories.is_big IS true" in sql
+    assert "news_stories.last_seen >= " in sql

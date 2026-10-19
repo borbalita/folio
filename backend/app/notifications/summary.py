@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 
 import structlog
-from openai import NOT_GIVEN, APIError, OpenAI
+from openai import NOT_GIVEN, OpenAI, OpenAIError
 from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel, Field
 
@@ -54,7 +54,9 @@ def news_text(items: list[NewsItemFacts]) -> str:
     """The big-news message; a failed call still sends the first headline and the links."""
     try:
         parsed = request_summary(items).choices[0].message.parsed
-    except APIError as exc:
+    except (OpenAIError, ValueError) as exc:
+        # Any failure (API, content filter, length, unparseable output) falls back: a summary
+        # that can't be written must not block this or any other notification.
         log.warning("news_summary_failed", error=type(exc).__name__)
         return news_fallback_text(items)
     if parsed is None:

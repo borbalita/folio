@@ -78,10 +78,11 @@ def _notify() -> dict[str, int]:
         now = datetime.now(UTC)
         new = record_notifications(session, now)
         sent = send_pending(session, now)
-    except Exception:
-        # Deliberately broad: whatever breaks here, the mail is already ingested.
+    except Exception as exc:  # noqa: BLE001
+        # Deliberately broad: whatever breaks here, the mail is already ingested. The type
+        # only: database errors carry bound parameters, which would put message text in logs.
         session.rollback()
-        log.exception("notifications_failed")
+        log.error("notifications_failed", error=type(exc).__name__)
         return {"notifications_error": 1}
     finally:
         session.close()

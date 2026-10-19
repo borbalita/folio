@@ -89,6 +89,11 @@ def send_pending(
                 row.status = NotificationStatus.SENT
                 row.sent_at = now
                 counts["sent"] += 1
+            elif response.status_code == 429:
+                # Rate limited: every further message would be refused too. Try next run.
+                _retry_later(row, "429", counts)
+                session.commit()
+                break
             elif _retryable(response.status_code):
                 _retry_later(row, str(response.status_code), counts)
             else:
