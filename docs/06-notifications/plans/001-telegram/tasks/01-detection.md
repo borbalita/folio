@@ -27,3 +27,16 @@ None.
 
 ## Notes
 - Implementation plan: [01-detection.plan.md](01-detection.plan.md).
+
+## Verified
+
+2026-10-19, branch `feat/telegram-detection`.
+
+- A new open invoice is recorded once across two runs: `test_new_open_invoice_once`. Pass.
+- `needs_info` says details are missing and shows no amount: `test_needs_info_says_details_missing_and_shows_no_amount`. Pass.
+- Due in 3 days is reminded, 4 days is not: `test_due_in_three_days_reminds_four_does_not`, `test_overdue_invoice_gets_no_due_soon_reminder`. Pass.
+- New and due in 2 days is one pending message, with `invoice_due` skipped: `test_new_and_due_soon_is_one_message`. Pass.
+- A rebuilt or grown big story records nothing pending: `test_big_story_announced_once_by_its_items`, `test_rebuilt_or_grown_story_is_not_announced_again`. Pass.
+- Missing Telegram settings skip every new row: `test_disabled_settings_skip_every_new_row`, `test_enabled_needs_all_three_settings`. Pass.
+- The migration on the dev database (manual): `d92e6ad10cbb` applied (owner OK). The baseline recorded 10 `invoice_new` and 38 `news_big` rows as `sent`; no open invoice was due within 3 days. RLS is on. A dry run of detection against the database plans nothing. Pass.
+- Also: the Berlin date at 23:30 UTC is the next day (`test_record_uses_berlin_date_and_commits`); invoices that arrive already paid are `skipped` (`test_already_paid_invoice_is_skipped`; ruling in the plan file).
