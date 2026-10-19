@@ -18,6 +18,7 @@ from app.database.models.finance.invoice_match import InvoiceMatch
 from app.database.models.finance.payment_draft import PaymentDraft
 from app.database.models.finance.transaction import Transaction
 from app.database.models.job_run import JobRun
+from app.database.models.notification import Notification
 from app.database.models.user import User
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "MessageCitation",
     "NewsItem",
     "NewsStory",
+    "Notification",
     "PaymentDraft",
     "SourceDocument",
     "Transaction",
