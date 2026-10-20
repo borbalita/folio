@@ -14,8 +14,8 @@ from app.notifications.detect import NewsItemFacts, StoryFacts
 from app.notifications.summary import NewsSummary
 
 ITEMS = [
-    NewsItemFacts(id=uuid.uuid4(), source="tldr", title="Lab ships model X", blurb="It is fast.", url="https://tldr.test/x"),
-    NewsItemFacts(id=uuid.uuid4(), source="alpha_signal", title="Model X is out", blurb="Beats Y on Z.", url="https://alpha.test/x"),
+    NewsItemFacts(id=uuid.uuid4(), email_id=uuid.uuid4(), position=0, source="tldr", title="Lab ships model X", blurb="It is fast.", url="https://tldr.test/x"),
+    NewsItemFacts(id=uuid.uuid4(), email_id=uuid.uuid4(), position=3, source="alpha_signal", title="Model X is out", blurb="Beats Y on Z.", url="https://alpha.test/x"),
 ]
 
 
@@ -106,7 +106,7 @@ def test_new_big_story_is_summarised_once(monkeypatch: pytest.MonkeyPatch) -> No
 def test_already_announced_story_never_calls_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
     asked, _ = _record(
         monkeypatch,
-        known={f"news:{i.source}:{i.url}" for i in ITEMS},
+        known={f"news:{i.email_id}:{i.position}" for i in ITEMS},
         enabled=True,
     )
 
@@ -118,3 +118,14 @@ def test_disabled_telegram_never_calls_the_model(monkeypatch: pytest.MonkeyPatch
 
     assert asked == []
     assert all(row.status == "skipped" for row in inserted)
+
+
+
+def test_summary_without_any_links_has_no_link_line(monkeypatch: pytest.MonkeyPatch) -> None:
+    items = [ITEMS[0].__class__(**{**ITEMS[1].__dict__, "url": ""})]
+    monkeypatch.setattr(
+        summary, "request_summary",
+        lambda items: _completion(NewsSummary(headline="H", summary="S.")),
+    )
+
+    assert summary.news_text(items) == "📰 H\nS."

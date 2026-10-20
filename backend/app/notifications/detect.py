@@ -30,6 +30,8 @@ class InvoiceFacts:
 @dataclass(frozen=True)
 class NewsItemFacts:
     id: uuid.UUID
+    email_id: uuid.UUID
+    position: int
     source: str
     title: str
     blurb: str
@@ -100,19 +102,27 @@ def due_soon_text(invoice: InvoiceFacts, today: date, app_url: str) -> str:
 
 
 def news_key(item: NewsItemFacts) -> str:
-    return f"news:{item.source}:{item.url}"
+    # An item's newsletter email and its place in it survive re-embedding, which recreates
+    # items with new ids. Links can't serve: most Alpha Signal items have none.
+    return f"news:{item.email_id}:{item.position}"
 
 
 def news_links(items: list[NewsItemFacts]) -> str:
-    """One link per newsletter, in the order the items came."""
+    """One link per newsletter that has one, in the order the items came."""
     seen: dict[str, str] = {}
     for item in items:
-        seen.setdefault(item.source, item.url)
+        if item.url:
+            seen.setdefault(item.source, item.url)
     return " · ".join(f"{SOURCE_NAMES.get(source, source)}: {url}" for source, url in seen.items())
 
 
+def news_message(headline: str, body: str | None, items: list[NewsItemFacts]) -> str:
+    lines = [f"📰 {headline}", body, news_links(items)]
+    return "\n".join(line for line in lines if line)
+
+
 def news_fallback_text(items: list[NewsItemFacts]) -> str:
-    return f"📰 {items[0].title}\n{news_links(items)}"
+    return news_message(items[0].title, None, items)
 
 
 def plan_notifications(

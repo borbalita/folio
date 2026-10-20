@@ -10,7 +10,7 @@ from openai.types.chat import ParsedChatCompletion
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.notifications.detect import NewsItemFacts, news_fallback_text, news_links
+from app.notifications.detect import NewsItemFacts, news_fallback_text, news_message
 
 log = structlog.get_logger(__name__)
 
@@ -62,4 +62,4 @@ def news_text(items: list[NewsItemFacts]) -> str:
     if parsed is None:
         log.warning("news_summary_failed", error="no_parsed_output")
         return news_fallback_text(items)
-    return f"📰 {parsed.headline.strip()}\n{parsed.summary.strip()}\n{news_links(items)}"
+    return news_message(parsed.headline.strip(), parsed.summary.strip(), items)

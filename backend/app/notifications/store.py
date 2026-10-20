@@ -66,7 +66,13 @@ def load_big_stories(session: Session, since: date) -> list[StoryFacts]:
     for item in rows:
         stories.setdefault(item.story_id, []).append(
             NewsItemFacts(
-                id=item.id, source=item.source, title=item.title, blurb=item.blurb, url=item.url
+                id=item.id,
+                email_id=item.email_id,
+                position=item.position,
+                source=item.source,
+                title=item.title,
+                blurb=item.blurb,
+                url=item.url,
             )
         )
     return [StoryFacts(items=items) for items in stories.values()]

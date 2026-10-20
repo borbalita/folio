@@ -30,14 +30,27 @@ def invoice(**overrides) -> InvoiceFacts:
     return InvoiceFacts(**values)
 
 
-def item(source: str, title: str = "Model X ships", url: str | None = None) -> NewsItemFacts:
+def item(
+    source: str,
+    title: str = "Model X ships",
+    url: str | None = None,
+    *,
+    email_id: uuid.UUID | None = None,
+    position: int = 0,
+) -> NewsItemFacts:
     return NewsItemFacts(
-        id=uuid.uuid4(), source=source, title=title, blurb="b", url=url or f"https://{source}.test/x"
+        id=uuid.uuid4(),
+        email_id=email_id or uuid.uuid4(),
+        position=position,
+        source=source,
+        title=title,
+        blurb="b",
+        url=f"https://{source}.test/x" if url is None else url,
     )
 
 
 def news_key(it: NewsItemFacts) -> str:
-    return f"news:{it.source}:{it.url}"
+    return f"news:{it.email_id}:{it.position}"
 
 
 def plan(invoices=(), stories=(), known=frozenset(), enabled=True):
@@ -130,7 +143,7 @@ def test_big_story_announced_once_by_its_items() -> None:
 
 def test_rebuilt_or_grown_story_is_not_announced_again() -> None:
     tldr, alpha = item("tldr"), item("alpha_signal")
-    later = item("tldr", "More on X", "https://tldr.test/more")
+    later = item("tldr", "More on X", "https://tldr.test/more", position=1)
     known = {news_key(tldr), news_key(alpha)}
 
     rows = plan(stories=[StoryFacts(items=[tldr, alpha, later])], known=known)
@@ -141,8 +154,11 @@ def test_rebuilt_or_grown_story_is_not_announced_again() -> None:
 def test_reembedded_items_with_new_ids_are_not_announced_again() -> None:
     tldr, alpha = item("tldr"), item("alpha_signal")
     known = {news_key(tldr), news_key(alpha)}
-    # Re-embedding deletes and recreates news items: same articles, new ids.
-    again = [item("tldr", url=tldr.url), item("alpha_signal", url=alpha.url)]
+    # Re-embedding deletes and recreates news items: same email and position, new ids.
+    again = [
+        item("tldr", email_id=tldr.email_id, position=tldr.position),
+        item("alpha_signal", email_id=alpha.email_id, position=alpha.position),
+    ]
 
     assert plan(stories=[StoryFacts(items=again)], known=known) == []
 
@@ -151,3 +167,17 @@ def test_disabled_settings_skip_every_new_row() -> None:
     rows = plan(invoices=[invoice()], stories=[StoryFacts(items=[item("tldr"), item("alpha_signal")])], enabled=False)
 
     assert rows and all(row.status == "skipped" for row in rows)
+
+
+
+def test_items_without_links_are_still_told_apart_and_not_linked() -> None:
+    # Alpha Signal items mostly carry no link.
+    first = StoryFacts(items=[item("tldr"), item("alpha_signal", url="")])
+    second = StoryFacts(items=[item("tldr", "Other news"), item("alpha_signal", "Other news", url="")])
+
+    rows = plan(stories=[first])
+    rows += plan(stories=[second], known={row.key for row in rows})
+
+    pending = [row for row in rows if row.status == "pending"]
+    assert len(pending) == 2
+    assert pending[0].text == "📰 Model X ships\nTLDR: https://tldr.test/x"
