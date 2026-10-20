@@ -21,7 +21,7 @@ All other tasks.
 
 2026-10-20, branch `docs/notifications-overview`.
 
-- `docs/README.md` links the overview, and the overview links back to this plan (browser): **pending**, checked on GitHub after push.
+- `docs/README.md` links the overview, and the overview links back to this plan (browser): on GitHub (branch `docs/notifications-overview`), `docs/README.md` has an Overview link to `06-notifications/overview.md`; the overview's "plan 001" link opens `plans/001-telegram/README.md`, which renders. Pass.
 - The success criteria (manual):
   1. A real invoice email reaches Telegram within 30 minutes: **pending**, waiting for the next invoice email.
   2. An open invoice due in 3 days is reminded once: **pending**, waiting for an invoice 3 days before its due date.
