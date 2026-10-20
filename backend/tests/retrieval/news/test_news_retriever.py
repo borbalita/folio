@@ -208,9 +208,9 @@ def test_stories_big_only_and_dates_go_into_the_aggregate_query() -> None:
 
     assert stories == []
     sql, params = session.statements[0], session.params[0]
-    assert "s.is_big IS TRUE" in sql
-    assert "s.last_seen >= :since" in sql
-    assert "s.first_seen <= :until" in sql
+    assert "count(DISTINCT ni.source) > 1" in sql
+    assert "max(ni.edition_date) >= :since" in sql
+    assert "min(ni.edition_date) <= :until" in sql
     assert params["since"] == date(2026, 10, 12)
     assert params["until"] == date(2026, 10, 18)
     assert len(session.statements) == 1
@@ -224,7 +224,7 @@ def test_stories_without_dates_or_big_only_has_no_such_conditions() -> None:
     sql = session.statements[0]
     assert ":since" not in sql
     assert ":until" not in sql
-    assert "is_big IS TRUE" not in sql
+    assert "HAVING" not in sql
 
 
 def test_stories_scope_both_queries_to_the_user() -> None:
@@ -280,3 +280,18 @@ def test_search_span_has_settings_not_query_or_filters(
     assert "2026-09-17" not in search
     assert "'langfuse.observation.metadata.passage_count': 1" in search
     assert "SECRET" not in span_text(spans, "embed-query")
+
+
+def test_big_and_dates_come_from_the_users_own_items_only() -> None:
+    # The shared story row may be big or wider because of another mailbox's items.
+    session = _Queries([])
+
+    NewsRetriever().stories(filters=_filters(), limit=10, session=session)  # type: ignore[arg-type]
+
+    sql = session.statements[0]
+    assert "s.is_big" not in sql
+    assert "s.first_seen" not in sql
+    assert "s.last_seen" not in sql
+    assert "min(ni.edition_date) AS first_seen" in sql
+    assert "max(ni.edition_date) AS last_seen" in sql
+    assert "count(DISTINCT ni.source) > 1 AS is_big" in sql

@@ -110,3 +110,17 @@ def test_no_active_mailbox_returns_the_empty_texts(
     assert execute_search_news(deps, "robots") == "No matching news."
     assert execute_list_big_news(deps) == "No big stories in that range."
     assert deps.seen_ids == set()
+
+
+def test_list_big_news_without_dates_covers_the_last_seven_days(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    deps = _deps(monkeypatch, [OWNED])
+    monkeypatch.setattr(
+        "app.email_assistant.tools.news.berlin_today", lambda: date(2026, 10, 20)
+    )
+
+    execute_list_big_news(deps)
+
+    filters = deps.news.filters  # type: ignore[attr-defined]
+    assert (filters.since, filters.until) == (date(2026, 10, 14), date(2026, 10, 20))

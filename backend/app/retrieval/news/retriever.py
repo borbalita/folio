@@ -154,27 +154,33 @@ class NewsRetriever:
 
 def _stories(session: Session, filters: NewsSearchFilters, limit: int) -> list[Story]:
     scope = scope_clause(filters.user_id, filters.mailbox_ids)
-    clauses = [scope.sql]
     params: dict[str, Any] = dict(scope.params)
+    having: list[str] = []
     if filters.big_only:
-        clauses.append("s.is_big IS TRUE")
+        having.append("count(DISTINCT ni.source) > 1")
     if filters.until is not None:
-        clauses.append("s.first_seen <= :until")
+        having.append("min(ni.edition_date) <= :until")
         params["until"] = filters.until
     if filters.since is not None:
-        clauses.append("s.last_seen >= :since")
+        having.append("max(ni.edition_date) >= :since")
         params["since"] = filters.since
-    # Counts only the user's items, so coverage never includes another mailbox.
+    having_sql = f"HAVING {' AND '.join(having)}" if having else ""
+    # Stories group items from every mailbox, so big and the dates come from this
+    # user's items only: another user's item never makes a story big or wider.
     aggregates = session.execute(
         text(
             f"""
-            SELECT s.id, s.first_seen, s.last_seen, s.is_big,
+            SELECT s.id,
+                   min(ni.edition_date) AS first_seen,
+                   max(ni.edition_date) AS last_seen,
+                   count(DISTINCT ni.source) > 1 AS is_big,
                    array_agg(DISTINCT ni.source ORDER BY ni.source) AS sources,
                    count(ni.id) AS item_count
             FROM news_stories s
             JOIN {_ITEMS_FROM} ON ni.story_id = s.id
-            WHERE {" AND ".join(clauses)}
-            GROUP BY s.id, s.first_seen, s.last_seen, s.is_big
+            WHERE {scope.sql}
+            GROUP BY s.id
+            {having_sql}
             """
         ),
         params,
