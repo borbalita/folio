@@ -7,10 +7,11 @@ from datetime import date
 
 from pydantic_ai import RunContext
 
+from app.config import settings
 from app.database import mailboxes
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.tools.status import emit_status
-from app.retrieval.news.formatting import format_big_stories, format_news_passages
+from app.retrieval.news.formatting import format_news_passages, format_stories
 from app.retrieval.news.queries import NewsSearchFilters
 
 READING_NEWSLETTERS = "Reading your AI newsletters"
@@ -68,11 +69,14 @@ def execute_list_big_news(
     since: date | None = None,
     until: date | None = None,
 ) -> str:
-    stories = deps.news.big_stories(filters=_filters(deps, since=since, until=until))
+    stories = deps.news.stories(
+        filters=_filters(deps, since=since, until=until, big_only=True),
+        limit=settings.retrieval_top_k,
+    )
     for story in stories:
         for item in story.items:
             deps.remember(item.item_id, item)
-    return format_big_stories(stories)
+    return format_stories(stories, empty="No big stories in that range.")
 
 
 def _filters(

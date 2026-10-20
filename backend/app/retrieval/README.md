@@ -75,7 +75,7 @@ Passages carry from, subject, sent date, and mailbox name. `format_email_passage
 - **`big_stories`.** Up to `RETRIEVAL_TOP_K` stories with `is_big` whose `first_seen`–`last_seen` range overlaps since–until, most recent first, each with its items in scope. Without dates it returns the most recent big stories.
 - **Citations** point at item ids, never at stories, so a story rebuild never breaks one.
 
-`format_news_passages` and `format_big_stories` write the tool text.
+`format_news_passages` and `format_stories` (with each story's `coverage_line`) write the tool text.
 
 ## Default settings
 
