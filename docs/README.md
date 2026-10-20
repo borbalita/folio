@@ -53,6 +53,7 @@ The finance agent: invoices from mail, bank and PayPal transactions, categories,
 
 Messages to the owner outside the app: Telegram notifications about invoices and big AI news.
 
+- [Overview](06-notifications/overview.md)
 - [Plans](06-notifications/plans/README.md)
 
 ## Legal
