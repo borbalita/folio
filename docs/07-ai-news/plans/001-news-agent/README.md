@@ -1,12 +1,13 @@
 # 001 — AI News agent: big stories and briefings
 
 - Created: 2026-10-20
-- Status: Draft
-- Current stage: Stage 4 design approved in chat; written spec awaiting the owner's review
+- Status: In progress
+- Current stage: Implementation; 001/01 next
 
 ## Approval state
 
 - 2026-10-20: in chat, the owner asked for a chatbot only about AI news that knows what big or important news means. They chose: a focused place for news, judged importance, briefings, demo-friendly; importance by coverage only; briefings on request in chat; owner-only; news moves out of the Email agent. Approach 1 (rank by coverage, grouping unchanged) chosen over grouping same-newsletter items across days. Design sections 1–3 approved. No evals for this agent.
+- 2026-10-20: the owner approved the written spec and asked to build it; the plan is Ready.
 - 2026-10-20: demo data comes from a separate plan; this agent must work for a demo account's own invented newsletters.
 
 ## Problem
@@ -77,12 +78,10 @@ chat orchestrator ── agent "news" ──► PydanticAI agent (app/news_assis
 
 ## Tasks
 
-Proposed; task files follow once the spec is approved.
-
-- [ ] 001/01 — Story coverage and ranking in news retrieval (test)
-- [ ] 001/02 — News agent, tools and chat turn, with the thread migration and access — after 01
-- [ ] 001/03 — News pages and picker card — after 02
-- [ ] 001/04 — News moves out of the Email agent (agent, instructions, picker text, eval modes) — after 02
+- [ ] [001/01 — Story coverage and ranking](tasks/01-coverage.md)
+- [ ] [001/02 — News agent, tools and chat turn](tasks/02-news-agent.md) — after 01
+- [ ] [001/03 — News pages and picker card](tasks/03-news-pages.md) — after 02
+- [ ] [001/04 — News moves out of the Email agent](tasks/04-email-without-news.md) — after 02
 
 ## Open questions and risks
 
