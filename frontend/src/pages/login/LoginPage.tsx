@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -15,15 +14,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth'
 
-type Mode = 'sign-in' | 'sign-up'
-
 export function LoginPage() {
-  const { status, signIn, signUp } = useAuth()
-  const [mode, setMode] = useState<Mode>('sign-in')
+  const { status, signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   if (status === 'authenticated') {
@@ -33,22 +28,14 @@ export function LoginPage() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
-    setMessage(null)
     setSubmitting(true)
 
-    const result =
-      mode === 'sign-in' ? await signIn(email, password) : await signUp(email, password)
+    const result = await signIn(email, password)
 
     setSubmitting(false)
 
     if (result.error) {
       setError(result.error)
-      return
-    }
-
-    if (mode === 'sign-up') {
-      setMessage('Account created. You can sign in if email confirmation is disabled.')
-      setMode('sign-in')
     }
   }
 
@@ -58,11 +45,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Welcome to Borbfolio</CardTitle>
-          <CardDescription>
-            {mode === 'sign-in'
-              ? 'Sign in with your email to continue.'
-              : 'Create an account with your email.'}
-          </CardDescription>
+          <CardDescription>Sign in with your email to continue.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={onSubmit}>
@@ -82,7 +65,7 @@ export function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+                autoComplete="current-password"
                 required
                 minLength={6}
                 value={password}
@@ -90,53 +73,15 @@ export function LoginPage() {
               />
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
             <Button
               type="submit"
               disabled={submitting || status === 'loading'}
               className="bg-(--brand-cyan) text-white hover:bg-(--brand-cyan)/90"
             >
-              {submitting
-                ? 'Please wait…'
-                : mode === 'sign-in'
-                  ? 'Sign in'
-                  : 'Sign up'}
+              {submitting ? 'Please wait…' : 'Sign in'}
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="justify-center text-sm text-muted-foreground">
-          {mode === 'sign-in' ? (
-            <p>
-              No account?{' '}
-              <button
-                type="button"
-                className="text-foreground underline-offset-4 hover:underline"
-                onClick={() => {
-                  setMode('sign-up')
-                  setError(null)
-                  setMessage(null)
-                }}
-              >
-                Sign up
-              </button>
-            </p>
-          ) : (
-            <p>
-              Already have an account?{' '}
-              <button
-                type="button"
-                className="text-foreground underline-offset-4 hover:underline"
-                onClick={() => {
-                  setMode('sign-in')
-                  setError(null)
-                  setMessage(null)
-                }}
-              >
-                Sign in
-              </button>
-            </p>
-          )}
-        </CardFooter>
       </Card>
     </main>
   )
