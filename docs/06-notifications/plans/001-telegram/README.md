@@ -8,7 +8,7 @@
 
 - 2026-10-19: in chat, the owner chose push only, instant messages, new-invoice and due-soon events, big news only, and payee, amount and due date in messages. They approved the assumptions (3 days, quiet hours 22:00–07:00 Berlin, no flood at launch) and the outbox approach. Big-news messages carry a summary of both newsletters (owner's addition).
 - 2026-10-19: the owner approved the written spec; the plan is Ready.
-- 2026-10-19: after the code review, news is keyed per article with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner to confirm).
+- 2026-10-19: after the code review, news is keyed per article (newsletter email and position) with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner to confirm).
 
 ## Problem
 
@@ -56,7 +56,7 @@ Non-goals: buttons or commands in Telegram; asking the assistants from Telegram;
 Email ingest (cron, 30 min)
   ├─ extract invoices, rebuild stories (existing)
   ├─ detect events ──► notifications (unique key per event)
-  │     invoice_new:<invoice id>   invoice_due:<invoice id>   news:<newsletter>:<url>
+  │     invoice_new:<invoice id>   invoice_due:<invoice id>   news:<email id>:<position>
   └─ send due rows ──► Telegram sendMessage   (held 22:00–07:00 Berlin, retried next run)
 ```
 
@@ -64,7 +64,7 @@ Email ingest (cron, 30 min)
 - **Detection** runs after extraction and story building in each ingest run, and records rows only:
   - **New invoice:** any invoice without an `invoice_new` row. Wording for `open`: "🧾 New invoice: {payee}, {amount}, due {date}". When it is due within 3 days, "· due soon" is added and its `invoice_due` row is recorded as `skipped`, so it gets one message. Wording for `needs_info`: "🧾 New invoice from {sender}: details missing, check it in Folio".
   - **Due soon:** an `open` invoice with a due date at most 3 days ahead (Berlin dates) and no `invoice_due` row. Wording: "⏰ Due in {n} days: {payee}, {amount} ({date})".
-  - **Big news:** a big story seen in the last 2 days whose articles have no `news:` row yet gets one message; a row is recorded per article (`news:<newsletter>:<url>`), so the message is attached to the first one and the others are `skipped`. Keys are per article, not per story or news item, because stories are rebuilt and items re-embedded with new ids. A rebuilt story, a re-embedded item or a story that gains an item is not announced again, and a backfill of old mail never announces old news.
+  - **Big news:** a big story seen in the last 2 days whose articles have no `news:` row yet gets one message; a row is recorded per article (`news:<newsletter email id>:<position>`), so the message is attached to the first one and the others are `skipped`. Keys are per article, not per story or news item id, because stories are rebuilt and items re-embedded with new ids; links can't serve, since most Alpha Signal items have none. Messages list only the links that exist. A rebuilt story, a re-embedded item or a story that gains an item is not announced again, and a backfill of old mail never announces old news.
   - Each invoice message links to `{APP_URL}/finance/invoices/{email id}`.
 - **News summary:** a structured model call on the story's items (title and blurb only) returns a headline and 2–3 sentences. Message:
   ```text
