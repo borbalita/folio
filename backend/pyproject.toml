@@ -36,7 +36,7 @@ exclude-newer = "7 days"
 
 [dependency-groups]
 dev = [
-    "docling==2.119.0",
+    "docling==2.132.0",
     "ipykernel==7.3.0",
     "pre-commit==4.6.2",
     "pytest==9.1.1",
