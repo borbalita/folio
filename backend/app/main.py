@@ -25,7 +25,19 @@ configure_logging()
 configure_tracing()
 log = structlog.get_logger(__name__)
 
-app = FastAPI(title="Document Copilot API")
+
+def docs_urls(environment: str) -> dict[str, str | None]:
+    """The docs map the whole API surface, so only a local run serves them."""
+    if environment == "local":
+        return {
+            "docs_url": "/docs",
+            "redoc_url": "/redoc",
+            "openapi_url": "/openapi.json",
+        }
+    return {"docs_url": None, "redoc_url": None, "openapi_url": None}
+
+
+app = FastAPI(title="Document Copilot API", **docs_urls(settings.environment))
 
 
 @app.exception_handler(Exception)

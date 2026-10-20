@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import base64
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
+import pytest
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExportResult
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace import Status, StatusCode
 
@@ -150,16 +154,47 @@ def test_exporter_filters_before_the_inner_exporter() -> None:
     assert "SECRET" not in _everything(exported)
 
 
-def test_langfuse_otlp_exporter_matches_the_sdk() -> None:
-    default = langfuse_otlp_exporter("pk", "sk", None)
-    custom = langfuse_otlp_exporter("pk", "sk", "https://eu.example.com")
+@pytest.fixture
+def otlp_receiver() -> Iterator[tuple[str, list[tuple[str, dict[str, str]]]]]:
+    """A local HTTP server that records the path and (lower-cased) headers of each export."""
+    received: list[tuple[str, dict[str, str]]] = []
 
-    assert default._endpoint == "https://cloud.langfuse.com/api/public/otel/v1/traces"
-    assert custom._endpoint == "https://eu.example.com/api/public/otel/v1/traces"
-    assert default._headers["Authorization"] == "Basic " + base64.b64encode(
-        b"pk:sk"
-    ).decode("ascii")
-    assert default._headers["x-langfuse-public-key"] == "pk"
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:
+            self.rfile.read(int(self.headers["Content-Length"]))
+            received.append(
+                (self.path, {k.lower(): v for k, v in self.headers.items()})
+            )
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args: object) -> None:
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_port}", received
+    server.shutdown()
+
+
+def test_langfuse_otlp_exporter_matches_the_sdk(otlp_receiver) -> None:
+    base_url, received = otlp_receiver
+    exporter = langfuse_otlp_exporter("pk", "sk", base_url)
+
+    assert exporter.export([_finished()]) is SpanExportResult.SUCCESS
+    ((path, headers),) = received
+    assert path == "/api/public/otel/v1/traces"
+    assert headers["authorization"] == "Basic " + base64.b64encode(b"pk:sk").decode(
+        "ascii"
+    )
+    assert headers["x-langfuse-public-key"] == "pk"
+
+
+def test_langfuse_otlp_exporter_defaults_to_langfuse_cloud() -> None:
+    exporter = langfuse_otlp_exporter("pk", "sk", None)
+
+    assert exporter._endpoint == "https://cloud.langfuse.com/api/public/otel/v1/traces"
 
 
 def test_status_message_that_is_not_a_code_is_dropped() -> None:
