@@ -24,6 +24,9 @@ jobs:
           # Settings refuse EMAIL_RERANK (on by default) without TYPESAFE_API_KEY. The
           # fast suite sets reranking explicitly where it tests it, so no key is needed.
           EMAIL_RERANK: "false"
+      # Runtime packages only; a known vulnerability fails the build until it is upgraded.
+      - run: uv export --frozen --no-dev --no-hashes --no-emit-project > requirements-audit.txt
+      - run: uvx pip-audit==2.10.1 -r requirements-audit.txt --no-deps --disable-pip
 
   frontend:
     runs-on: ubuntu-latest
@@ -43,3 +46,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsc --noEmit
       - run: pnpm lint
+      # Only what ships in the bundle; build tools like the shadcn CLI never reach the browser.
+      - run: pnpm audit --prod --audit-level high
