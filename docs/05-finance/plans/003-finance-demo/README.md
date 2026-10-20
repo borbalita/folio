@@ -1,12 +1,13 @@
 # 003 — Finance demo: a demo user with fake invoices and a live run
 
 - Created: 2026-10-20
-- Status: Draft
-- Current stage: Spec written; waiting for the owner's review
+- Status: Ready
+- Current stage: Spec approved; implementation not started
 
 ## Approval state
 
 - 2026-10-20: settled in chat, one question at a time: the demo is shown live by the owner first and may become self-serve later; it shows a ready-made state plus one invoice that arrives live; the live invoice skips the mailbox and enters the real pipeline; the demo is a second user in the production app; invoices come from a fixed catalogue of fictional vendors; a simulated bank booking closes the payment loop; the controls sit on a separate presenter page; reset is a button there plus a command. Design sections 1–4 approved.
+- 2026-10-20: written spec and task breakdown approved; the plan is Ready.
 
 ## Problem
 
