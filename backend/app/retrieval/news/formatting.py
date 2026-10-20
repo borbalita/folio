@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from app.retrieval.news.retriever import BigStory, NewsPassage
+from app.retrieval.news.retriever import NewsPassage, Story
 
 
 def format_news_passages(passages: list[NewsPassage]) -> str:
@@ -11,7 +11,7 @@ def format_news_passages(passages: list[NewsPassage]) -> str:
     return "\n\n".join(_item_block(passage) for passage in passages)
 
 
-def format_big_stories(stories: list[BigStory]) -> str:
+def format_big_stories(stories: list[Story]) -> str:
     if not stories:
         return "No big stories in that range."
     blocks = []

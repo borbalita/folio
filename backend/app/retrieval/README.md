@@ -123,7 +123,7 @@ retrieval/
 │   ├── queries.py     # EmailQueries, EmailSearchFilters, owner scope
 │   └── formatting.py  # text for search_emails
 ├── news/
-│   ├── retriever.py   # NewsRetriever, NewsPassage, BigStory, scoped load
+│   ├── retriever.py   # NewsRetriever, NewsPassage, Story (ranked by coverage), scoped load
 │   ├── queries.py     # NewsQueries, NewsSearchFilters
 │   └── formatting.py  # text for search_news and list_big_news
 └── __init__.py

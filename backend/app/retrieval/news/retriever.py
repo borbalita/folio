@@ -1,4 +1,4 @@
-"""Vector search over news_items and the big cross-source stories. Every query repeats the owner scope."""
+"""Vector search over news_items and stories ranked by coverage. Every query repeats the owner scope."""
 
 from __future__ import annotations
 
@@ -38,11 +38,36 @@ class NewsPassage(BaseModel):
     score: float
 
 
-class BigStory(BaseModel):
+class Story(BaseModel):
+    """A story with the user's items and its coverage: newsletters, item count, days."""
+
     story_id: UUID
     first_seen: date
     last_seen: date
+    is_big: bool
+    sources: list[str]
+    item_count: int
     items: list[NewsPassage]
+
+    @property
+    def days(self) -> int:
+        return (self.last_seen - self.first_seen).days + 1
+
+
+def rank_stories(stories: list[Story]) -> list[Story]:
+    """Big first, then more newsletters, items and days, then newest; ties by id."""
+    ordered = sorted(stories, key=lambda story: story.story_id)
+    return sorted(
+        ordered,
+        key=lambda story: (
+            story.is_big,
+            len(story.sources),
+            story.item_count,
+            story.days,
+            story.last_seen,
+        ),
+        reverse=True,
+    )
 
 
 def load_news_items(
@@ -80,15 +105,20 @@ class NewsRetriever:
         with get_session() as owned:
             return self._search(owned, query, filters)
 
-    def big_stories(
-        self, *, filters: NewsSearchFilters, session: Session | None = None
-    ) -> list[BigStory]:
+    def stories(
+        self,
+        *,
+        filters: NewsSearchFilters,
+        limit: int,
+        session: Session | None = None,
+    ) -> list[Story]:
+        """Stories in the period, ranked by coverage, at most `limit`; `big_only` keeps big ones."""
         if not filters.mailbox_ids:
             return []
         if session is not None:
-            return _big_stories(session, filters)
+            return _stories(session, filters, limit)
         with get_session() as owned:
-            return _big_stories(owned, filters)
+            return _stories(owned, filters, limit)
 
     def _search(
         self, session: Session, query: str, filters: NewsSearchFilters
@@ -122,57 +152,65 @@ class NewsRetriever:
             return passages
 
 
-def _big_stories(session: Session, filters: NewsSearchFilters) -> list[BigStory]:
+def _stories(session: Session, filters: NewsSearchFilters, limit: int) -> list[Story]:
     scope = scope_clause(filters.user_id, filters.mailbox_ids)
-    story_clauses = ["s.is_big IS TRUE"]
-    params: dict[str, Any] = {**scope.params, "limit": settings.retrieval_top_k}
+    clauses = [scope.sql]
+    params: dict[str, Any] = dict(scope.params)
+    if filters.big_only:
+        clauses.append("s.is_big IS TRUE")
     if filters.until is not None:
-        story_clauses.append("s.first_seen <= :until")
+        clauses.append("s.first_seen <= :until")
         params["until"] = filters.until
     if filters.since is not None:
-        story_clauses.append("s.last_seen >= :since")
+        clauses.append("s.last_seen >= :since")
         params["since"] = filters.since
-    rows = session.execute(
+    # Counts only the user's items, so coverage never includes another mailbox.
+    aggregates = session.execute(
         text(
             f"""
-            WITH stories AS (
-                SELECT s.id, s.first_seen, s.last_seen
-                FROM news_stories s
-                WHERE {" AND ".join(story_clauses)}
-                  AND EXISTS (
-                      SELECT 1 FROM {_ITEMS_FROM}
-                      WHERE ni.story_id = s.id AND {scope.sql}
-                  )
-                ORDER BY s.last_seen DESC
-                LIMIT :limit
-            )
-            SELECT st.first_seen, st.last_seen, {_ITEM_COLUMNS}
-            FROM stories st
-            JOIN {_ITEMS_FROM} ON ni.story_id = st.id
-            WHERE {scope.sql}
-            ORDER BY st.last_seen DESC, st.id, ni.source, ni.position
+            SELECT s.id, s.first_seen, s.last_seen, s.is_big,
+                   array_agg(DISTINCT ni.source ORDER BY ni.source) AS sources,
+                   count(ni.id) AS item_count
+            FROM news_stories s
+            JOIN {_ITEMS_FROM} ON ni.story_id = s.id
+            WHERE {" AND ".join(clauses)}
+            GROUP BY s.id, s.first_seen, s.last_seen, s.is_big
             """
         ),
         params,
     ).all()
-    return _group_stories(rows)
-
-
-def _group_stories(rows: Any) -> list[BigStory]:
-    stories: dict[UUID, BigStory] = {}
+    ranked = rank_stories([_story(row) for row in aggregates])[:limit]
+    if not ranked:
+        return []
+    story_ids = [story.story_id for story in ranked]
+    rows = session.execute(
+        text(
+            f"""
+            SELECT {_ITEM_COLUMNS}
+            FROM {_ITEMS_FROM}
+            WHERE ni.story_id = ANY(:story_ids)
+              AND {scope.sql}
+            ORDER BY ni.source, ni.position
+            """
+        ),
+        {"story_ids": story_ids, **scope.params},
+    ).all()
+    by_id = {story.story_id: story for story in ranked}
     for row in rows:
-        story_id = UUID(str(row.story_id))
-        story = stories.get(story_id)
-        if story is None:
-            story = BigStory(
-                story_id=story_id,
-                first_seen=row.first_seen,
-                last_seen=row.last_seen,
-                items=[],
-            )
-            stories[story_id] = story
-        story.items.append(_passage(row))
-    return list(stories.values())
+        by_id[UUID(str(row.story_id))].items.append(_passage(row))
+    return ranked
+
+
+def _story(row: Any) -> Story:
+    return Story(
+        story_id=UUID(str(row.id)),
+        first_seen=row.first_seen,
+        last_seen=row.last_seen,
+        is_big=row.is_big,
+        sources=list(row.sources),
+        item_count=row.item_count,
+        items=[],
+    )
 
 
 def _passage(row: Any) -> NewsPassage:
