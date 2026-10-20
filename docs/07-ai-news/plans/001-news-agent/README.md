@@ -2,7 +2,7 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 001/01 next
+- Current stage: Implementation; 001/01 done, 001/02 next
 
 ## Approval state
 
@@ -78,7 +78,7 @@ chat orchestrator ── agent "news" ──► PydanticAI agent (app/news_assis
 
 ## Tasks
 
-- [ ] [001/01 — Story coverage and ranking](tasks/01-coverage.md)
+- [x] [001/01 — Story coverage and ranking](tasks/01-coverage.md)
 - [ ] [001/02 — News agent, tools and chat turn](tasks/02-news-agent.md) — after 01
 - [ ] [001/03 — News pages and picker card](tasks/03-news-pages.md) — after 02
 - [ ] [001/04 — News moves out of the Email agent](tasks/04-email-without-news.md) — after 02
