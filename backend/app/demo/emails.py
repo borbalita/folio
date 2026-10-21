@@ -1,4 +1,8 @@
-"""Draw a demo invoice and build its email with a PDF, in the vendor's layout and tone."""
+"""Draw a demo invoice and build its email in the vendor's layout and tone.
+
+Normal and already-paid emails carry the invoice PDF; an online-only email is a notice that
+the invoice waits in the customer account, as the ingest check defines `online_only`.
+"""
 
 from __future__ import annotations
 
@@ -382,11 +386,19 @@ def _key_fact(invoice: DemoInvoice) -> str:
             "short": f"Zahlung {due} online unter {portal}.",
         },
     }
-    lead = {
-        "formal": f"anbei erhalten Sie unsere Rechnung {invoice.number} über {amount}.",
-        "friendly": f"im Anhang findest du deine Rechnung {invoice.number} über {amount}.",
-        "short": f"anbei die Rechnung {invoice.number} über {amount}.",
-    }[tone]
+    if invoice.kind == "online_only":
+        # A notice only: the invoice itself waits in the customer account.
+        lead = {
+            "formal": f"Ihre Rechnung {invoice.number} über {amount} steht für Sie bereit.",
+            "friendly": f"deine Rechnung {invoice.number} über {amount} ist jetzt online.",
+            "short": f"Rechnung {invoice.number} über {amount} ist online abrufbar.",
+        }[tone]
+    else:
+        lead = {
+            "formal": f"anbei erhalten Sie unsere Rechnung {invoice.number} über {amount}.",
+            "friendly": f"im Anhang findest du deine Rechnung {invoice.number} über {amount}.",
+            "short": f"anbei die Rechnung {invoice.number} über {amount}.",
+        }[tone]
     return f"{lead} {facts[invoice.kind][tone]}"
 
 
@@ -412,9 +424,14 @@ def invoice_message(
         month=MONTHS[invoice.invoice_date.month - 1],
         year=invoice.invoice_date.year,
     )
-    filename = vendor.filename.format(
-        number=invoice.number, month=f"{invoice.invoice_date:%Y-%m}"
-    ).replace("/", "-")
+    attachments: tuple[ParsedAttachment, ...] = ()
+    if invoice.kind != "online_only":
+        filename = vendor.filename.format(
+            number=invoice.number, month=f"{invoice.invoice_date:%Y-%m}"
+        ).replace("/", "-")
+        attachments = (
+            ParsedAttachment(filename, "application/pdf", invoice_pdf(invoice)),
+        )
     message_id = f"<demo-{uuid4()}@folio.example>"
     return ParsedMessage(
         message_id=message_id,
@@ -426,8 +443,6 @@ def invoice_message(
         to_addresses=[to_address],
         sent_at=sent_at,
         body=_body(invoice, rng.choice(OPENINGS[vendor.tone])),
-        attachment_filenames=(filename,),
-        attachments=(
-            ParsedAttachment(filename, "application/pdf", invoice_pdf(invoice)),
-        ),
+        attachment_filenames=tuple(attachment.filename for attachment in attachments),
+        attachments=attachments,
     )

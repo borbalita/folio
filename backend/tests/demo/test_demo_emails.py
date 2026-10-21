@@ -189,3 +189,17 @@ def test_normal_body_names_the_same_reference_as_the_pdf() -> None:
         if invoice.vendor.tone == "formal":
             assert invoice.reference in message.body
             assert "Angabe der Rechnungsnummer" not in message.body
+
+
+def test_online_only_is_a_notice_without_the_invoice() -> None:
+    for vendor in VENDORS:
+        invoice, message = _message(8, "online_only", vendor)
+
+        assert message.attachments == ()
+        assert message.attachment_filenames == ()
+        assert vendor.customer_portal in message.body
+        assert format_euro(invoice.amount) in message.body
+        assert invoice.number in message.body
+        assert "Anhang" not in message.body
+        assert "anbei" not in message.body
+        assert IBAN_PATTERN.search(message.body) is None
