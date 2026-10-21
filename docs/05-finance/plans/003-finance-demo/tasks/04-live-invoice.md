@@ -21,4 +21,16 @@ The demo user's new invoice goes through the same labelling, check, extraction a
 003/01, 003/02.
 
 ## Notes
+- Implementation plan: [04-live-invoice.plan.md](04-live-invoice.plan.md).
 - If Jev doesn't label the fictional emails as invoices, the PDF filename rule (`rechnung` in the name) already routes them to detection; check that before changing any wording.
+
+## Verified
+
+2026-10-21, branch `feat/demo-live-invoice`.
+
+- Fake model, Normal invoice → open invoice with the built payee, IBAN and amount stored in the demo mailbox: `test_a_normal_invoice_is_stored_open_for_the_demo_user` (also: trace tag `demo`, matching run for the demo user). Pass.
+- Yahoo run unchanged: `ingest_fetched` untouched; the existing ingest suite passes. Pass.
+- Model error → reported, stored as today: `test_a_model_error_is_reported_and_stored_as_today` (`needs_info`, `extraction_failed`, `failures: 1`, error text). Pass.
+- Real models, one invoice of each kind: **pending** — `DEMO_USER_ID` is not set in the local backend settings.
+- Suite: `uv run pytest -m "not integration"`: 766 passed; `ruff check` clean.
+
