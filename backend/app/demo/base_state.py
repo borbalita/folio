@@ -57,7 +57,8 @@ BASE_INVOICES: tuple[BaseInvoice, ...] = (
     BaseInvoice("hosting", "normal", "matched", 40, -33, debit_days_ago=36),
     BaseInvoice("strom", "normal", "matched", 70, -56, debit_days_ago=60),
     BaseInvoice("zahnarzt", "normal", "matched", 55, -25, debit_days_ago=45),
-    BaseInvoice("handwerk", "normal", "suggested", 30, -16, debit_days_ago=22),
+    # Not yet due, so the list shows exactly one overdue invoice, as in the spec.
+    BaseInvoice("handwerk", "normal", "suggested", 8, 12, debit_days_ago=4),
     BaseInvoice("mobilfunk", "already_paid", "paid_before", 35, -25),
     BaseInvoice("mobilfunk", "online_only", "online", 3, 7),
 )
@@ -85,15 +86,18 @@ class BaseRows:
     transactions: list[Transaction]
     matches: list[InvoiceMatch]
 
+    def groups(self) -> tuple[list, ...]:
+        """Rows by table, parents before children; insert each group before the next."""
+        return (
+            self.emails,
+            self.attachments,
+            self.invoices,
+            self.transactions,
+            self.matches,
+        )
+
     def all(self) -> list[object]:
-        """Rows in an order the foreign keys accept."""
-        return [
-            *self.emails,
-            *self.attachments,
-            *self.invoices,
-            *self.transactions,
-            *self.matches,
-        ]
+        return [row for group in self.groups() for row in group]
 
 
 def _at(day: date, hour: int, minute: int = 0) -> datetime:
@@ -104,8 +108,9 @@ def _at(day: date, hour: int, minute: int = 0) -> datetime:
 
 def _demo_invoice(spec: BaseInvoice, seed: int, today: date) -> DemoInvoice:
     vendor = next(v for v in VENDORS if v.key == spec.vendor)
-    drawn = draw_invoice(random.Random(seed), spec.kind, today, vendor)
     invoice_date = today - timedelta(days=spec.invoice_days_ago)
+    # Drawn as of the invoice date, so numbers like 2026-… carry the invoice's year.
+    drawn = draw_invoice(random.Random(seed), spec.kind, invoice_date, vendor)
     return replace(
         drawn,
         invoice_date=invoice_date,

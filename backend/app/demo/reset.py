@@ -42,8 +42,11 @@ def reset_demo(
         )
     )
     rows = build_base_state(today, accounts, to_address=email)
-    session.add_all(rows.all())
-    session.flush()
+    # No relationships are mapped, so the unit of work doesn't know parents from
+    # children; flushing one table at a time keeps the foreign keys satisfied.
+    for group in rows.groups():
+        session.add_all(group)
+        session.flush()
     return {"invoices": len(rows.invoices), "transactions": len(rows.transactions)}
 
 

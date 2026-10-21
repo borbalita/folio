@@ -170,3 +170,19 @@ def test_two_builds_do_not_collide() -> None:
     assert not {t.dedup_key for t in first.transactions} & {
         t.dedup_key for t in second.transactions
     }
+
+
+def test_the_ui_overdue_count_matches_the_spec() -> None:
+    rows = _build()
+    unpaid = [i for i in rows.invoices if i.status == InvoiceStatus.OPEN]
+
+    # The invoice list marks every unpaid invoice past its due date as overdue.
+    assert sum(1 for i in unpaid if i.due_date < TODAY) == 1
+
+
+def test_invoice_numbers_carry_the_invoice_year() -> None:
+    rows = _build(date(2027, 1, 5))
+
+    for invoice in rows.invoices:
+        if invoice.invoice_number and invoice.invoice_date.year == 2026:
+            assert "2027" not in invoice.invoice_number

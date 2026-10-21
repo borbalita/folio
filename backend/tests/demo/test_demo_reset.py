@@ -20,6 +20,8 @@ class _Recorder:
         self.added: list[object] = []
         self.commits = 0
         self.fail_on_add = fail_on_add
+        self.pending: list[str] = []
+        self.flushes: list[list[str]] = []
 
     def execute(self, statement):
         compiled = statement.compile(
@@ -31,9 +33,11 @@ class _Recorder:
         if self.fail_on_add:
             raise RuntimeError("disk full")
         self.added += list(rows)
+        self.pending += [type(row).__name__ for row in rows]
 
     def flush(self) -> None:
-        pass
+        self.flushes.append(sorted(set(self.pending)))
+        self.pending = []
 
     def commit(self) -> None:
         self.commits += 1
@@ -140,3 +144,18 @@ def test_command_resets_and_prints_the_counts(
 
     assert reset.main() == 0
     assert "invoices: 9, transactions: 36" in capsys.readouterr().out
+
+
+def test_reset_flushes_parents_before_children() -> None:
+    # No relationships are mapped, so one flush would insert in class-name order.
+    session = _Recorder()
+
+    reset.reset_demo(session, USER, email="demo@example.com", today=TODAY)
+
+    assert session.flushes == [
+        ["EmailMessage"],
+        ["EmailAttachment"],
+        ["Invoice"],
+        ["Transaction"],
+        ["InvoiceMatch"],
+    ]
