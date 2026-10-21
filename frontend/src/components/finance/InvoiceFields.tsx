@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { api, type Invoice, type InvoiceEdit, type InvoiceField } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
-import { describeIssue } from '@/lib/invoices'
+import { describeIssue, displayStatus } from '@/lib/invoices'
 
 const FIELDS: { name: InvoiceField; label: string; type?: string }[] = [
   { name: 'payee', label: 'Payee' },
@@ -97,7 +97,7 @@ export function InvoiceFields({ invoice, onChange }: Props) {
       className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <InvoiceStatusBadge status={invoice.status} />
+        <InvoiceStatusBadge status={displayStatus(invoice)} />
         {invoice.status === 'paid' && invoice.paidBy === 'owner' ? (
           <span className="text-xs text-muted-foreground">
             Marked paid by you{paidOn ? ` on ${paidOn}` : ''}

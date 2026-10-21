@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -19,6 +19,10 @@ from app.database.models.finance.payment_draft import (
 )
 from app.finance.epc import epc_payload, qr_svg_data_uri
 from app.finance.payments import DraftValues, approve_refusal, draft_values, skip_reason
+
+# An approved payment shows its invoice as pending until the debit arrives, for at
+# most this long: a transfer takes a business day, plus a weekend or holiday.
+PENDING_DAYS = 5
 
 REFUSALS = {
     "not_open": "The invoice is no longer open; it may have been paid meanwhile.",
@@ -191,3 +195,32 @@ def complete_for_invoices(session, invoice_ids: list[uuid.UUID]) -> None:
         )
         .values(status=DraftStatus.COMPLETED)
     )
+
+
+def is_payment_pending(status: str, approved_at: datetime | None, now: datetime) -> bool:
+    """Approved within the last PENDING_DAYS; after that the invoice shows open again."""
+    return (
+        status == DraftStatus.APPROVED
+        and approved_at is not None
+        and approved_at >= now - timedelta(days=PENDING_DAYS)
+    )
+
+
+def pending_invoice_ids(
+    session, invoice_ids: list[uuid.UUID], *, now: datetime | None = None
+) -> set[uuid.UUID]:
+    """The invoices among these whose payment is approved and still expected."""
+    if not invoice_ids:
+        return set()
+    now = now or datetime.now(UTC)
+    rows = session.execute(
+        select(PaymentDraft.invoice_id, PaymentDraft.status, PaymentDraft.approved_at).where(
+            PaymentDraft.invoice_id.in_(invoice_ids),
+            PaymentDraft.status == DraftStatus.APPROVED,
+        )
+    ).all()
+    return {
+        row.invoice_id
+        for row in rows
+        if is_payment_pending(row.status, row.approved_at, now)
+    }

@@ -1,7 +1,7 @@
-import type { Invoice, InvoiceStatus } from '@/lib/api'
+import type { DisplayStatus, Invoice } from '@/lib/api'
 
 export interface Filters {
-  statuses: InvoiceStatus[]
+  statuses: DisplayStatus[]
   /** `YYYY-MM-DD` bounds on the invoice date, or the sent date when it has none. */
   from: string
   to: string
@@ -9,16 +9,21 @@ export interface Filters {
 }
 
 export const DEFAULT_FILTERS: Filters = {
-  statuses: ['open', 'needs_info'],
+  statuses: ['open', 'pending', 'needs_info'],
   from: '',
   to: '',
   payee: '',
 }
 
-export const STATUS_LABELS: Record<InvoiceStatus, string> = {
+export const STATUS_LABELS: Record<DisplayStatus, string> = {
   open: 'Open',
+  pending: 'Pending',
   needs_info: 'Needs info',
   paid: 'Paid',
+}
+
+export function displayStatus(invoice: Invoice): DisplayStatus {
+  return invoice.status === 'open' && invoice.paymentPending ? 'pending' : invoice.status
 }
 
 const ISSUE_LABELS: Record<string, string> = {

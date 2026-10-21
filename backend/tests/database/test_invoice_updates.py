@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 
-from app.database import invoices, matches
+from app.database import invoices, matches, payments
 from app.database.models.finance.invoice import Invoice
 
 OWN = uuid.UUID("00000000-0000-0000-0000-000000000010")
@@ -108,6 +108,7 @@ def test_two_invoices_are_marked_paid_and_back(
     monkeypatch.setattr(
         matches, "reject_links", lambda session, invoice_ids: rejected.append(invoice_ids)
     )
+    monkeypatch.setattr(payments, "pending_invoice_ids", lambda session, invoice_ids: set())
 
     paid = invoices.set_invoices_paid(ids, True, [OWN])
 

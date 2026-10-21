@@ -10,11 +10,11 @@ from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy import select
 
-from app.database import matches
+from app.database import matches, payments
 from app.database.engine import get_session
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.message import EmailMessage
-from app.database.models.finance.invoice import Invoice
+from app.database.models.finance.invoice import Invoice, InvoiceStatus
 from app.finance.invoice_edits import apply_edit, set_paid
 
 
@@ -59,6 +59,16 @@ def serialize_invoice(row: Invoice) -> dict[str, Any]:
     }
 
 
+def _extras(session, rows: list[Invoice]) -> dict[uuid.UUID, dict[str, Any]]:
+    """Per invoice: its match and suggestions, and whether an approved payment is on its way."""
+    found = matches.for_invoices(session, [row.id for row in rows])
+    open_ids = [row.id for row in rows if row.status == InvoiceStatus.OPEN]
+    pending = payments.pending_invoice_ids(session, open_ids)
+    for row in rows:
+        found[row.id]["paymentPending"] = row.id in pending
+    return found
+
+
 def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
     """Every invoice in these mailboxes with its email, newest email first."""
     with get_session() as session:
@@ -68,7 +78,7 @@ def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
             .where(EmailMessage.mailbox_id.in_(mailbox_ids))
             .order_by(EmailMessage.sent_at.desc(), Invoice.position)
         ).all()
-        found = matches.for_invoices(session, [row.Invoice.id for row in rows])
+        found = _extras(session, [row.Invoice for row in rows])
         return [
             {
                 **serialize_invoice(row.Invoice),
@@ -113,7 +123,7 @@ def get_invoice(email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, 
             .where(Invoice.email_id == email_id)
             .order_by(Invoice.position)
         ).all()
-        found = matches.for_invoices(session, [row.id for row in rows])
+        found = _extras(session, list(rows))
         return {
             **_summary(email),
             "body": email.body,
@@ -157,7 +167,7 @@ def get_invoice_item(
     """One invoice with its match and suggestions."""
     with get_session() as session:
         [row] = _owned_invoices(session, [invoice_id], mailbox_ids)
-        return {**serialize_invoice(row), **matches.for_invoices(session, [row.id])[row.id]}
+        return {**serialize_invoice(row), **_extras(session, [row])[row.id]}
 
 
 def set_invoices_paid(
@@ -172,7 +182,7 @@ def set_invoices_paid(
         if not paid:
             matches.reject_links(session, invoice_ids)
         session.commit()
-        found = matches.for_invoices(session, invoice_ids)
+        found = _extras(session, rows)
         return [{**serialize_invoice(row), **found[row.id]} for row in rows]
 
 
