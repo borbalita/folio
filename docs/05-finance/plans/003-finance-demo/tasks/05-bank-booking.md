@@ -17,3 +17,6 @@ An approved demo payment can be "booked" into the demo account, and the real mat
 
 ## Dependencies
 003/01.
+
+## Notes
+- Implementation plan: [05-bank-booking.plan.md](05-bank-booking.plan.md).
