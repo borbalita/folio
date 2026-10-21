@@ -4,7 +4,7 @@ import { InvoiceStatusBadge } from '@/components/finance/InvoiceStatusBadge'
 import { Checkbox } from '@/components/ui/checkbox'
 import type { InvoiceRow } from '@/lib/api'
 import { formatIsoDay } from '@/lib/format'
-import { formatAmount, isOverdue } from '@/lib/invoices'
+import { displayStatus, formatAmount, isOverdue } from '@/lib/invoices'
 
 interface Props {
   invoices: InvoiceRow[]
@@ -68,7 +68,7 @@ export function InvoiceList({ invoices, today, selected, onToggle, onToggleAll }
                 </td>
                 <td className="px-3 py-2">
                   <div className="flex flex-col items-start gap-0.5">
-                    <InvoiceStatusBadge status={invoice.status} />
+                    <InvoiceStatusBadge status={displayStatus(invoice)} />
                     {invoice.match?.source === 'auto' ? (
                       <span className="text-xs text-muted-foreground">Matched automatically</span>
                     ) : null}

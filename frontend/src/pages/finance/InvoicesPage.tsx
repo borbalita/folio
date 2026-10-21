@@ -6,7 +6,7 @@ import { PayInvoices } from '@/components/finance/PayInvoices'
 import { Button } from '@/components/ui/button'
 import { api, type InvoiceRow } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
-import { DEFAULT_FILTERS, type Filters, isOverdue, todayIso } from '@/lib/invoices'
+import { DEFAULT_FILTERS, displayStatus, type Filters, isOverdue, todayIso } from '@/lib/invoices'
 import { useRefresh } from '@/lib/useRefresh'
 
 type State = { invoices: InvoiceRow[] } | { error: string } | null
@@ -20,7 +20,7 @@ function visible(invoices: InvoiceRow[], filters: Filters, today: string): Invoi
   const payee = filters.payee.trim().toLowerCase()
   const shown = invoices.filter(
     (invoice) =>
-      filters.statuses.includes(invoice.status) &&
+      filters.statuses.includes(displayStatus(invoice)) &&
       (!filters.from || dayOf(invoice) >= filters.from) &&
       (!filters.to || dayOf(invoice) <= filters.to) &&
       (!payee || (invoice.payee ?? '').toLowerCase().includes(payee)),

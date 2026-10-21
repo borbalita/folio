@@ -42,6 +42,9 @@ export interface InvoiceAttachment {
 
 export type InvoiceStatus = 'open' | 'needs_info' | 'paid'
 
+/** What the app shows: an open invoice whose approved payment is on its way is pending. */
+export type DisplayStatus = InvoiceStatus | 'pending'
+
 /** One invoice extracted from an email. `amount` is a decimal string, dates are `YYYY-MM-DD`. */
 export interface Invoice {
   id: string
@@ -65,6 +68,8 @@ export interface Invoice {
    * `invoice` when the invoice itself says it is paid.
    */
   paidBy: string | null
+  /** Open, with a payment approved in the last 5 days whose debit hasn't arrived yet. */
+  paymentPending: boolean
   /** The linked payment, set when `paidBy` is `match`. */
   match: InvoiceMatch | null
   /** Possible payments for the owner to confirm or reject. */
