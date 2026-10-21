@@ -5,6 +5,7 @@ import uuid
 from collections.abc import Callable, Iterator
 
 import pytest
+import structlog
 from fastapi.testclient import TestClient
 from langfuse import Langfuse
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
@@ -12,6 +13,10 @@ from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanE
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.main import app
+
+# app.main configures structlog to cache each logger on first use. In one test session
+# that freezes a module's logger before a later test's capture_logs can intercept it.
+structlog.configure(cache_logger_on_first_use=False)
 
 TEST_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 TEST_THREAD_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")

@@ -2,7 +2,7 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 003/01, 003/02 and 003/05 done
+- Current stage: Implementation; 003/01, 003/02, 003/04 and 003/05 done
 
 ## Approval state
 
@@ -96,7 +96,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 - [x] [003/01 — Demo user, access, demo mailbox and bank](tasks/01-demo-user.md)
 - [x] [003/02 — Vendor catalogue, PDF writer and email builder](tasks/02-invoice-builder.md)
 - [ ] [003/03 — Base state and reset](tasks/03-base-state-reset.md) — after 01, 02
-- [ ] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
+- [x] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
 - [x] [003/05 — Simulated bank booking](tasks/05-bank-booking.md) — after 01
 - [ ] [003/06 — Presenter page and list refresh](tasks/06-presenter-page.md) — after 03, 04, 05
 - [ ] [003/07 — Production setup and rehearsal](tasks/07-rehearsal.md) — after 06
@@ -114,5 +114,5 @@ Critical path: 01 → 04 → 06 → 07. 02 can start beside 01; 03, 04 and 05 ar
 
 - **Self-serve later:** strangers would use the demo login. Before that: a daily limit on new invoices, a nightly reset cron (the same reset function), a visible guide instead of the presenter page, and moving the demo to its own environment.
 - **Demo data in the production database,** separated by user filters and RLS. Guarded by tests that reset leaves other users' rows untouched and that demo routes refuse everyone but `DEMO_USER_ID`.
-- **Model output on fictional invoices** may differ from real ones (for example, Jev not labelling a fictional vendor as an invoice). Next action: 003/04 checks each kind against the real models before the presenter page is built.
+- **Model output on fictional invoices** may differ from real ones. 003/04 checked one invoice of each kind against the real models (2026-10-21): all three came out as intended. Next action: watch the rehearsal (003/07).
 - **Live timing:** 10–20 seconds of model calls during a call. Next action: the rehearsal in 003/07 measures it; if it feels long, the presenter page sends earlier or the invoice list shows a "processing" row.
