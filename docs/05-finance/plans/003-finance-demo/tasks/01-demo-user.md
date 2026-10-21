@@ -28,3 +28,17 @@ None.
 ## Notes
 - Implementation plan: [01-demo-user.plan.md](01-demo-user.plan.md).
 - The owner creates the demo user in the Supabase dashboard (Authentication → Users → Add user); Claude doesn't create accounts.
+
+## Verified
+
+2026-10-21, branch `feat/demo-user` (fast suite: 693 passed; ruff, `tsc --noEmit` and `pnpm lint` clean).
+
+- Demo user's `/me` lists `documents` and `finance`, not `email`: `test_me_lists_finance_for_the_demo_user`, plus `test_active_mailbox_ids_excludes_demo` (a demo mailbox never opens Email). Pass.
+- Finance routes answer for the demo user; other non-owners get 403: `test_finance_routes_answer_for_the_demo_user`, existing `test_finance_routes_are_forbidden_for_another_user`. Pass.
+- Owner gets 403 on demo routes: `test_demo_route_is_403_for_the_owner`. Pass.
+- No `DEMO_USER_ID`: demo routes 404, owner's Finance unchanged: `test_demo_route_is_404_without_demo_user`, `test_is_demo_user_is_false_when_unset`, the existing owner suite. Pass.
+- Email and bank crons don't read or change the demo accounts: `test_yahoo_ingest_ignores_the_demo_mailbox`, `test_sync_targets_skip_the_demo_bank`, `test_connection_states_skip_the_demo_bank`, `test_owner_still_syncs_all_real_banks`, and (added in final review) `test_load_invoices_skips_demo_mailboxes` for the cron's notification step. Pass.
+- Demo user's bank list shows only the demo bank, Sync now fetches nothing without error, Connect is 403: `test_demo_user_lists_only_the_demo_bank`, `test_demo_user_sync_now_ignores_the_owners_cooldown`, `test_demo_user_cannot_start_a_connection`. Pass.
+- Also from the final review: settings refuse `DEMO_USER_ID` equal to the finance or email owner (`tests/test_config.py`).
+- Migration `92567bf64557` (provider `demo`) is written but not yet applied to the shared database.
+- PR: see the branch's pull request.
