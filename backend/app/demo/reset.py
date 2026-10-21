@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.engine import get_session
 from app.database.models.chat.thread import ChatThread
+from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
 from app.database.models.finance.transaction import Transaction
 from app.database.models.user import User
@@ -30,6 +31,10 @@ def reset_demo(
     chat messages with their thread, through the database's cascades.
     """
     accounts = ensure_demo_accounts(session, user_id)
+    # Lock the demo mailbox, so a second reset waits instead of adding a second base state.
+    session.execute(
+        select(Mailbox.id).where(Mailbox.id == accounts.mailbox_id).with_for_update()
+    )
     session.execute(
         delete(EmailMessage).where(EmailMessage.mailbox_id == accounts.mailbox_id)
     )

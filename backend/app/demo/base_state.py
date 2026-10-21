@@ -60,7 +60,7 @@ BASE_INVOICES: tuple[BaseInvoice, ...] = (
     # Not yet due, so the list shows exactly one overdue invoice, as in the spec.
     BaseInvoice("handwerk", "normal", "suggested", 8, 12, debit_days_ago=4),
     BaseInvoice("mobilfunk", "already_paid", "paid_before", 35, -25),
-    BaseInvoice("mobilfunk", "online_only", "online", 3, 7),
+    BaseInvoice("hosting", "online_only", "online", 3, 7),
 )
 
 SALARY = ("Lindgrün Software GmbH", "0700100020", Decimal("3240.00"))

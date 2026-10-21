@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, timedelta
+from itertools import pairwise
 
 import pytest
 
@@ -186,3 +187,14 @@ def test_invoice_numbers_carry_the_invoice_year() -> None:
     for invoice in rows.invoices:
         if invoice.invoice_number and invoice.invoice_date.year == 2026:
             assert "2027" not in invoice.invoice_number
+
+
+def test_no_vendor_bills_twice_within_two_weeks() -> None:
+    rows = _build()
+    by_payee: dict[str, list[date]] = {}
+    for email in rows.emails:
+        by_payee.setdefault(email.from_name, []).append(email.sent_at.date())
+
+    for days in by_payee.values():
+        days.sort()
+        assert all((b - a).days >= 14 for a, b in pairwise(days)), days
