@@ -291,7 +291,7 @@ class _FinanceChatAgent(_ChatAgent):
 
     async def run(self, user_text: str, deps: Deps) -> TurnResult:
         deps.mailbox_ids = await asyncio.to_thread(
-            mailboxes.active_mailbox_ids, deps.user_id
+            mailboxes.invoice_mailbox_ids, deps.user_id
         )
         return await run_finance_agent(user_text, deps)
 

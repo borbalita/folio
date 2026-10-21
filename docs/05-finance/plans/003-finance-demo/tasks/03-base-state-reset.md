@@ -19,5 +19,8 @@ One call returns the demo user to a fixed, realistic Finance state with dates re
 - Given an error halfway, then the demo user's data is as before the reset. (test)
 - Given a reset, when the demo user opens Finance, then the lists look realistic and every status is visible. (browser)
 
+## Notes
+- From 003/01's browser check: the invoice routes return 403 for a Finance user without a mailbox. After a reset the demo mailbox exists; also consider returning an empty list instead of 403, and a general 403 message in the frontend.
+
 ## Dependencies
 003/01, 003/02.

@@ -13,7 +13,7 @@ OWN_MAILBOX = uuid.UUID("00000000-0000-0000-0000-000000000010")
 @pytest.fixture(autouse=True)
 def finance_owner(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(settings, "finance_owner_user_id", TEST_USER_ID)
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [OWN_MAILBOX])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [OWN_MAILBOX])
 
 
 def test_owner_creates_drafts_without_choosing_an_account(

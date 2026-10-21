@@ -1,4 +1,4 @@
-"""Finance routes. Every route is owner-only."""
+"""Finance routes. Every route is for the Finance owner or the demo user."""
 
 from __future__ import annotations
 
@@ -16,9 +16,9 @@ from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from app.auth.demo_access import is_demo_user
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.auth.email_access import require_email_access
-from app.auth.finance_access import require_finance_owner
+from app.auth.finance_access import require_finance_user, require_invoice_mailboxes
 from app.database import (
     bank_connections,
     invoices,
@@ -32,28 +32,28 @@ from app.finance import enable_banking, transaction_sync
 log = structlog.get_logger(__name__)
 
 
-def finance_owner(
+def finance_user(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CurrentUser:
-    require_finance_owner(user)
+    require_finance_user(user)
     return user
 
 
 SYNC_COOLDOWN = timedelta(minutes=10)
 
 router = APIRouter(
-    prefix="/finance", tags=["finance"], dependencies=[Depends(finance_owner)]
+    prefix="/finance", tags=["finance"], dependencies=[Depends(finance_user)]
 )
 
 # Invoice data stays scoped to the owner's mailboxes, so each route resolves them
-# after the router-level owner check.
+# after the router-level Finance access check.
 
 
 @router.get("/invoices")
 async def list_invoices(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(invoices.list_invoices, mailbox_ids)
 
 
@@ -62,7 +62,7 @@ async def get_invoice(
     email_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(invoices.get_invoice, email_id, mailbox_ids)
 
 
@@ -71,7 +71,7 @@ async def get_attachment(
     attachment_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> Response:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     file = await asyncio.to_thread(
         invoices.get_attachment_file, attachment_id, mailbox_ids
     )
@@ -112,7 +112,7 @@ async def update_invoice(
     body: InvoiceEdit,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     changes = body.model_dump(exclude_unset=True)
     await asyncio.to_thread(invoices.update_invoice, invoice_id, changes, mailbox_ids)
     # An edited amount, IBAN or reference can make or break a match.
@@ -125,7 +125,7 @@ async def set_invoices_paid(
     body: InvoicesPaid,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(
         invoices.set_invoices_paid, body.ids, body.paid, mailbox_ids
     )
@@ -136,7 +136,7 @@ async def confirm_match(
     match_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     invoice_id = await asyncio.to_thread(matches.confirm, match_id, mailbox_ids)
     return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
@@ -146,7 +146,7 @@ async def reject_match(
     match_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     invoice_id = await asyncio.to_thread(matches.reject, match_id, mailbox_ids)
     return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
@@ -162,7 +162,7 @@ async def create_payment_drafts(
     body: DraftsRequest,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(
         payments.create_drafts, body.invoice_ids, mailbox_ids
     )
@@ -173,7 +173,7 @@ async def get_payment_drafts(
     ids: Annotated[list[uuid.UUID], Query()],
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.get_drafts, ids, mailbox_ids)
 
 
@@ -182,7 +182,7 @@ async def approve_payment_draft(
     draft_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.approve, draft_id, mailbox_ids)
 
 
@@ -191,7 +191,7 @@ async def cancel_payment_draft(
     draft_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.cancel, draft_id, mailbox_ids)
 
 
@@ -216,6 +216,8 @@ async def bank_connection_callback(
     body: CallbackBody,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
+    if is_demo_user(user.id):
+        raise HTTPException(403, "The demo bank cannot be connected.")
     # Checked before any bank call so a forged or replayed state costs nothing.
     pending = await asyncio.to_thread(
         bank_connections.find_pending, user.id, body.state
@@ -242,6 +244,8 @@ async def start_bank_connection(
     bank: str,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, str]:
+    if is_demo_user(user.id):
+        raise HTTPException(403, "The demo bank cannot be connected.")
     if bank not in bank_connections.BANKS:
         raise HTTPException(404, "Unknown bank.")
     state = secrets.token_urlsafe(32)
@@ -280,6 +284,9 @@ async def sync_banks(
     request: Request,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, int]:
+    if is_demo_user(user.id):
+        # Nothing to fetch, and a demo press must neither hit nor start the owner's cooldown.
+        return {"accounts": 0, "fetched": 0, "added": 0, "skipped": 0, "unparsed": 0}
     last = await asyncio.to_thread(job_runs.last_started, "bank_sync")
     if last is not None and datetime.now(UTC) - last < SYNC_COOLDOWN:
         raise HTTPException(429, "Synced less than 10 minutes ago; try again later.")

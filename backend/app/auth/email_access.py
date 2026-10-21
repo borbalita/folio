@@ -8,7 +8,7 @@ import uuid
 from fastapi import HTTPException, status
 
 from app.auth.dependencies import CurrentUser
-from app.auth.finance_access import is_finance_owner, require_finance_owner
+from app.auth.finance_access import is_finance_user, require_finance_user
 from app.database import mailboxes
 
 
@@ -29,7 +29,7 @@ async def agents_for(user: CurrentUser) -> list[str]:
     if ids:
         # News reads the user's own newsletters, so it follows the mailbox like Email.
         agents.extend(["email", "news"])
-    if is_finance_owner(user):
+    if is_finance_user(user):
         agents.append("finance")
     return agents
 
@@ -39,4 +39,4 @@ async def require_agent_access(user: CurrentUser, agent: str) -> None:
     if agent in ("email", "news"):
         await require_email_access(user)
     elif agent == "finance":
-        require_finance_owner(user)
+        require_finance_user(user)

@@ -8,8 +8,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.database import bank_connections
-from app.finance import enable_banking
+from app.database import bank_connections, job_runs
+from app.finance import enable_banking, transaction_sync
 from app.finance.enable_banking import (
     EbSession,
     EnableBankingError,
@@ -228,3 +228,50 @@ def test_non_owner_gets_403_on_bank_connection_routes(
         "/finance/bank-connections/callback", json={"code": "c", "state": "s"}
     )
     assert callback.status_code == 403
+
+
+@pytest.fixture
+def demo_user(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
+    monkeypatch.setattr(settings, "demo_user_id", TEST_USER_ID)
+
+
+def test_demo_user_cannot_start_a_connection(
+    authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def begin(*_: Any) -> None:
+        pytest.fail("the demo user never begins a connection")
+
+    monkeypatch.setattr(bank_connections, "begin_connection", begin)
+
+    start = authed_client.post("/finance/bank-connections/N26/start")
+    demo_bank = authed_client.post("/finance/bank-connections/Demo Bank/start")
+    callback = authed_client.post(
+        "/finance/bank-connections/callback", json={"code": "c", "state": "s"}
+    )
+
+    assert start.status_code == 403
+    assert demo_bank.status_code == 403
+    assert callback.status_code == 403
+
+
+def test_demo_user_sync_now_ignores_the_owners_cooldown(
+    authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def never(*_: Any, **__: Any) -> None:
+        pytest.fail("the demo user neither syncs nor records a job")
+
+    monkeypatch.setattr(job_runs, "last_started", lambda job: datetime.now(UTC))
+    monkeypatch.setattr(transaction_sync, "run_job", never)
+    monkeypatch.setattr(transaction_sync, "run_bank_sync", never)
+
+    response = authed_client.post("/finance/bank-sync")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "accounts": 0,
+        "fetched": 0,
+        "added": 0,
+        "skipped": 0,
+        "unparsed": 0,
+    }

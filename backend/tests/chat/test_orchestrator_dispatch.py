@@ -86,7 +86,7 @@ def test_finance_thread_uses_finance_agent(
     monkeypatch.setattr(orchestrator, "run_agent", fail)
     monkeypatch.setattr(orchestrator, "run_email_agent", fail)
     monkeypatch.setattr(orchestrator, "run_finance_agent", finance_agent)
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [])
     monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
 
     text = _collect("finance")

@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     yahoo_app_password: str | None = None
     email_agent_owner_user_id: uuid.UUID | None = None
     finance_owner_user_id: uuid.UUID | None = None
+    demo_user_id: uuid.UUID | None = None
     typesafe_api_key: str | None = None
     # Evals only: the Claude judge. The app itself never calls Anthropic.
     anthropic_api_key: str | None = None
@@ -82,6 +83,14 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def demo_user_is_not_the_owner(self) -> "Settings":
+        if self.demo_user_id and self.demo_user_id == self.finance_owner_user_id:
+            raise ValueError("DEMO_USER_ID must not be the finance owner")
+        if self.demo_user_id and self.demo_user_id == self.email_agent_owner_user_id:
+            raise ValueError("DEMO_USER_ID must not be the email agent owner")
+        return self
+
     @field_validator("email_timezone")
     @classmethod
     def timezone_exists(cls, value: str) -> str:
@@ -120,7 +129,12 @@ class Settings(BaseSettings):
         # Railway variables often hold the PEM on one line with literal "\n".
         return value.replace("\\n", "\n") if value else value
 
-    @field_validator("email_agent_owner_user_id", "finance_owner_user_id", mode="before")
+    @field_validator(
+        "email_agent_owner_user_id",
+        "finance_owner_user_id",
+        "demo_user_id",
+        mode="before",
+    )
     @classmethod
     def blank_optional_uuid(
         cls, value: str | uuid.UUID | None

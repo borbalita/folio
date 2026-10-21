@@ -20,6 +20,7 @@ from app.database.models.base import Base
 class MailboxProvider(StrEnum):
     YAHOO = "yahoo"
     GMAIL = "gmail"
+    DEMO = "demo"
 
 
 class Mailbox(Base):

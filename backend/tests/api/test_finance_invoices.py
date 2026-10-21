@@ -35,7 +35,7 @@ def test_invoice_routes_are_forbidden_for_another_user(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
 
     assert authed_client.get("/finance/invoices").status_code == 403
     assert authed_client.get(f"/finance/invoices/{EMAIL_ID}").status_code == 403
@@ -59,7 +59,7 @@ def test_invoice_routes_are_forbidden_without_a_mailbox(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [])
 
     assert authed_client.get("/finance/invoices").status_code == 403
     assert authed_client.get(f"/finance/invoices/{EMAIL_ID}").status_code == 403
@@ -71,7 +71,7 @@ def test_owner_lists_invoices_scoped_to_their_mailboxes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seen: list[list[uuid.UUID]] = []
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
 
     def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, str]]:
         seen.append(mailbox_ids)
@@ -90,7 +90,7 @@ def test_owner_gets_an_invoice_scoped_to_their_mailboxes(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     seen: list[tuple[uuid.UUID, list[uuid.UUID]]] = []
 
     def get_invoice(
@@ -112,7 +112,7 @@ def test_owner_downloads_a_stored_pdf_inline(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     monkeypatch.setattr(
         invoices,
         "get_attachment_file",
@@ -196,7 +196,7 @@ def test_owner_edits_only_the_fields_sent(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     seen: list[tuple[uuid.UUID, dict, list[uuid.UUID]]] = []
 
     def update_invoice(
@@ -240,7 +240,7 @@ def test_edit_with_a_bad_date_is_rejected(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     monkeypatch.setattr(
         invoices, "update_invoice", lambda *_args: pytest.fail("not called")
     )
@@ -256,7 +256,7 @@ def test_owner_marks_several_invoices_paid(
     authed_client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     other = uuid.uuid4()
     seen: list[tuple[list[uuid.UUID], bool, list[uuid.UUID]]] = []
 
@@ -284,7 +284,7 @@ def test_owner_confirms_or_rejects_a_match(
     monkeypatch: pytest.MonkeyPatch,
     action: str,
 ) -> None:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", _owns_mailbox)
     match_id = uuid.uuid4()
     seen: list[tuple[uuid.UUID, list[uuid.UUID]]] = []
 
@@ -314,3 +314,14 @@ def test_match_routes_are_forbidden_for_another_user(
     response = authed_client.post(f"/finance/matches/{uuid.uuid4()}/confirm")
 
     assert response.status_code == 403
+
+
+def test_finance_invoices_use_the_invoice_scope(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", TEST_USER_ID)
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    monkeypatch.setattr(invoices, "list_invoices", lambda mailbox_ids: [])
+
+    assert authed_client.get("/finance/invoices").status_code == 200

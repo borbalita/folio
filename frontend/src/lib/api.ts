@@ -113,7 +113,7 @@ export interface InvoiceDetail extends InvoiceSummary {
   invoices: Invoice[]
 }
 
-export type BankName = 'N26' | 'ING' | 'PayPal'
+export type BankName = 'N26' | 'ING' | 'PayPal' | 'Demo Bank'
 
 export type PaymentDraftStatus = 'draft' | 'approved' | 'completed' | 'cancelled'
 

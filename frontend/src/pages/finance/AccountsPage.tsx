@@ -161,19 +161,22 @@ export function AccountsPage() {
                 ) : (
                   <p className="text-sm text-muted-foreground">Not connected.</p>
                 )}
-                <div>
-                  <Button
-                    variant={connection.connected ? 'outline' : 'default'}
-                    disabled={starting !== null}
-                    onClick={() => void start(connection.bank)}
-                  >
-                    {starting === connection.bank
-                      ? 'Redirecting…'
-                      : connection.connected
-                        ? 'Reconnect'
-                        : 'Connect'}
-                  </Button>
-                </div>
+                {/* The demo bank is fixture data; the server refuses to connect it. */}
+                {connection.bank === 'Demo Bank' ? null : (
+                  <div>
+                    <Button
+                      variant={connection.connected ? 'outline' : 'default'}
+                      disabled={starting !== null}
+                      onClick={() => void start(connection.bank)}
+                    >
+                      {starting === connection.bank
+                        ? 'Redirecting…'
+                        : connection.connected
+                          ? 'Reconnect'
+                          : 'Connect'}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))
