@@ -17,6 +17,10 @@ from app.database.models.finance.bank_connection import BankConnection
 DEMO_IDENTIFICATION = "demo"
 
 
+def demo_address(user_id: uuid.UUID) -> str:
+    return f"demo+{user_id}@folio.example"
+
+
 @dataclass(frozen=True)
 class DemoAccounts:
     mailbox_id: uuid.UUID
@@ -37,7 +41,7 @@ def ensure_demo_accounts(session: Session, user_id: uuid.UUID) -> DemoAccounts:
         mailbox = Mailbox(
             user_id=user_id,
             provider=MailboxProvider.DEMO,
-            address=f"demo+{user_id}@folio.example",
+            address=demo_address(user_id),
             display_name="Demo",
         )
         session.add(mailbox)

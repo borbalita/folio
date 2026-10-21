@@ -63,3 +63,43 @@ def test_the_demo_user_lists_and_books_their_payments(
     assert booked.status_code == 200
     assert booked.json()["invoiceStatus"] == "paid"
     assert seen == [(TEST_USER_ID, PAYMENT)]
+
+
+def test_the_demo_user_sends_a_live_invoice(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.demo import live
+
+    monkeypatch.setattr(settings, "demo_user_id", TEST_USER_ID)
+    seen: list[tuple[uuid.UUID, str]] = []
+
+    def send(user_id: uuid.UUID, kind: str) -> dict:
+        seen.append((user_id, kind))
+        return {
+            "sent": {"kind": "normal"},
+            "invoices": [],
+            "failures": 0,
+            "error": None,
+        }
+
+    monkeypatch.setattr(live, "send_invoice", send)
+
+    sent = authed_client.post("/finance/demo/invoices", json={"kind": "random"})
+    refused = authed_client.post("/finance/demo/invoices", json={"kind": "lottery"})
+
+    assert sent.status_code == 200
+    assert seen == [(TEST_USER_ID, "random")]
+    assert refused.status_code == 422
+
+
+def test_the_owner_cannot_send_live_invoices(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "demo_user_id", uuid.uuid4())
+
+    assert (
+        authed_client.post(
+            "/finance/demo/invoices", json={"kind": "normal"}
+        ).status_code
+        == 403
+    )

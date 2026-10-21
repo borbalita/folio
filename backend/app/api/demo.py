@@ -7,10 +7,11 @@ import uuid
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 
 from app.auth.demo_access import require_demo_user
 from app.auth.dependencies import CurrentUser
-from app.demo import booking
+from app.demo import booking, live
 
 router = APIRouter(prefix="/finance/demo", tags=["demo"])
 
@@ -28,3 +29,16 @@ async def book_payment(
     user: Annotated[CurrentUser, Depends(require_demo_user)],
 ) -> dict[str, Any]:
     return await asyncio.to_thread(booking.book, user.id, payment_id)
+
+
+class NewInvoice(BaseModel):
+    kind: live.RequestedKind
+
+
+@router.post("/invoices")
+async def send_invoice(
+    body: NewInvoice,
+    user: Annotated[CurrentUser, Depends(require_demo_user)],
+) -> dict[str, Any]:
+    """Waits for the real models (about 10–20 s) and returns what was stored."""
+    return await asyncio.to_thread(live.send_invoice, user.id, body.kind)
