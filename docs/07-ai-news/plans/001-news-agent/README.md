@@ -8,7 +8,7 @@
 
 - 2026-10-20: in chat, the owner asked for a chatbot only about AI news that knows what big or important news means. They chose: a focused place for news, judged importance, briefings, demo-friendly; importance by coverage only; briefings on request in chat; owner-only; news moves out of the Email agent. Approach 1 (rank by coverage, grouping unchanged) chosen over grouping same-newsletter items across days. Design sections 1–3 approved. No evals for this agent.
 - 2026-10-20: the owner approved the written spec and asked to build it; the plan is Ready.
-- 2026-10-21: the owner approved 001/05, demo newsletters for the finance demo user: two fictional newsletters ("The Daily Tensor", "The AI Detective"), AI News reads the demo mailbox, seeded by 003's reset with precomputed embeddings.
+- 2026-10-21: the owner approved 001/05, demo newsletters for the finance demo user: two fictional newsletters ("The Daily Tensor", "AI Detective"), AI News reads the demo mailbox, seeded by 003's reset with precomputed embeddings.
 - 2026-10-21: final review: stories count only items inside the period, so big means both newsletters within it (owner's spec says "all from that period").
 - 2026-10-20: demo data comes from a separate plan; this agent must work for a demo account's own invented newsletters.
 
