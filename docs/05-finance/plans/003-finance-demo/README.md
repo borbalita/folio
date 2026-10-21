@@ -2,7 +2,7 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 003/01 to 003/05 done
+- Current stage: Implementation; 003/01–06 done, 003/07 (rehearsal) next
 
 ## Approval state
 
@@ -99,7 +99,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 - [x] [003/03 — Base state and reset](tasks/03-base-state-reset.md) — after 01, 02
 - [x] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
 - [x] [003/05 — Simulated bank booking](tasks/05-bank-booking.md) — after 01
-- [ ] [003/06 — Presenter page and list refresh](tasks/06-presenter-page.md) — after 03, 04, 05
+- [x] [003/06 — Presenter page and list refresh](tasks/06-presenter-page.md) — after 03, 04, 05
 - [ ] [003/07 — Production setup and rehearsal](tasks/07-rehearsal.md) — after 06
 
 ```text
