@@ -20,6 +20,7 @@ One call returns the demo user to a fixed, realistic Finance state with dates re
 - Given a reset, when the demo user opens Finance, then the lists look realistic and every status is visible. (browser)
 
 ## Notes
+- Implementation plan: [03-base-state-reset.plan.md](03-base-state-reset.plan.md).
 - From 003/01's browser check: the invoice routes return 403 for a Finance user without a mailbox. After a reset the demo mailbox exists; also consider returning an empty list instead of 403, and a general 403 message in the frontend.
 
 ## Dependencies
