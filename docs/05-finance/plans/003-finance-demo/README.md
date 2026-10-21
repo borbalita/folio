@@ -8,6 +8,7 @@
 
 - 2026-10-20: settled in chat, one question at a time: the demo is shown live by the owner first and may become self-serve later; it shows a ready-made state plus one invoice that arrives live; the live invoice skips the mailbox and enters the real pipeline; the demo is a second user in the production app; invoices come from a fixed catalogue of fictional vendors; a simulated bank booking closes the payment loop; the controls sit on a separate presenter page; reset is a button there plus a command. Design sections 1–4 approved.
 - 2026-10-20: written spec and task breakdown approved; the plan is Ready.
+- 2026-10-21: added while planning 003/01, at the owner's OK: the demo user's Accounts page shows only the demo bank; sync and expiry checks skip it; Connect returns 403 for the demo user.
 
 ## Problem
 
@@ -59,7 +60,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 ```
 
 - **Demo user and access:** the owner creates the user in the Supabase dashboard; its id goes to Railway as `DEMO_USER_ID`, mirrored in `config.py` and optional (no demo without it). Finance access becomes "owner or demo user". Every demo route takes the user id from `DEMO_USER_ID` only and returns 403 to anyone else, the owner included.
-- **Demo mailbox and bank:** a mailbox with a new provider `demo` (no IMAP; the email cron never reads it), which doesn't open the Email agent. One bank connection `demo` with one account, "Demo Bank · Girokonto" with a fake IBAN, and consent far in the future, so no expiry alerts. The bank-sync cron already syncs the owner only.
+- **Demo mailbox and bank:** a mailbox with a new provider `demo` (no IMAP; the email cron never reads it), which doesn't open the Email agent. One bank connection `Demo Bank` with one account, "Girokonto" with a fake IBAN, and consent far in the future. Bank sync (cron and Sync now) and expiry notices only cover the real banks (N26, ING, PayPal), so the demo connection never reaches Enable Banking; Sync now for the demo user adds nothing. The demo user's Accounts page lists only the demo bank, and Connect returns 403 for the demo user.
 - **Code:** a package `backend/app/demo/`: `catalogue.py` (vendors), `pdf.py` (PDF writer), `emails.py` (builds a parsed message with its PDF), `base_state.py` (the rows below), `reset.py`, `booking.py`; routes under `/finance/demo`; a command `python -m app.demo.reset`.
 - **Base state** (offsets from today, turned into dates at reset):
 
