@@ -1,6 +1,6 @@
 import { http } from '@/lib/http'
 
-export type AgentName = 'documents' | 'email' | 'finance'
+export type AgentName = 'documents' | 'email' | 'finance' | 'news'
 
 export interface Thread {
   id: string

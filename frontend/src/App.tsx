@@ -44,6 +44,12 @@ export default function App() {
                 </Route>
               </Route>
               <Route path="/email/invoices/:emailId" element={<LegacyInvoiceRedirect />} />
+              <Route element={<AgentRoute agent="news" />}>
+                <Route path="/news" element={<ChatPage key="news" agentName="news" />}>
+                  <Route index element={<ChatEmptyState />} />
+                  <Route path=":threadId" element={<ChatThreadPage />} />
+                </Route>
+              </Route>
               <Route element={<AgentRoute agent="finance" />}>
                 <Route path="/finance" element={<FinanceLayout />}>
                   <Route index element={<Navigate to="invoices" replace />} />

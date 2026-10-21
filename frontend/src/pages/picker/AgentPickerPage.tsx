@@ -12,7 +12,7 @@ import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
 // The everyday assistants first; Document Copilot is the original demo.
-const PICKER_ORDER: AgentName[] = ['finance', 'email', 'documents']
+const PICKER_ORDER: AgentName[] = ['finance', 'email', 'news', 'documents']
 
 function AgentCard({
   agent,
