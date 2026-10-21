@@ -25,7 +25,7 @@ The owner runs the demo from a phone or a second tab, and the app the audience s
 
 ## Verified
 
-2026-10-21, branch `feat/demo-presenter`, local backend and frontend against the real database, signed in as the demo user.
+2026-10-21, branch `feat/demo-presenter`, PR [borbalita/folio#79](https://github.com/borbalita/folio/pull/79), local backend and frontend against the real database, signed in as the demo user.
 
 - Demo user, phone size → the three blocks fit without horizontal scrolling: at 375 × 812 the page width equals the screen width (375). Pass.
 - Owner → no controls: **pending** — needs the owner signed in.
