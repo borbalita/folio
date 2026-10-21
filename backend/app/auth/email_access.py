@@ -8,7 +8,7 @@ import uuid
 from fastapi import HTTPException, status
 
 from app.auth.dependencies import CurrentUser
-from app.auth.finance_access import is_finance_owner, require_finance_owner
+from app.auth.finance_access import is_finance_user, require_finance_user
 from app.database import mailboxes
 
 
@@ -28,7 +28,7 @@ async def agents_for(user: CurrentUser) -> list[str]:
     ids = await asyncio.to_thread(mailboxes.active_mailbox_ids, user.id)
     if ids:
         agents.append("email")
-    if is_finance_owner(user):
+    if is_finance_user(user):
         agents.append("finance")
     return agents
 
@@ -38,4 +38,4 @@ async def require_agent_access(user: CurrentUser, agent: str) -> None:
     if agent == "email":
         await require_email_access(user)
     elif agent == "finance":
-        require_finance_owner(user)
+        require_finance_user(user)

@@ -1,4 +1,4 @@
-"""Finance is limited to the one user named in settings; off for everyone when unset."""
+"""Finance is open to the owner and the demo user named in settings; off when neither is set."""
 
 from __future__ import annotations
 
@@ -8,11 +8,10 @@ from app.auth.dependencies import CurrentUser
 from app.config import settings
 
 
-def is_finance_owner(user: CurrentUser) -> bool:
-    owner = settings.finance_owner_user_id
-    return owner is not None and user.id == owner
+def is_finance_user(user: CurrentUser) -> bool:
+    return user.id in (settings.finance_owner_user_id, settings.demo_user_id)
 
 
-def require_finance_owner(user: CurrentUser) -> None:
-    if not is_finance_owner(user):
+def require_finance_user(user: CurrentUser) -> None:
+    if not is_finance_user(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")

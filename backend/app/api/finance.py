@@ -1,4 +1,4 @@
-"""Finance routes. Every route is owner-only."""
+"""Finance routes. Every route is for the Finance owner or the demo user."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
-from app.auth.finance_access import require_finance_owner
+from app.auth.finance_access import require_finance_user
 from app.database import (
     bank_connections,
     invoices,
@@ -32,21 +32,21 @@ from app.finance import enable_banking, transaction_sync
 log = structlog.get_logger(__name__)
 
 
-def finance_owner(
+def finance_user(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CurrentUser:
-    require_finance_owner(user)
+    require_finance_user(user)
     return user
 
 
 SYNC_COOLDOWN = timedelta(minutes=10)
 
 router = APIRouter(
-    prefix="/finance", tags=["finance"], dependencies=[Depends(finance_owner)]
+    prefix="/finance", tags=["finance"], dependencies=[Depends(finance_user)]
 )
 
 # Invoice data stays scoped to the owner's mailboxes, so each route resolves them
-# after the router-level owner check.
+# after the router-level Finance access check.
 
 
 @router.get("/invoices")
