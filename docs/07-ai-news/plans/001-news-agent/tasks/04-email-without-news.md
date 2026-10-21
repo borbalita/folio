@@ -19,3 +19,11 @@ The Email agent answers about mail only and points news questions to the News ag
 
 ## Notes
 - Implementation plan: [04-email-without-news.plan.md](04-email-without-news.plan.md).
+
+## Verified
+
+2026-10-21, branch `feat/news-agent-chat`.
+
+- News question → the Email agent searches nothing and points to the News agent: `test_email_agent_only_searches_mail` and `test_instructions_point_news_questions_to_the_news_assistant`; in the browser "What were the big AI stories this week?" answered "The AI News assistant answers questions about big AI stories from newsletters like TLDR and Alpha Signal." with no embeddings call in the backend log. Pass.
+- Old Email thread with news citations → still shows them: a thread with 13 news citations opened, source 1 showed the Alpha Signal item. Pass.
+- Email eval modes run without the news retriever: `test_agent_run_searches_the_replay_and_records_its_answer`, `test_agent_run_records_every_search_it_made`. Pass.
