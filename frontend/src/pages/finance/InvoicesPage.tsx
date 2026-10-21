@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { InvoiceFilters } from '@/components/finance/InvoiceFilters'
 import { InvoiceList } from '@/components/finance/InvoiceList'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { api, type InvoiceRow } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
 import { DEFAULT_FILTERS, type Filters, isOverdue, todayIso } from '@/lib/invoices'
+import { useRefresh } from '@/lib/useRefresh'
 
 type State = { invoices: InvoiceRow[] } | { error: string } | null
 
@@ -57,6 +58,15 @@ export function InvoicesPage() {
       cancelled = true
     }
   }, [])
+
+  const refresh = useCallback(() => {
+    // Quiet: a failed refresh keeps the list on screen.
+    api
+      .listInvoices()
+      .then((invoices) => setState({ invoices }))
+      .catch(() => undefined)
+  }, [])
+  useRefresh(refresh)
 
   const all = state && 'invoices' in state ? state.invoices : null
   const shown = useMemo(() => (all ? visible(all, filters, today) : []), [all, filters, today])

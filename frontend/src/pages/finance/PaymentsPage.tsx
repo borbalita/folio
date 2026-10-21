@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { PaymentCard } from '@/components/finance/PaymentCard'
@@ -6,6 +6,7 @@ import { PdfViewer } from '@/components/finance/PdfViewer'
 import { Button } from '@/components/ui/button'
 import { api, type PaymentDraft } from '@/lib/api'
 import { describeApiError } from '@/lib/http'
+import { useRefresh } from '@/lib/useRefresh'
 
 type State = { drafts: PaymentDraft[] } | { error: string } | null
 
@@ -39,6 +40,18 @@ export function PaymentsPage() {
       cancelled = true
     }
   }, [key])
+
+  const refresh = useCallback(() => {
+    if (!key) {
+      return
+    }
+    // Keeps the current card: a booking elsewhere completes a payment without a reload.
+    api
+      .getPaymentDrafts(key.split(','))
+      .then((drafts) => setState({ drafts }))
+      .catch(() => undefined)
+  }, [key])
+  useRefresh(refresh)
 
   if (!key) {
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { CloseInvoice } from '@/components/finance/CloseInvoice'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { api, type Invoice, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
+import { useRefresh } from '@/lib/useRefresh'
 
 function SkippedAttachment({ attachment }: { attachment: InvoiceAttachment }) {
   const reason =
@@ -52,6 +53,17 @@ export function InvoicePage() {
       cancelled = true
     }
   }, [emailId])
+
+  const refresh = useCallback(() => {
+    if (!emailId) {
+      return
+    }
+    api
+      .getInvoice(emailId)
+      .then(setLoaded)
+      .catch(() => undefined)
+  }, [emailId])
+  useRefresh(refresh)
 
   if (!emailId) {
     return null

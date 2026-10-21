@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { api, type Transaction } from '@/lib/api'
 import { formatIsoDay } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
+import { useRefresh } from '@/lib/useRefresh'
 
 type State = { transactions: Transaction[] } | { error: string } | null
 
@@ -40,6 +41,14 @@ export function TransactionsPage() {
       cancelled = true
     }
   }, [])
+
+  const refresh = useCallback(() => {
+    api
+      .listTransactions()
+      .then((transactions) => setState({ transactions }))
+      .catch(() => undefined)
+  }, [])
+  useRefresh(refresh)
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">

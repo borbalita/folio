@@ -18,3 +18,6 @@ The owner runs the demo from a phone or a second tab, and the app the audience s
 
 ## Dependencies
 003/03, 003/04, 003/05.
+
+## Notes
+- Implementation plan: [06-presenter-page.plan.md](06-presenter-page.plan.md).

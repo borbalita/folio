@@ -182,6 +182,31 @@ export interface BankSyncCounts {
   unparsed: number
 }
 
+export type DemoInvoiceKind = 'normal' | 'already_paid' | 'online_only' | 'random'
+
+export interface DemoSendResult {
+  sent: { kind: Exclude<DemoInvoiceKind, 'random'>; vendor: string; number: string; amount: string }
+  invoices: Invoice[]
+  failures: number
+  error: string | null
+}
+
+export interface DemoPayment {
+  id: string
+  invoiceId: string
+  payee: string
+  amount: string
+  currency: string
+  reference: string | null
+  approvedAt: string | null
+}
+
+export interface DemoBookResult {
+  booked: boolean
+  paymentStatus: PaymentDraftStatus
+  invoiceStatus: InvoiceStatus | null
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -234,4 +259,13 @@ export const api = {
   listTransactions: () => http.get<Transaction[]>('/finance/transactions'),
 
   getAttachment: (attachmentId: string) => http.getBlob(`/finance/attachments/${attachmentId}`),
+
+  sendDemoInvoice: (kind: DemoInvoiceKind) =>
+    http.post<DemoSendResult>('/finance/demo/invoices', { kind }, { timeoutMs: 90_000 }),
+
+  listDemoPayments: () => http.get<DemoPayment[]>('/finance/demo/payments'),
+
+  bookDemoPayment: (id: string) => http.post<DemoBookResult>(`/finance/demo/payments/${id}/book`),
+
+  resetDemo: () => http.post<Record<string, number>>('/finance/demo/reset', undefined, { timeoutMs: 60_000 }),
 }

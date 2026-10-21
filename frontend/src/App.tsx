@@ -12,6 +12,7 @@ import { LegacyInvoiceRedirect } from '@/pages/email/LegacyInvoiceRedirect'
 import { AccountsPage } from '@/pages/finance/AccountsPage'
 import { BankCallbackPage } from '@/pages/finance/BankCallbackPage'
 import { FinanceChatEmpty, FinanceChatPage } from '@/pages/finance/FinanceChatPage'
+import { DemoPresenterPage } from '@/pages/finance/DemoPresenterPage'
 import { FinanceLayout } from '@/pages/finance/FinanceLayout'
 import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
@@ -53,6 +54,7 @@ export default function App() {
                 </Route>
               </Route>
               <Route element={<AgentRoute agent="finance" />}>
+                <Route path="/finance/demo" element={<DemoPresenterPage />} />
                 <Route path="/finance" element={<FinanceLayout />}>
                   <Route index element={<Navigate to="invoices" replace />} />
                   <Route path="invoices" element={<InvoicesPage />} />
