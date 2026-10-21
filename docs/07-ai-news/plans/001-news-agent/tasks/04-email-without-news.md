@@ -1,0 +1,29 @@
+# 001/04 — News moves out of the Email agent
+
+## Goal
+The Email agent answers about mail only and points news questions to the News agent.
+
+## Scope
+- Remove `search_news`, `list_big_news` and the news deps from the Email agent; its instructions answer AI-news questions with a one-line pointer to the News agent, without searching or citing.
+- Picker description: "Search your mail, with citations to each message."
+- The eval modes `answer.py` and `e2e.py` stop passing a news retriever.
+- Old Email threads with news citations still render.
+
+## Acceptance criteria
+- Given a news question, when the Email agent answers, then it calls no tool and points to the News agent. (test)
+- Given an old Email thread with news citations, when it opens, then the citations still show. (browser)
+- Given the Email evals, when their modes are built, then they run without the news retriever. (test)
+
+## Dependencies
+001/02.
+
+## Notes
+- Implementation plan: [04-email-without-news.plan.md](04-email-without-news.plan.md).
+
+## Verified
+
+2026-10-21, branch `feat/news-agent-chat`, PR [borbalita/folio#70](https://github.com/borbalita/folio/pull/70).
+
+- News question → the Email agent searches nothing and points to the News agent: `test_email_agent_only_searches_mail` and `test_instructions_point_news_questions_to_the_news_assistant`; in the browser "What were the big AI stories this week?" answered "The AI News assistant answers questions about big AI stories from newsletters like TLDR and Alpha Signal." with no embeddings call in the backend log. Pass.
+- Old Email thread with news citations → still shows them: a thread with 13 news citations opened, source 1 showed the Alpha Signal item. Pass.
+- Email eval modes run without the news retriever: `test_agent_run_searches_the_replay_and_records_its_answer`, `test_agent_run_records_every_search_it_made`. Pass.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { CloseInvoice } from '@/components/finance/CloseInvoice'
+import { EmailMessage } from '@/components/finance/EmailMessage'
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
 import { InvoicePayment } from '@/components/finance/InvoicePayment'
 import { PdfViewer } from '@/components/finance/PdfViewer'
@@ -140,7 +141,7 @@ export function InvoicePage() {
 
         <section className="flex flex-col gap-2 border-t border-border pt-6">
           <h2 className="text-sm font-medium text-muted-foreground">Email message</h2>
-          <p className="whitespace-pre-wrap text-sm">{loaded.body}</p>
+          <EmailMessage body={loaded.body} />
         </section>
       </article>
     </div>

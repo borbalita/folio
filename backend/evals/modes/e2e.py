@@ -23,7 +23,6 @@ from app.email_assistant.outputs import EmailAnswer
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.rerank import EvidenceJudgement
 from app.retrieval.email.retriever import EmailPassage, EmailRetriever
-from app.retrieval.news.retriever import NewsRetriever
 from evals.agent_run import ToolStep, candidate_model, effort_settings, run_agent
 from evals.cases import RagCase
 from evals.dataset import IdMap, load_id_map, load_rag_cases
@@ -122,7 +121,6 @@ async def run_case(
         user_id=case.user_id,
         thread_id=uuid.uuid4(),
         retriever=retriever,
-        news=NewsRetriever(),
     )
     started = time.perf_counter()
     record = await run_agent(case.question, case.today, deps, model, model_settings)

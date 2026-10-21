@@ -201,3 +201,30 @@ def test_yahoo_ingest_ignores_the_demo_mailbox(monkeypatch: pytest.MonkeyPatch) 
     assert found is yahoo
     assert demo.provider == "demo"
     assert demo.display_name == "Demo"
+
+
+def test_skipped_message_gets_its_body_with_line_breaks() -> None:
+    parsed = _parsed(body="Hallo,\n\nanbei die Rechnung.")
+    stored_row = EmailMessage(
+        mailbox_id=uuid.uuid4(),
+        message_id=parsed.message_id,
+        from_address=parsed.from_address,
+        from_name="",
+        body="Hallo, anbei die Rechnung.",
+        content_hash=content_hash("Hallo, anbei die Rechnung.", parsed.subject),
+        embedding_model=settings.openai_embedding_model,
+        embedding_dimensions=settings.openai_embedding_dimensions,
+    )
+    session = _MemorySession(existing=stored_row)
+
+    action, *_ = _store_one(
+        session,  # type: ignore[arg-type]
+        stored_row.mailbox_id,
+        parsed,
+        embed=lambda _texts: pytest.fail("a skipped message is not embedded"),
+        classifier=lambda _prompt: pytest.fail("a skipped message is not labelled"),
+        extract=None,
+    )
+
+    assert action == "skip"
+    assert stored_row.body == "Hallo,\n\nanbei die Rechnung."

@@ -1,8 +1,10 @@
-"""Text for the search_news and list_big_news tool responses."""
+"""Text for the news tool responses: items, and stories with their coverage."""
 
 from __future__ import annotations
 
-from app.retrieval.news.retriever import BigStory, NewsPassage
+from datetime import date
+
+from app.retrieval.news.retriever import NewsPassage, Story
 
 
 def format_news_passages(passages: list[NewsPassage]) -> str:
@@ -11,19 +13,38 @@ def format_news_passages(passages: list[NewsPassage]) -> str:
     return "\n\n".join(_item_block(passage) for passage in passages)
 
 
-def format_big_stories(stories: list[BigStory]) -> str:
+_NEWSLETTER_NAMES = {"tldr": "TLDR", "alpha_signal": "Alpha Signal"}
+
+
+def coverage_line(story: Story) -> str:
+    """E.g. "both newsletters · 3 items · Oct 12–14" or "TLDR only · 1 item · Oct 12"."""
+    if len(story.sources) > 1:
+        newsletters = "both newsletters"
+    else:
+        name = story.sources[0] if story.sources else "unknown"
+        newsletters = f"{_NEWSLETTER_NAMES.get(name, name)} only"
+    items = f"{story.item_count} item{'' if story.item_count == 1 else 's'}"
+    return f"{newsletters} · {items} · {_day_range(story.first_seen, story.last_seen)}"
+
+
+def format_stories(stories: list[Story], *, empty: str) -> str:
     if not stories:
-        return "No big stories in that range."
+        return empty
     blocks = []
     for story in stories:
-        sources = " + ".join(sorted({item.source for item in story.items}))
-        header = (
-            f"Story {story.first_seen.isoformat()} to {story.last_seen.isoformat()} "
-            f"({sources})"
-        )
+        header = f"{'Big' if story.is_big else 'Story'} — {coverage_line(story)}"
         items = "\n\n".join(_item_block(item) for item in story.items)
         blocks.append(f"{header}\n{items}")
     return "\n\n---\n\n".join(blocks)
+
+
+def _day_range(first: date, last: date) -> str:
+    start = f"{first:%b} {first.day}"
+    if first == last:
+        return start
+    if (first.year, first.month) == (last.year, last.month):
+        return f"{start}–{last.day}"
+    return f"{start}–{last:%b} {last.day}"
 
 
 def _item_block(passage: NewsPassage) -> str:

@@ -72,10 +72,10 @@ Passages carry from, subject, sent date, and mailbox name. `format_email_passage
 `news_items` has an embedding but no `search_vector`, so `NewsRetriever` is not a `HybridRetriever`. It reuses `ChunkQueries.semantic` through `NewsQueries` and the same owner scope as mail.
 
 - **`search`.** Embed the query, rank items by cosine distance, keep `RETRIEVAL_TOP_K`, then reload them with the scope repeated. `NewsSearchFilters` narrows by `edition_date` (since, until) and `big_only`, which keeps items whose story has `is_big`.
-- **`big_stories`.** Up to `RETRIEVAL_TOP_K` stories with `is_big` whose `first_seen`–`last_seen` range overlaps since–until, most recent first, each with its items in scope. Without dates it returns the most recent big stories.
+- **`stories`.** Stories ranked by coverage, at most `limit`, each with its items in scope. Coverage comes from the user's own items only, since stories group items from every mailbox: newsletters (big when more than one), item count, and first to last edition day. Only items whose edition falls within since–until count and are loaded, so a story's coverage is its coverage in that period; `big_only` keeps big ones. Ranking: big, then newsletters, items, days, newest; ties by story id. Callers choose the period; the Email tool defaults to the last 7 days.
 - **Citations** point at item ids, never at stories, so a story rebuild never breaks one.
 
-`format_news_passages` and `format_big_stories` write the tool text.
+`format_news_passages` and `format_stories` (with each story's `coverage_line`) write the tool text.
 
 ## Default settings
 
@@ -123,7 +123,7 @@ retrieval/
 │   ├── queries.py     # EmailQueries, EmailSearchFilters, owner scope
 │   └── formatting.py  # text for search_emails
 ├── news/
-│   ├── retriever.py   # NewsRetriever, NewsPassage, BigStory, scoped load
+│   ├── retriever.py   # NewsRetriever, NewsPassage, Story (ranked by coverage), scoped load
 │   ├── queries.py     # NewsQueries, NewsSearchFilters
 │   └── formatting.py  # text for search_news and list_big_news
 └── __init__.py

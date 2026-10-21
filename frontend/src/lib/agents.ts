@@ -1,4 +1,4 @@
-import { FileText, Mail, Wallet, type LucideIcon } from 'lucide-react'
+import { FileText, Mail, Newspaper, Wallet, type LucideIcon } from 'lucide-react'
 
 import type { AgentName } from '@/lib/api'
 
@@ -30,14 +30,25 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
   email: {
     name: 'email',
     title: 'Email Assistant',
-    description: 'Search your mail and AI newsletters, with citations to each message.',
+    description: 'Search your mail, with citations to each message.',
     path: '/email',
     emptyTitle: 'Ask about your mail',
-    emptyHint:
-      'Start a new chat to search messages or see the big AI news of the week.',
-    placeholder: 'Ask about your mail or AI news…',
+    emptyHint: 'Start a new chat to search your messages.',
+    placeholder: 'Ask about your mail…',
     hasThreads: true,
     icon: Mail,
+  },
+  news: {
+    name: 'news',
+    title: 'AI News',
+    description: 'Big AI stories and briefings from your newsletters, with citations.',
+    path: '/news',
+    emptyTitle: 'Ask about AI news',
+    emptyHint:
+      'Start a new chat and ask "What were the big stories this week?" or "Catch me up since Monday".',
+    placeholder: 'Ask about AI news…',
+    hasThreads: true,
+    icon: Newspaper,
   },
   finance: {
     name: 'finance',

@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-AgentName = Literal["documents", "email", "finance"]
+AgentName = Literal["documents", "email", "finance", "news"]
 
 
 class StreamChatRequest(BaseModel):

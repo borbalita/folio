@@ -40,10 +40,20 @@ from app.finance_assistant.agent import run_finance_agent
 from app.finance_assistant.deps import FinanceAgentDeps
 from app.finance_assistant.outputs import FinanceTurnResult
 from app.finance_assistant.tools import LOOKING
-from app.grounding import DocumentGrounder, EmailGrounder, Grounder, GroundingError
+from app.grounding import (
+    DocumentGrounder,
+    EmailGrounder,
+    Grounder,
+    GroundingError,
+    NewsGrounder,
+)
+from app.news_assistant.agent import run_news_agent
+from app.news_assistant.deps import NewsAgentDeps
+from app.news_assistant.outputs import NewsTurnResult
+from app.news_assistant.tools import READING_NEWSLETTERS
 from app.retrieval.documents.retriever import DocumentRetriever
 from app.retrieval.email.retriever import EmailRetriever
-from app.retrieval.news.retriever import NewsPassage, NewsRetriever
+from app.retrieval.news.retriever import NewsRetriever
 
 log = structlog.get_logger(__name__)
 
@@ -52,8 +62,8 @@ AGENT_FAILURES = (AgentRunError, ModelAPIError, UnexpectedModelBehavior, APIErro
 ASSISTANT_UNAVAILABLE = "The assistant couldn't complete this answer. Try again."
 UNEXPECTED_TURN_ERROR = "Something went wrong. Try again."
 
-Deps = DocumentAgentDeps | EmailAgentDeps | FinanceAgentDeps
-TurnResult = AgentTurnResult | EmailTurnResult | FinanceTurnResult
+Deps = DocumentAgentDeps | EmailAgentDeps | FinanceAgentDeps | NewsAgentDeps
+TurnResult = AgentTurnResult | EmailTurnResult | FinanceTurnResult | NewsTurnResult
 
 
 class _ChatAgent(ABC):
@@ -87,7 +97,9 @@ class _ChatAgent(ABC):
     @abstractmethod
     def turn_metadata(self, result: TurnResult, deps: Deps) -> dict[str, Any]: ...
 
-    def citation_rows(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]] | None:
+    def citation_rows(
+        self, result: TurnResult, deps: Deps
+    ) -> list[dict[str, Any]] | None:
         return None
 
     def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
@@ -199,7 +211,6 @@ class _EmailChatAgent(_CitingChatAgent):
             user_id=user.id,
             thread_id=thread_id,
             retriever=EmailRetriever(),
-            news=NewsRetriever(),
             status_queue=status_queue,
         )
 
@@ -207,13 +218,6 @@ class _EmailChatAgent(_CitingChatAgent):
         return await run_email_agent(user_text, deps)
 
     def passage_fields(self, passage: Any) -> dict[str, Any]:
-        if isinstance(passage, NewsPassage):
-            return {
-                "title": passage.title,
-                "source": passage.source,
-                "date": passage.edition_date.isoformat(),
-                "url": passage.url,
-            }
         return {
             "from": passage.from_address,
             "subject": passage.subject,
@@ -222,9 +226,45 @@ class _EmailChatAgent(_CitingChatAgent):
         }
 
     def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]:
-        if isinstance(passage, NewsPassage):
-            return {"email_chunk_id": None, "news_item_id": chunk_id}
         return {"email_chunk_id": chunk_id, "news_item_id": None}
+
+    def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
+        chats.insert_email_citations(message_id, rows)
+
+
+class _NewsChatAgent(_CitingChatAgent):
+    """Cites newsletter items; they are stored as news citations in email_citations."""
+
+    name = "news"
+    status_label = READING_NEWSLETTERS
+    grounder = NewsGrounder()
+
+    def new_deps(
+        self,
+        user: CurrentUser,
+        thread_id: uuid.UUID,
+        status_queue: asyncio.Queue[str | None],
+    ) -> NewsAgentDeps:
+        return NewsAgentDeps(
+            user_id=user.id,
+            thread_id=thread_id,
+            news=NewsRetriever(),
+            status_queue=status_queue,
+        )
+
+    async def run(self, user_text: str, deps: Deps) -> TurnResult:
+        return await run_news_agent(user_text, deps)
+
+    def passage_fields(self, passage: Any) -> dict[str, Any]:
+        return {
+            "title": passage.title,
+            "source": passage.source,
+            "date": passage.edition_date.isoformat(),
+            "url": passage.url,
+        }
+
+    def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]:
+        return {"email_chunk_id": None, "news_item_id": chunk_id}
 
     def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
         chats.insert_email_citations(message_id, rows)
@@ -243,11 +283,16 @@ class _FinanceChatAgent(_ChatAgent):
         status_queue: asyncio.Queue[str | None],
     ) -> FinanceAgentDeps:
         return FinanceAgentDeps(
-            user_id=user.id, thread_id=thread_id, mailbox_ids=[], status_queue=status_queue
+            user_id=user.id,
+            thread_id=thread_id,
+            mailbox_ids=[],
+            status_queue=status_queue,
         )
 
     async def run(self, user_text: str, deps: Deps) -> TurnResult:
-        deps.mailbox_ids = await asyncio.to_thread(mailboxes.invoice_mailbox_ids, deps.user_id)
+        deps.mailbox_ids = await asyncio.to_thread(
+            mailboxes.invoice_mailbox_ids, deps.user_id
+        )
         return await run_finance_agent(user_text, deps)
 
     def validate(self, result: TurnResult, deps: Deps) -> None:
@@ -285,7 +330,12 @@ class _FinanceChatAgent(_ChatAgent):
 
 _AGENTS: dict[str, _ChatAgent] = {
     agent.name: agent
-    for agent in (_DocumentChatAgent(), _EmailChatAgent(), _FinanceChatAgent())
+    for agent in (
+        _DocumentChatAgent(),
+        _EmailChatAgent(),
+        _NewsChatAgent(),
+        _FinanceChatAgent(),
+    )
 }
 
 

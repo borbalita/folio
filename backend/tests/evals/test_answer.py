@@ -23,7 +23,6 @@ from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer, EmailCitationRef
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.retriever import EmailPassage
-from app.retrieval.news.retriever import NewsRetriever
 from evals.agent_run import (
     OUTPUT_TOOL,
     candidate_model,
@@ -325,7 +324,6 @@ def test_agent_run_searches_the_replay_and_records_its_answer(
         user_id=USER,
         thread_id=uuid.uuid4(),
         retriever=ReplayRetriever([passage]),
-        news=NewsRetriever(),
     )
 
     record = asyncio.run(
