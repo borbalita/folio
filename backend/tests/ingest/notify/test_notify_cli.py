@@ -53,3 +53,19 @@ def test_test_message_goes_to_the_configured_chat(monkeypatch: pytest.MonkeyPatc
 
     assert code == 0
     assert sent == [{"chat_id": "42", "text": "✅ Folio notifications are set up."}]
+
+
+@pytest.mark.parametrize(
+    "handler",
+    [
+        lambda request: httpx.Response(401, json={"ok": False, "description": "Unauthorized"}),
+        lambda request: (_ for _ in ()).throw(httpx.ConnectError("down", request=request)),
+    ],
+)
+def test_telegram_errors_never_show_the_token(capsys, handler) -> None:
+    code = run.main(["--chat-id"], client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+    out = capsys.readouterr()
+    assert code == 1
+    assert "123:abc" not in out.out + out.err
+    assert "Telegram" in out.err
