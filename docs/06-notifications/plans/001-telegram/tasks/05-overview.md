@@ -23,10 +23,10 @@ All other tasks.
 
 - `docs/README.md` links the overview, and the overview links back to this plan (browser): on GitHub (branch `docs/notifications-overview`), `docs/README.md` has an Overview link to `06-notifications/overview.md`; the overview's "plan 001" link opens `plans/001-telegram/README.md`, which renders. Pass.
 - The success criteria (manual):
-  1. A real invoice email reaches Telegram within 30 minutes: **pending**, waiting for the next invoice email.
-  2. An open invoice due in 3 days is reminded once: **pending**, waiting for an invoice 3 days before its due date.
+  1. A real invoice email reaches Telegram within 30 minutes: **skipped** at the owner's request (2026-10-21); covered by tests only.
+  2. An open invoice due in 3 days is reminded once: **skipped** at the owner's request (2026-10-21); covered by tests only.
   3. A big AI story reaches Telegram once with a summary and links: **pass.** The 15:00 UTC run (2026-10-20) sent "OpenAI Reports Gains in Modernizing Legacy Code" with a 2-sentence summary and the TLDR link; the owner received it. Its second item (Alpha Signal) is `skipped`. The 15:32 run recorded and sent nothing new.
-  4. Nothing is sent between 22:00 and 07:00 Berlin: **pending**, waiting for an event in quiet hours (covered by `test_quiet_hours`).
+  4. Nothing is sent between 22:00 and 07:00 Berlin: **skipped** at the owner's request (2026-10-21); covered by `test_quiet_hours`.
   5. Ingest succeeds and failures are visible: **pass.** Both runs are `ok`, with `notifications_new/sent/failed/held` in `job_runs.counts` (2/1/0/0, then 0/0/0/0); no row failed. The failure paths are covered by tests, not by breaking production.
   6. Turning notifications on sends nothing old: **pass.** All 48 launch rows (10 invoices, 38 news items) are still `sent` with empty text; the only message since launch is the new story; nothing was recorded as `skipped` between the merge and the redeploy.
 
