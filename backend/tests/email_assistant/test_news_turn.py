@@ -16,7 +16,7 @@ from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer, EmailCitationRef
 from app.email_assistant.tools.news import execute_list_big_news, execute_search_news
 from app.grounding import UNKNOWN_CHUNK, EmailGrounder, GroundingError
-from app.retrieval.news.retriever import BigStory, NewsPassage
+from app.retrieval.news.retriever import NewsPassage, Story
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
 
 TLDR_ITEM = uuid.UUID("00000000-0000-0000-0000-0000000000a1")
@@ -74,12 +74,15 @@ def _patch(monkeypatch: pytest.MonkeyPatch, agent: _Agent) -> list[dict]:
         lambda self, query, *, filters, session=None: [_item(TLDR_ITEM, "tldr")],
     )
     monkeypatch.setattr(
-        "app.retrieval.news.retriever.NewsRetriever.big_stories",
-        lambda self, *, filters, session=None: [
-            BigStory(
+        "app.retrieval.news.retriever.NewsRetriever.stories",
+        lambda self, *, filters, limit, session=None: [
+            Story(
                 story_id=STORY,
                 first_seen=date(2026, 9, 21),
                 last_seen=date(2026, 9, 22),
+                is_big=True,
+                sources=["alpha_signal", "tldr"],
+                item_count=2,
                 items=[_item(ALPHA_ITEM, "alpha_signal"), _item(TLDR_ITEM, "tldr")],
             )
         ],

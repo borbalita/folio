@@ -3,17 +3,25 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import date
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from pydantic_ai import RunContext
 
+from app.config import settings
 from app.database import mailboxes
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.tools.status import emit_status
-from app.retrieval.news.formatting import format_big_stories, format_news_passages
+from app.retrieval.news.formatting import format_news_passages, format_stories
 from app.retrieval.news.queries import NewsSearchFilters
 
 READING_NEWSLETTERS = "Reading your AI newsletters"
+# Without dates, big news means this week's, not the best-covered stories of all time.
+DEFAULT_DAYS = 7
+
+
+def berlin_today() -> date:
+    return datetime.now(ZoneInfo(settings.email_timezone)).date()
 
 
 async def search_news(
@@ -68,11 +76,17 @@ def execute_list_big_news(
     since: date | None = None,
     until: date | None = None,
 ) -> str:
-    stories = deps.news.big_stories(filters=_filters(deps, since=since, until=until))
+    if since is None and until is None:
+        until = berlin_today()
+        since = until - timedelta(days=DEFAULT_DAYS - 1)
+    stories = deps.news.stories(
+        filters=_filters(deps, since=since, until=until, big_only=True),
+        limit=settings.retrieval_top_k,
+    )
     for story in stories:
         for item in story.items:
             deps.remember(item.item_id, item)
-    return format_big_stories(stories)
+    return format_stories(stories, empty="No big stories in that range.")
 
 
 def _filters(
