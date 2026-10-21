@@ -13,6 +13,13 @@ from email.utils import getaddresses, parsedate_to_datetime
 from html.parser import HTMLParser
 
 _WHITESPACE = re.compile(r"\s+")
+_SPACES = re.compile(r"[^\S\n]+")
+_BLANK_LINES = re.compile(r"\n{3,}")
+# Tags that end a line, and those that end a paragraph, when HTML becomes text.
+_LINE_TAGS = frozenset({"br", "div", "tr", "li", "table", "ul", "ol"})
+_PARAGRAPH_TAGS = frozenset(
+    {"p", "h1", "h2", "h3", "h4", "h5", "h6", "table", "blockquote"}
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +49,18 @@ def normalize_whitespace(text: str) -> str:
     return _WHITESPACE.sub(" ", text).strip()
 
 
+def tidy_text(text: str) -> str:
+    """Collapse spaces within lines and keep at most one blank line between paragraphs.
+
+    Collapsing all whitespace gives the same result as before, so content hashes don't change.
+    """
+    lines = (
+        _SPACES.sub(" ", line).strip()
+        for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    )
+    return _BLANK_LINES.sub("\n\n", "\n".join(lines)).strip()
+
+
 def decode_header_text(value: str) -> str:
     """Decode RFC 2047 encoded words (`=?UTF-8?Q?...?=`); the compat32 parser leaves them raw."""
     try:
@@ -67,7 +86,8 @@ def html_to_text(html: str) -> str:
     parser = _TextExtractor()
     parser.feed(html)
     parser.close()
-    return normalize_whitespace(" ".join(parser.parts))
+    # Joined with spaces like the flat text was, so collapsing it gives the same hash.
+    return tidy_text(" ".join(parser.parts))
 
 
 def parse_rfc822(raw: bytes, *, provider_message_id: str, folder: str) -> ParsedMessage:
@@ -97,6 +117,23 @@ class _TextExtractor(HTMLParser):
         super().__init__()
         self.parts: list[str] = []
 
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in _LINE_TAGS:
+            self._break("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _PARAGRAPH_TAGS:
+            self._break("\n\n")
+        elif tag in _LINE_TAGS:
+            self._break("\n")
+
+    def _break(self, marker: str) -> None:
+        # Adjacent tags (</div><div>) give one break, the larger of the two.
+        if self.parts and not self.parts[-1].strip():
+            self.parts[-1] = max(self.parts[-1], marker, key=len)
+        else:
+            self.parts.append(marker)
+
     def handle_data(self, data: str) -> None:
         if data.strip():
             self.parts.append(data)
@@ -105,7 +142,7 @@ class _TextExtractor(HTMLParser):
 def _body(message: Message) -> str:
     plain = _part_text(message, "text/plain")
     if plain is not None:
-        return normalize_whitespace(plain)
+        return tidy_text(plain)
     html = _part_text(message, "text/html")
     if html is not None:
         return html_to_text(html)
