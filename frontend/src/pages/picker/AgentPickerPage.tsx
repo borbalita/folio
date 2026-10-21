@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { AgentIcon } from '@/components/AgentIcon'
+import { LegalLinks } from '@/components/LegalLinks'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { AGENTS, type AgentInfo } from '@/lib/agents'
@@ -116,6 +117,9 @@ export function AgentPickerPage() {
         </div>
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </main>
+      <footer className="flex justify-center px-4 pb-4">
+        <LegalLinks />
+      </footer>
     </div>
   )
 }

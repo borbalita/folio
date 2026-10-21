@@ -69,6 +69,10 @@ Plans live in `docs/<area>/plans/NNN-<topic>/`: a `README.md` spec and one file 
 - **Record and tick.** Add a `Verified` section to the task file: date, one line per criterion with how it was checked and the result, and the PR link. Tick the task in the spec's Tasks checklist only when every criterion passed. A failed or skipped criterion keeps it unticked, with the reason.
 - **Plan status.** Set the spec's status to `In progress` with the first task, and `Complete` when every task and success criterion is met.
 
+## Privacy page
+
+The app's public privacy page ([PrivacyPage.tsx](frontend/src/pages/legal/PrivacyPage.tsx), served at `/privacy`) must match what the app does. With every change, check whether it alters what personal data the app collects, stores or shows, who can see it, or which outside service receives it: a new provider or model API, notifications, tracing content, new data sources, new users or accounts, cookies or browser storage, hosting. If so, update the page and its "Last updated" date in the same change, and say so in the PR. If unsure, ask the owner.
+
 ## Configuration
 
 A single settings module is the source of truth for environment per service (`backend/app/config.py`, `frontend/lib/env.ts`). Do not call `os.getenv` / read `process.env` directly in app code. Do not call `load_dotenv` anywhere. If a third-party SDK reads env vars directly, mirror them in the settings module — don't sprinkle `setdefault` elsewhere.

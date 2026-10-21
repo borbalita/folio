@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 
+import { LegalLinks } from '@/components/LegalLinks'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import {
@@ -83,6 +84,7 @@ export function LoginPage() {
           </form>
         </CardContent>
       </Card>
+      <LegalLinks className="absolute bottom-4" />
     </main>
   )
 }
