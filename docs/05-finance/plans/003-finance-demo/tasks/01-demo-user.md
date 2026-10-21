@@ -40,5 +40,5 @@ None.
 - Email and bank crons don't read or change the demo accounts: `test_yahoo_ingest_ignores_the_demo_mailbox`, `test_sync_targets_skip_the_demo_bank`, `test_connection_states_skip_the_demo_bank`, `test_owner_still_syncs_all_real_banks`, and (added in final review) `test_load_invoices_skips_demo_mailboxes` for the cron's notification step. Pass.
 - Demo user's bank list shows only the demo bank, Sync now fetches nothing without error, Connect is 403: `test_demo_user_lists_only_the_demo_bank`, `test_demo_user_sync_now_ignores_the_owners_cooldown`, `test_demo_user_cannot_start_a_connection`. Pass.
 - Also from the final review: settings refuse `DEMO_USER_ID` equal to the finance or email owner (`tests/test_config.py`).
-- Migration `92567bf64557` (provider `demo`) is written but not yet applied to the shared database.
+- Migration `92567bf64557` (provider `demo`, after the news migration `2938db925e7d`) applied by the owner on 2026-10-21; `alembic check`: no new upgrade operations.
 - PR: see the branch's pull request.
