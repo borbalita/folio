@@ -22,7 +22,9 @@ def sqlalchemy_database_url() -> str:
 
 @lru_cache(maxsize=1)
 def get_engine() -> Engine:
-    return create_engine(sqlalchemy_database_url())
+    # Error messages would otherwise carry the values being written (payees, amounts,
+    # message texts) into logs and tracebacks.
+    return create_engine(sqlalchemy_database_url(), hide_parameters=True)
 
 
 @lru_cache(maxsize=1)
