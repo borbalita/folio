@@ -15,6 +15,8 @@
 - No new dependencies; the PDF is written by hand (PDF 1.4, uncompressed, standard font Helvetica, WinAnsiEncoding).
 - Vendors are fictional; sender domains end in `.example` (reserved TLD), so no real company or domain is imitated.
 - German wording in subject, body and PDF.
+- Invoices and emails vary: each vendor has its own layout, number format, payment terms, VAT, line items and email tone, and every draw varies within that (number of items, wording). Every attachment filename still contains `Rechnung`, so the existing filename rule backs up labelling.
+- Totals add up: sum of line items (net) + VAT = total, each rounded to cents.
 - IBANs pass `app.finance.invoice_checks.iban_valid`. Their bank code starts with `0`, which no German bank uses, so a scanned demo QR can never pay a real account.
 - Tests: from `backend/`, `set -a && . ./.env.example && set +a && EMAIL_RERANK=false OPENAI_API_KEY=sk-invalid-for-tests uv run pytest -m "not integration"`; `uv run ruff check .`; `uv run ruff format --check <changed files>`.
 
@@ -25,6 +27,7 @@
 3. **Due date before invoice date** or amounts with more than 2 decimals must never be drawn → test in Task 3 over many seeds.
 4. **German amount format** (`84,20 €`, thousands with `.`) in the PDF and body; the extraction model reads these → test in Task 3.
 5. **Online only must not leak an IBAN** anywhere (PDF text and email body) → test in Task 3.
+6. **Variance collapsing**: a code change that makes every invoice look the same would still pass the shape tests → variance tests in Task 3 count distinct subjects, openings, layouts and item counts over many seeds.
 
 ---
 
@@ -35,14 +38,26 @@
 - Test: `backend/tests/demo/test_catalogue.py`
 
 **Interfaces:**
-- Produces: `@dataclass(frozen=True, slots=True) class Vendor: key: str; name: str; sender: str; street: str; city: str; bank_code: str; account: str; amount_range: tuple[Decimal, Decimal]; item: str; customer_portal: str` and `VENDORS: tuple[Vendor, ...]`; `demo_iban(bank_code: str, account: str) -> str` (German IBAN: `DE` + check digits + 8-digit bank code + 10-digit account).
-- Catalogue (6 vendors, `key`: name, item): `stadtwerke`: "Stadtwerke Musterstadt GmbH", "Strom (Grundversorgung), Abschlag"; `mobilfunk`: "Funkwelle Mobil GmbH", "Mobilfunk-Tarif Smart M"; `hosting`: "Serverhafen Hosting UG", "Webhosting Paket Pro"; `zahnarzt`: "Zahnarztpraxis Dr. Lindqvist", "Professionelle Zahnreinigung"; `fitness`: "Kraftwerk Fitnessstudio", "Mitgliedsbeitrag"; `handwerk`: "Malerbetrieb Özdemir & Söhne", "Malerarbeiten Flur". Senders like `rechnung@stadtwerke-musterstadt.example` and `service@funkwelle.example`, all ending in `.example`; `customer_portal` e.g. `kundenkonto.funkwelle.example`. Bank codes `0` + 7 digits, distinct per vendor.
+- Produces: `@dataclass(frozen=True, slots=True) class Item: label: str; price_range: tuple[Decimal, Decimal]`; `@dataclass(frozen=True, slots=True) class Vendor: key: str; name: str; sender: str; street: str; city: str; bank_code: str; account: str; items: tuple[Item, ...]; max_items: int; vat_rate: Decimal; number_format: str; due_days: int; layout: Literal["classic", "modern", "compact"]; tone: Literal["formal", "friendly", "short"]; filename: str; customer_portal: str` and `VENDORS: tuple[Vendor, ...]`; `demo_iban(bank_code: str, account: str) -> str` (German IBAN: `DE` + check digits + 8-digit bank code + 10-digit account).
+- Catalogue (6 vendors; each with 2–5 items, `max_items` 1–4, its own style):
+
+  | key | name | items (examples) | VAT | number format | due | layout | tone | filename |
+  |---|---|---|---|---|---|---|---|---|
+  | `stadtwerke` | Stadtwerke Musterstadt GmbH | Abschlag Strom, Grundpreis, Zählermiete | 19 % | `{year}-{n:08d}` | 14 days | classic | formal | `Rechnung_{number}.pdf` |
+  | `mobilfunk` | Funkwelle Mobil GmbH | Tarif Smart M, EU-Roaming, Datenpaket 5 GB | 19 % | `FM{n:010d}` | 10 days | modern | friendly | `Funkwelle_Rechnung_{month}.pdf` |
+  | `hosting` | Serverhafen Hosting UG | Webhosting Pro, Domain `.de`, SSL-Zertifikat, Backup | 19 % | `INV-{year}-{n:05d}` | 7 days | compact | short | `Rechnung-INV-{number}.pdf` |
+  | `zahnarzt` | Zahnarztpraxis Dr. Lindqvist | Professionelle Zahnreinigung, Kontrolle, Röntgen | 0 % (medical, VAT-exempt) | `{n:04d}/{year}` | 30 days | classic | formal | `Rechnung {number}.pdf` |
+  | `fitness` | Kraftwerk Fitnessstudio | Mitgliedsbeitrag, Getränkeflatrate, Kurs Yoga | 19 % | `KW-{n:06d}` | 0 days ("sofort fällig") | modern | friendly | `Rechnung_KW.pdf` |
+  | `handwerk` | Malerbetrieb Özdemir & Söhne | Malerarbeiten Flur (Std.), Material, Anfahrt | 19 % | `R{year}{n:04d}` | 14 days | compact | formal | `Rechnung_{number}.pdf` |
+
+  `{n}` is drawn per invoice; `{month}` is the invoice month (`2026-10`). Senders like `rechnung@stadtwerke-musterstadt.example` and `service@funkwelle.example`, all ending in `.example`; `customer_portal` e.g. `kundenkonto.funkwelle.example`. Bank codes `0` + 7 digits, distinct per vendor.
 
 - [ ] **Step 1: Write failing tests**
   - `test_every_vendor_sends_from_an_example_domain`: `vendor.sender.endswith(".example")` for all; keys unique; 6 vendors.
   - `test_demo_ibans_pass_the_checksum_and_cannot_be_paid`: for each vendor `iban = demo_iban(v.bank_code, v.account)`; `iban_valid(iban)`; `iban.startswith("DE")`; `len(iban) == 22`; `iban[4] == "0"`.
   - `test_demo_iban_check_digits`: `demo_iban("37040044", "0532013000") == "DE89370400440532013000"` (the standard documentation example proves the check-digit formula).
-  - `test_amount_ranges_are_positive_and_ordered`.
+  - `test_item_price_ranges_are_positive_and_ordered`; `1 <= max_items <= len(items)`.
+  - `test_vendors_differ_in_style`: at least 3 distinct layouts, 3 tones, 5 number formats, 2 VAT rates across `VENDORS`; every `filename` contains `Rechnung`.
 - [ ] **Step 2: Run; expect ImportError.**
 - [ ] **Step 3: Implement.** Check digits: `98 - int(numeric(bban + "DE00")) % 97`, zero-padded to 2, where letters map to `ord(c) - 55`.
 - [ ] **Step 4: Tests and ruff green.**
@@ -83,22 +98,35 @@
 - Consumes: `Vendor`, `VENDORS`, `demo_iban` (Task 1); `Text`, `Rule`, `render_pdf` (Task 2); `ParsedMessage`, `ParsedAttachment` from `ingest/email/parse.py`.
 - Produces (used by 003/03 and 003/04):
   - `InvoiceKind = Literal["normal", "already_paid", "online_only"]`
-  - `@dataclass(frozen=True, slots=True) class DemoInvoice: vendor: Vendor; kind: InvoiceKind; number: str; amount: Decimal; invoice_date: date; due_date: date; iban: str | None`
-  - `draw_invoice(rng: random.Random, kind: InvoiceKind, today: date, vendor: Vendor | None = None) -> DemoInvoice`: vendor from `rng` when `None`; amount uniform in the vendor's range, quantized to `0.01`; `number = f"RE-{today.year}-{rng.randint(10000, 99999)}"`; `invoice_date = today - rng.randint(0, 3) days`; `due_date = invoice_date + 14 days`; `iban = None` only for `online_only`.
-  - `invoice_pdf(invoice: DemoInvoice) -> bytes`: letterhead (vendor name, street, city), recipient "Alex Beispiel, Musterweg 1, 12345 Musterstadt", "Rechnung", number, dates, one line item with amount, total; then per kind: normal → "Bitte überweisen Sie den Betrag bis zum <due> auf folgendes Konto:" with IBAN (grouped in 4s), BIC-free, and "Verwendungszweck: <number>"; already_paid → "Der Betrag wurde am <invoice_date> per Lastschrift von Ihrem Konto abgebucht. Sie müssen nichts weiter tun."; online_only → "Bitte bezahlen Sie bequem in Ihrem Kundenkonto: <customer_portal>".
-  - `invoice_message(invoice: DemoInvoice, *, to_address: str, sent_at: datetime) -> ParsedMessage`: `message_id = f"<demo-{uuid4()}@folio.example>"`, `provider_message_id` = the same id, `folder = "INBOX"`, `subject = f"Ihre Rechnung {number} von {vendor.name}"`, `from_address = vendor.sender`, `from_name = vendor.name`, `to_addresses = [to_address]`, German body (greeting, one sentence per kind matching the PDF, "Ihre Rechnung finden Sie im Anhang.", signature), one attachment `Rechnung_<number>.pdf` (`application/pdf`), `attachment_filenames` matching.
+  - `@dataclass(frozen=True, slots=True) class Line: label: str; quantity: int; unit_price: Decimal` (net)
+  - `@dataclass(frozen=True, slots=True) class DemoInvoice: vendor: Vendor; kind: InvoiceKind; number: str; lines: tuple[Line, ...]; net: Decimal; vat: Decimal; amount: Decimal; invoice_date: date; due_date: date; iban: str | None; customer_number: str`
+  - `draw_invoice(rng: random.Random, kind: InvoiceKind, today: date, vendor: Vendor | None = None) -> DemoInvoice`: vendor from `rng` when `None`; 1..`max_items` distinct items, each with quantity 1 (hourly items 1–8) and a unit price uniform in its range, quantized to `0.01`; `net` = sum, `vat = (net * vat_rate).quantize(0.01, ROUND_HALF_UP)`, `amount = net + vat`; `number` from the vendor's `number_format`; `invoice_date = today - rng.randint(0, 3)` days; `due_date = invoice_date + due_days`; `customer_number` like `KD-{6 digits}`; `iban = None` only for `online_only`.
+  - `invoice_pdf(invoice: DemoInvoice) -> bytes`, laid out per `vendor.layout`:
+    - **classic**: letterhead top left, recipient window block, "Rechnung" heading, a meta block (Rechnungsnummer, Kundennummer, Rechnungsdatum), an item table (Pos., Bezeichnung, Menge, Einzelpreis, Gesamt) with rules, net/VAT/total block, footer with bank details and register line.
+    - **modern**: name large top right, "RECHNUNG" in bold, meta in two columns, items without position numbers, the total emphasised in bold, bank details inline above the footer.
+    - **compact**: one-line letterhead, meta on one line, items as "label … amount" lines, only "Gesamtbetrag (inkl. MwSt.)", payment text directly under it.
+    - VAT 0 %: "Umsatzsteuerfrei gem. § 4 Nr. 14 UStG" instead of a VAT line.
+    - Payment text per kind, with wording varying per tone: normal → a transfer request until the due date (or "sofort fällig" when `due_days == 0`) with the IBAN grouped in 4s and a reference: "Verwendungszweck: {number}" or "Bitte geben Sie als Referenz {customer_number} / {number} an"; already_paid → the amount "wurde am {date} per Lastschrift von Ihrem Konto abgebucht" (date = invoice date or the next day); online_only → pay in the customer account at `customer_portal`.
+  - `invoice_message(invoice: DemoInvoice, *, rng: random.Random, to_address: str, sent_at: datetime) -> ParsedMessage`: `message_id = f"<demo-{uuid4()}@folio.example>"`, `provider_message_id` = the same id, `folder = "INBOX"`, `from_address = vendor.sender`, `from_name = vendor.name`, `to_addresses = [to_address]`, one attachment named by `vendor.filename` (`application/pdf`), `attachment_filenames` matching. Subject and body are drawn with `rng` from small pools per tone (at least 3 subjects and 3 openings per tone), for example:
+    - formal: "Ihre Rechnung Nr. {number}", "Rechnung {number} vom {date}"; "Sehr geehrte Damen und Herren," … "Mit freundlichen Grüßen"
+    - friendly: "Deine Rechnung für {month_name} ist da", "Neue Rechnung von {vendor}"; "Hallo," … "Viele Grüße, dein {vendor}-Team"
+    - short: "Rechnung {number}", "[{vendor}] Rechnung {number}"; a two-line body ("anbei die Rechnung … Zahlung bis {due}.")
+    - The body repeats the kind's key fact (amount and due date for normal, "bereits abgebucht" for already_paid, the portal for online_only) and never an IBAN for online_only.
   - `format_euro(amount: Decimal) -> str`: German format, `Decimal("1234.5")` → `"1.234,50 €"`.
 
 - [ ] **Step 1: Write failing tests**
   - `test_draw_is_repeatable_for_a_seed`: two `random.Random(7)` draws are equal.
-  - `test_drawn_values_are_sane_over_many_seeds`: for seeds 0–199 and each kind: `invoice_date <= today`, `due_date > invoice_date`, `amount == amount.quantize(Decimal("0.01"))`, amount within the vendor's range, IBAN `None` iff `online_only`, else `iban_valid`.
+  - `test_drawn_values_are_sane_over_many_seeds`: for seeds 0–199 and each kind: `invoice_date <= today`, `due_date >= invoice_date`, all money quantized to cents, `net == sum(quantity * unit_price)`, `amount == net + vat`, `vat == 0` iff the vendor's rate is 0, 1 ≤ lines ≤ `max_items` with distinct labels, IBAN `None` iff `online_only`, else `iban_valid`.
+  - `test_invoices_vary`: over seeds 0–99 for one vendor: at least 2 distinct line counts and 20 distinct numbers; over all vendors: all 3 layouts appear.
+  - `test_emails_vary`: over seeds 0–59 per tone: at least 3 distinct subjects and 3 distinct first body lines; formal bodies never start with "Hallo".
+  - `test_totals_in_the_pdf_match`: the PDF text holds `format_euro(amount)`, and for 19 % vendors also `format_euro(vat)`; for the dentist "Umsatzsteuerfrei".
   - `test_messages_get_fresh_ids`: two messages from the same invoice differ in `message_id`; two draws with different seeds differ in `number`.
   - `test_pdf_text_per_kind`: using `pdf_strings` from `tests/demo/test_pdf.py` (move it to `tests/demo/conftest.py` or a `tests/demo/pdf_text.py` helper): normal holds the grouped IBAN and "Verwendungszweck"; already_paid holds "abgebucht" and no "überweisen"; online_only holds the portal and no "DE" IBAN pattern (`re.search(r"DE\d{2}( ?\d{4}){4} ?\d{2}", text)` is `None`).
   - `test_online_only_body_has_no_iban`: same regex on `message.body`.
-  - `test_message_shape`: subject, sender ends in `.example`, one attachment named `Rechnung_<number>.pdf` with `application/pdf` and bytes starting `%PDF-1.4`, `attachment_filenames == (that name,)`, `to_addresses == [to_address]`.
+  - `test_message_shape`: sender ends in `.example`, one attachment named from `vendor.filename` (contains `Rechnung`) with `application/pdf` and bytes starting `%PDF-1.4`, `attachment_filenames == (that name,)`, `to_addresses == [to_address]`.
   - `test_format_euro`: `"84,20 €"`, `"1.234,50 €"`, `"0,99 €"`.
 - [ ] **Step 2: Run; expect ImportError.**
-- [ ] **Step 3: Implement.** Dates in the PDF and body as `dd.mm.yyyy`.
+- [ ] **Step 3: Implement.** Dates as `dd.mm.yyyy`; keep each layout a small function (`_classic`, `_modern`, `_compact`) returning `list[Text | Rule]`, and the text pools as module-level tuples.
 - [ ] **Step 4: Full fast suite and ruff green.**
 - [ ] **Step 5: Commit** `feat(demo): invoice emails with PDFs for each demo kind`
 
@@ -107,5 +135,5 @@
 ### Task 4: Verify and record (controller)
 
 - [ ] Every `(test)` criterion in [02-invoice-builder.md](02-invoice-builder.md) maps to a passing test.
-- [ ] `(browser)`: write one PDF per kind to a scratch directory, serve it with `python -m http.server` on a free localhost port, open each in the browser pane, and note that it shows a readable invoice (umlauts, €, IBAN grouping).
+- [ ] `(browser)`: write one PDF per vendor (all three layouts) and per kind to a scratch directory, serve it with `python -m http.server` on a free localhost port, open each in the browser pane, and note that it shows a readable invoice (umlauts, €, IBAN grouping).
 - [ ] Verified section in the task file; tick 003/02 in the spec only if all passed.

@@ -7,12 +7,14 @@ Code that produces a realistic, fictional invoice email with a PDF, for each kin
 - `app/demo/catalogue.py`: about 6 fictional vendors (name, `.example` sender address, street, IBAN seed, typical amount range, line-item wording), German.
 - `app/demo/pdf.py`: a minimal PDF 1.4 writer for one A4 page of text and lines with a standard font; no dependency.
 - `app/demo/emails.py`: builds a `ParsedMessage` with a fresh Message-ID, subject, body and `Rechnung_<number>.pdf`; draws amount, invoice number, invoice and due dates, and an IBAN with a valid checksum. Already paid says the amount was debited; Online only has no IBAN and points to the customer account.
+- Variance (added 2026-10-21 at the owner's request): each vendor has its own layout (three layouts), number format, payment terms, VAT and email tone; each draw varies the line items and the subject and body wording.
 - A seeded random source, so tests are repeatable.
 
 ## Out of scope
 - Storing or ingesting the email (003/03, 003/04).
 
 ## Acceptance criteria
+- Given many seeds, then invoices differ in layout, line items and numbers, and emails differ in subject and wording within each vendor's tone. (test)
 - Given any seed, when an invoice is built, then its IBAN passes the mod-97 check and its sender domain ends in `.example`. (test)
 - Given two builds, then their Message-IDs and invoice numbers differ. (test)
 - Given each kind, then the PDF text holds the expected phrases (IBAN for Normal, the debit note for Already paid, no IBAN for Online only). (test)
