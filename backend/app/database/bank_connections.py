@@ -10,6 +10,7 @@ from typing import Any
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import Insert, insert
 
+from app.config import settings
 from app.database.engine import get_session
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
@@ -17,6 +18,8 @@ from app.finance.enable_banking import EbAccount, EbSession
 from app.finance.expiry import connection_status
 
 BANKS: tuple[str, ...] = ("N26", "ING", "PayPal")
+# Fixture data for the demo user: never synced, never expiring, never connected.
+DEMO_BANK = "Demo Bank"
 
 
 @dataclass(frozen=True)
@@ -159,7 +162,10 @@ def clear_pending(user_id: uuid.UUID, state: str) -> None:
 
 
 def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
-    """One entry per supported bank, in BANKS order, connected or not."""
+    """One entry per supported bank, in BANKS order, connected or not.
+
+    The demo user sees only the Demo Bank.
+    """
     with get_session() as session:
         connections = {
             c.bank: c
@@ -180,7 +186,8 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
 
     now = datetime.now(UTC)
     result: list[dict[str, Any]] = []
-    for bank in BANKS:
+    banks = (DEMO_BANK,) if user_id == settings.demo_user_id else BANKS
+    for bank in banks:
         connection = connections.get(bank)
         connected = connection is not None and connection.session_id is not None
         result.append(
@@ -220,7 +227,11 @@ def sync_targets(user_id: uuid.UUID, now: datetime) -> tuple[list[SyncAccount], 
     """
     with get_session() as session:
         connections = list(
-            session.scalars(select(BankConnection).where(BankConnection.user_id == user_id))
+            session.scalars(
+                select(BankConnection).where(
+                    BankConnection.user_id == user_id, BankConnection.bank.in_(BANKS)
+                )
+            )
         )
         live = {
             c.id: c.bank
@@ -264,6 +275,7 @@ def connection_states(user_id: uuid.UUID) -> list[ConnectionState]:
             for c in session.scalars(
                 select(BankConnection).where(
                     BankConnection.user_id == user_id,
+                    BankConnection.bank.in_(BANKS),
                     BankConnection.session_id.is_not(None),
                 )
             )

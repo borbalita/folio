@@ -16,6 +16,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from app.auth.demo_access import is_demo_user
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.finance_access import require_finance_user, require_invoice_mailboxes
 from app.database import (
@@ -215,6 +216,8 @@ async def bank_connection_callback(
     body: CallbackBody,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
+    if is_demo_user(user.id):
+        raise HTTPException(403, "The demo bank cannot be connected.")
     # Checked before any bank call so a forged or replayed state costs nothing.
     pending = await asyncio.to_thread(
         bank_connections.find_pending, user.id, body.state
@@ -241,6 +244,8 @@ async def start_bank_connection(
     bank: str,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, str]:
+    if is_demo_user(user.id):
+        raise HTTPException(403, "The demo bank cannot be connected.")
     if bank not in bank_connections.BANKS:
         raise HTTPException(404, "Unknown bank.")
     state = secrets.token_urlsafe(32)

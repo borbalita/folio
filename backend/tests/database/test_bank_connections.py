@@ -194,3 +194,100 @@ def test_complete_connection_rehashes_before_the_upsert(monkeypatch: pytest.Monk
     # The existing row now carries the new hash, so the upsert updates it in place.
     assert existing.identification_hash == "h-new"
     assert calls == ["flush", "upsert"]
+
+
+DEMO_ID = uuid.UUID("00000000-0000-0000-0000-0000000000d3")
+
+
+def _compiled(statement: object) -> str:
+    return str(
+        statement.compile(  # type: ignore[attr-defined]
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+    )
+
+
+def test_sync_targets_skip_the_demo_bank(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = MagicMock()
+    session.scalars.return_value = []
+    _patch_session(monkeypatch, session)
+
+    bank_connections.sync_targets(USER_ID, datetime.now(UTC))
+
+    sql = _compiled(session.scalars.call_args_list[0].args[0])
+    assert "bank IN ('N26', 'ING', 'PayPal')" in sql
+
+
+def test_connection_states_skip_the_demo_bank(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = MagicMock()
+    session.scalars.return_value = []
+    _patch_session(monkeypatch, session)
+
+    bank_connections.connection_states(USER_ID)
+
+    sql = _compiled(session.scalars.call_args.args[0])
+    assert "bank IN ('N26', 'ING', 'PayPal')" in sql
+
+
+def test_owner_still_syncs_all_real_banks(monkeypatch: pytest.MonkeyPatch) -> None:
+    connections = [
+        BankConnection(
+            id=uuid.uuid4(), user_id=USER_ID, bank=bank, session_id="s",
+            valid_until=datetime.now(UTC) + timedelta(days=60),
+        )
+        for bank in ("N26", "ING", "PayPal")
+    ]
+    accounts = [
+        BankAccount(id=uuid.uuid4(), connection_id=c.id, uid=c.bank, identification_hash="h")
+        for c in connections
+    ]
+    session = MagicMock()
+    session.scalars.side_effect = [connections, accounts]
+    _patch_session(monkeypatch, session)
+
+    targets, skipped = bank_connections.sync_targets(USER_ID, datetime.now(UTC))
+
+    assert [t.bank for t in targets] == ["N26", "ING", "PayPal"]
+    assert skipped == 0
+
+
+def test_demo_user_lists_only_the_demo_bank(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(bank_connections.settings, "demo_user_id", DEMO_ID)
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=DEMO_ID, bank="Demo Bank", session_id="demo",
+        valid_until=datetime.now(UTC) + timedelta(days=3650),
+    )
+    account = BankAccount(
+        id=uuid.uuid4(), connection_id=connection.id, uid="demo",
+        identification_hash="demo", iban="DE89370400440532013000", name="Girokonto",
+        currency="EUR",
+    )
+    session = MagicMock()
+    session.scalars.side_effect = [[connection], [account]]
+    _patch_session(monkeypatch, session)
+
+    result = bank_connections.list_connections(DEMO_ID)
+
+    assert len(result) == 1
+    assert result[0]["bank"] == "Demo Bank"
+    assert result[0]["connected"] is True
+    assert result[0]["status"] == "active"
+    assert result[0]["accounts"] == [
+        {
+            "id": str(account.id),
+            "name": "Girokonto",
+            "ibanMasked": "DE89 •••• 3000",
+            "currency": "EUR",
+        }
+    ]
+
+
+def test_owner_list_is_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(bank_connections.settings, "demo_user_id", DEMO_ID)
+    session = MagicMock()
+    session.scalars.return_value = []
+    _patch_session(monkeypatch, session)
+
+    result = bank_connections.list_connections(USER_ID)
+
+    assert [c["bank"] for c in result] == ["N26", "ING", "PayPal"]

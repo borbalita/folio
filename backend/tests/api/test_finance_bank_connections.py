@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.database import bank_connections
-from app.finance import enable_banking
+from app.database import bank_connections, job_runs, matches, transactions
+from app.finance import enable_banking, transaction_sync
 from app.finance.enable_banking import (
     EbSession,
     EnableBankingError,
@@ -228,3 +230,54 @@ def test_non_owner_gets_403_on_bank_connection_routes(
         "/finance/bank-connections/callback", json={"code": "c", "state": "s"}
     )
     assert callback.status_code == 403
+
+
+@pytest.fixture
+def demo_user(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
+    monkeypatch.setattr(settings, "demo_user_id", TEST_USER_ID)
+
+
+def test_demo_user_cannot_start_a_connection(
+    authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def begin(*_: Any) -> None:
+        pytest.fail("the demo user never begins a connection")
+
+    monkeypatch.setattr(bank_connections, "begin_connection", begin)
+
+    start = authed_client.post("/finance/bank-connections/N26/start")
+    demo_bank = authed_client.post("/finance/bank-connections/Demo Bank/start")
+    callback = authed_client.post(
+        "/finance/bank-connections/callback", json={"code": "c", "state": "s"}
+    )
+
+    assert start.status_code == 403
+    assert demo_bank.status_code == 403
+    assert callback.status_code == 403
+
+
+def test_demo_user_sync_now_fetches_nothing(
+    authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    session = MagicMock()
+    session.scalars.return_value = []
+
+    @contextmanager
+    def fake_get_session():
+        yield session
+
+    async def never(*_: Any, **__: Any) -> None:
+        pytest.fail("the demo user never reaches Enable Banking")
+
+    monkeypatch.setattr(bank_connections, "get_session", fake_get_session)
+    monkeypatch.setattr(job_runs, "last_started", lambda job: None)
+    monkeypatch.setattr(transaction_sync, "run_job", lambda name, fn: fn())
+    monkeypatch.setattr(transactions, "latest_booking_dates", lambda ids: {})
+    monkeypatch.setattr(matches, "match_for_user", lambda user_id, now=None: {})
+    monkeypatch.setattr(enable_banking, "fetch_transactions", never)
+
+    response = authed_client.post("/finance/bank-sync")
+
+    assert response.status_code == 200
+    assert response.json()["fetched"] == 0
