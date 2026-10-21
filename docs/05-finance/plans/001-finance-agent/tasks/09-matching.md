@@ -26,3 +26,10 @@ Open invoices are linked to the debits that paid them, automatically when the ma
 
 ## Notes
 - Implementation plan: [09-matching.plan.md](09-matching.plan.md).
+
+## Verified
+
+2026-10-16, PR https://github.com/borbalita/folio/pull/31.
+
+- The five `(test)` criteria: `tests/finance/test_matching.py`, `tests/database/test_matches.py`. Pass.
+- Undo an automatic link (browser) and the 90-day spot check (manual): **moved to 001/13** at the owner's request (2026-10-16), to be checked together with the end-to-end run.

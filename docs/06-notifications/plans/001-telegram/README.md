@@ -2,13 +2,13 @@
 
 - Created: 2026-10-19
 - Status: Ready
-- Current stage: Implementation; 001/01 to 001/03 done
+- Current stage: Implementation; 001/01 to 001/04 done, 001/05 in progress
 
 ## Approval state
 
 - 2026-10-19: in chat, the owner chose push only, instant messages, new-invoice and due-soon events, big news only, and payee, amount and due date in messages. They approved the assumptions (3 days, quiet hours 22:00–07:00 Berlin, no flood at launch) and the outbox approach. Big-news messages carry a summary of both newsletters (owner's addition).
 - 2026-10-19: the owner approved the written spec; the plan is Ready.
-- 2026-10-19: after the code review, news is keyed per article (newsletter email and position) with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner to confirm).
+- 2026-10-19: after the code review, news is keyed per article (newsletter email and position) with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner confirmed 2026-10-21). The owner decided not to fix the missing Alpha Signal links for now.
 
 ## Problem
 
@@ -98,7 +98,7 @@ Email ingest (cron, 30 min)
 - [x] [001/01 — Notifications table, event detection and launch baseline](tasks/01-detection.md)
 - [x] [001/02 — Big-news summaries](tasks/02-news-summary.md) — after 01
 - [x] [001/03 — Telegram sender with quiet hours and retries](tasks/03-sender.md) — after 01
-- [ ] [001/04 — Wire into email ingest; settings and setup command](tasks/04-wiring.md) — after 02, 03
+- [x] [001/04 — Wire into email ingest; settings and setup command](tasks/04-wiring.md) — after 02, 03
 - [ ] [001/05 — Overview and end-to-end check](tasks/05-overview.md) — after 04
 
 ```text

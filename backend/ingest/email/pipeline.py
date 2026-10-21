@@ -186,8 +186,10 @@ def _store_one(
     action = ingest_action(stored, parsed)
     if action == "skip":
         assert stored_row is not None
-        # Backfills names on mail stored before from_name existed; no re-embedding needed.
+        # Backfills names and line breaks on mail stored before them; the hash ignores
+        # whitespace, so no re-embedding is needed.
         stored_row.from_name = parsed.from_name
+        stored_row.body = parsed.body
         return action, "", 0, 0, 0, None, None
 
     label, source = label_message(parsed, classifier=classifier)

@@ -94,8 +94,59 @@ def test_only_pdf_bytes_are_kept(
 
 
 def test_html_to_text_and_whitespace() -> None:
-    assert html_to_text("<div>A</div><div>B</div>") == "A B"
+    assert html_to_text("<div>A</div><div>B</div>") == "A\nB"
     assert normalize_whitespace(" a \n b ") == "a b"
+
+
+def test_plain_body_keeps_paragraphs_and_line_breaks() -> None:
+    raw = _message(
+        message_id="<id@example.com>",
+        plain="Hallo  Frau Tasnadi,\r\n\r\n\r\n\r\nanbei die Rechnung.\r\n> zitiert \r\n",
+        html=None,
+    )
+    parsed = parse_rfc822(raw, provider_message_id="1", folder="INBOX")
+    assert parsed.body == "Hallo Frau Tasnadi,\n\nanbei die Rechnung.\n> zitiert"
+
+
+def test_html_body_keeps_paragraphs_and_line_breaks() -> None:
+    html = (
+        "<html><body>"
+        "<p>Hello <b>there</b></p><p>Bye<br>now</p>"
+        "<table><tr><td>Total</td><td>45,00</td></tr><tr><td>Due</td></tr></table>"
+        "</body></html>"
+    )
+    assert html_to_text(html) == "Hello there\n\nBye\nnow\n\nTotal 45,00\nDue"
+
+
+@pytest.mark.parametrize(
+    "html",
+    [
+        "<p>Hello <b>there</b></p><p>Bye<br>now</p>",
+        "<div>Rech<b>nung</b></div><div>  A  </div>",
+        "<table><tr><td>Total</td><td>45,00</td></tr></table>",
+    ],
+)
+def test_line_breaks_leave_the_content_hash_unchanged(html: str) -> None:
+    # Stored mail was hashed from the collapsed text; equal hashes keep it from re-embedding.
+    collapsed = " ".join(html_to_text(html).split())
+    assert content_hash(html_to_text(html), "s") == content_hash(collapsed, "s")
+    assert collapsed == _old_html_to_text(html)
+
+
+def _old_html_to_text(html: str) -> str:
+    from html.parser import HTMLParser
+
+    parts: list[str] = []
+
+    class Extractor(HTMLParser):
+        def handle_data(self, data: str) -> None:
+            if data.strip():
+                parts.append(data)
+
+    extractor = Extractor()
+    extractor.feed(html)
+    extractor.close()
+    return normalize_whitespace(" ".join(parts))
 
 
 def _message(*, message_id: str | None, plain: str | None, html: str | None) -> bytes:
