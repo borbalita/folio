@@ -17,6 +17,7 @@ import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
 import { PaymentsPage } from '@/pages/finance/PaymentsPage'
 import { TransactionsPage } from '@/pages/finance/TransactionsPage'
+import { PrivacyPage } from '@/pages/legal/PrivacyPage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
 import { AgentPickerPage } from '@/pages/picker/AgentPickerPage'
@@ -27,6 +28,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<MeGate />}>
               <Route path="/" element={<AgentPickerPage />} />
