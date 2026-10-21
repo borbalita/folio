@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.chat import router as chat_router
+from app.api.demo import router as demo_router
 from app.api.finance import router as finance_router
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import agents_for
@@ -61,6 +62,7 @@ app.add_middleware(
 
 app.include_router(chat_router)
 app.include_router(finance_router)
+app.include_router(demo_router)
 
 
 @app.on_event("startup")

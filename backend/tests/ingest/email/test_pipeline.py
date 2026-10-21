@@ -16,6 +16,7 @@ from ingest.email.pipeline import (
     _store_one,
     ingest_action,
     ingest_fetched,
+    upsert_yahoo_mailbox,
 )
 
 
@@ -159,6 +160,47 @@ def test_summary_lists_the_spec_counts() -> None:
     assert "re-embedded: 0" in text
     assert "news items: 0" in text
     assert "stories rebuilt: 0" in text
+
+
+class _MailboxLookupSession(_MemorySession):
+    """Answers the provider lookup from its rows, so a wrong provider filter shows."""
+
+    def __init__(self, rows: list[Mailbox]) -> None:
+        super().__init__()
+        self.rows = rows
+
+    def scalar(self, statement: object) -> Mailbox | None:  # type: ignore[override]
+        wanted = set(statement.compile().params.values())  # type: ignore[attr-defined]
+        return next((m for m in self.rows if m.provider in wanted), None)
+
+
+def test_yahoo_ingest_ignores_the_demo_mailbox(monkeypatch: pytest.MonkeyPatch) -> None:
+    owner_id = uuid.uuid4()
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", owner_id
+    )
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "me@yahoo.com")
+    address = "me@yahoo.com"
+    demo = Mailbox(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        provider="demo",
+        address=address,
+        display_name="Demo",
+    )
+    yahoo = Mailbox(
+        id=uuid.uuid4(),
+        user_id=owner_id,
+        provider="yahoo",
+        address=address,
+        display_name=address,
+    )
+
+    found = upsert_yahoo_mailbox(_MailboxLookupSession([demo, yahoo]))  # type: ignore[arg-type]
+
+    assert found is yahoo
+    assert demo.provider == "demo"
+    assert demo.display_name == "Demo"
 
 
 def test_skipped_message_gets_its_body_with_line_breaks() -> None:

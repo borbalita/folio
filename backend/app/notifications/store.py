@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
@@ -49,6 +50,8 @@ def load_invoices(session: Session) -> list[InvoiceFacts]:
     rows = session.execute(
         select(Invoice, EmailMessage.from_address)
         .join(EmailMessage, EmailMessage.id == Invoice.email_id)
+        .join(Mailbox, Mailbox.id == EmailMessage.mailbox_id)
+        .where(Mailbox.provider != MailboxProvider.DEMO)
         .order_by(EmailMessage.sent_at, Invoice.position)
     ).all()
     return [invoice_facts(row.Invoice, row.from_address) for row in rows]
