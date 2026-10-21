@@ -23,7 +23,7 @@ All other tasks.
 
 2026-10-21, branch `docs/finance-overview`.
 
-- `docs/README.md` links the overview, and the overview links back to this plan (browser): **pending**, checked on GitHub after push.
+- `docs/README.md` links the overview, and the overview links back to this plan (browser): on GitHub (branch `docs/finance-overview`), `docs/README.md` has an Overview link to `05-finance/overview.md`, which renders and whose "plan 001" link points to `plans/001-finance-agent/README.md`. Pass.
 - The owner's hand test of real invoices (manual): **skipped** at the owner's request (2026-10-21).
 - The success criteria (manual):
   1. A real invoice email appears in Finance within 30 minutes: **pass.** The two newest invoice emails (2026-10-19) were in Finance 30 and 6 minutes after arriving, both as `needs_info` with the reason recorded. Older invoices were backfilled before extraction was scheduled.
