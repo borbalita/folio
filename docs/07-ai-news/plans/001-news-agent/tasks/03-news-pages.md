@@ -14,3 +14,13 @@ The owner opens AI News from the picker and chats in their own news threads.
 
 ## Dependencies
 001/02.
+
+## Verified
+
+2026-10-21, branch `feat/news-agent-chat`, PR [borbalita/folio#70](https://github.com/borbalita/folio/pull/70), local backend and frontend against the real database.
+
+- Picker → AI News card shows ("Big AI stories and briefings from your newsletters, with citations.") and opens a `/news` thread. Pass.
+- "What were the big stories this week?" → "this week" = Oct 19–21; the one big story (OpenAI legacy-code modernization) with "both newsletters · 2 items · Oct 20", citing both items; the TLDR source opens its article ("Open article"); the Alpha Signal item has no link, as most don't. Pass.
+- "Catch me up since Monday" → the big story first with its reason, then 20 other stories in 5 themes, all from Oct 19–21 (re-run after the period fix). Pass.
+- `pnpm tsc --noEmit` and `pnpm lint` clean.
+- Note: the briefing is long (21 stories for 3 days); the cap question stays open in the spec.

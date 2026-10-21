@@ -46,7 +46,7 @@ def test_me_includes_email_for_an_active_mailbox(
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == str(TEST_USER_ID)
-    assert body["agents"] == ["documents", "email"]
+    assert body["agents"] == ["documents", "email", "news"]
 
 
 def test_email_routes_are_forbidden_without_a_mailbox(
@@ -149,3 +149,26 @@ def test_document_routes_stay_open_without_a_mailbox(
     assert authed_client.post("/threads", json={}).status_code == 200
     messages = authed_client.get(f"/threads/{TEST_THREAD_ID}/messages")
     assert messages.status_code == 200
+
+
+def _news_thread(thread_id: uuid.UUID, user_id: uuid.UUID) -> dict[str, str]:
+    return {"id": str(thread_id), "title": "News", "agent": "news"}
+
+
+def test_news_routes_are_forbidden_without_a_mailbox(
+    authed_client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", _no_mailbox)
+    monkeypatch.setattr(chats, "get_thread_for_user", _news_thread)
+
+    listed = authed_client.get("/threads", params={"agent": "news"})
+    created = authed_client.post("/threads", json={"agent": "news"})
+    posted = authed_client.post(
+        "/chat/stream",
+        json={"threadId": str(TEST_THREAD_ID), "messages": []},
+    )
+
+    assert listed.status_code == 403
+    assert created.status_code == 403
+    assert posted.status_code == 403

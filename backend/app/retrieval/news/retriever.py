@@ -154,16 +154,19 @@ class NewsRetriever:
 
 def _stories(session: Session, filters: NewsSearchFilters, limit: int) -> list[Story]:
     scope = scope_clause(filters.user_id, filters.mailbox_ids)
+    # Only items from the period count and are shown: "since Monday" never cites
+    # last Thursday, and big means both newsletters covered it within the period.
+    where = [scope.sql]
     params: dict[str, Any] = dict(scope.params)
+    if filters.since is not None:
+        where.append("ni.edition_date >= :since")
+        params["since"] = filters.since
+    if filters.until is not None:
+        where.append("ni.edition_date <= :until")
+        params["until"] = filters.until
     having: list[str] = []
     if filters.big_only:
         having.append("count(DISTINCT ni.source) > 1")
-    if filters.until is not None:
-        having.append("min(ni.edition_date) <= :until")
-        params["until"] = filters.until
-    if filters.since is not None:
-        having.append("max(ni.edition_date) >= :since")
-        params["since"] = filters.since
     having_sql = f"HAVING {' AND '.join(having)}" if having else ""
     # Stories group items from every mailbox, so big and the dates come from this
     # user's items only: another user's item never makes a story big or wider.
@@ -178,7 +181,7 @@ def _stories(session: Session, filters: NewsSearchFilters, limit: int) -> list[S
                    count(ni.id) AS item_count
             FROM news_stories s
             JOIN {_ITEMS_FROM} ON ni.story_id = s.id
-            WHERE {scope.sql}
+            WHERE {" AND ".join(where)}
             GROUP BY s.id
             {having_sql}
             """
@@ -195,11 +198,11 @@ def _stories(session: Session, filters: NewsSearchFilters, limit: int) -> list[S
             SELECT {_ITEM_COLUMNS}
             FROM {_ITEMS_FROM}
             WHERE ni.story_id = ANY(:story_ids)
-              AND {scope.sql}
+              AND {" AND ".join(where)}
             ORDER BY ni.source, ni.position
             """
         ),
-        {"story_ids": story_ids, **scope.params},
+        {"story_ids": story_ids, **params},
     ).all()
     by_id = {story.story_id: story for story in ranked}
     for row in rows:

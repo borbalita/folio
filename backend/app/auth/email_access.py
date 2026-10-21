@@ -27,7 +27,8 @@ async def agents_for(user: CurrentUser) -> list[str]:
     agents = ["documents"]
     ids = await asyncio.to_thread(mailboxes.active_mailbox_ids, user.id)
     if ids:
-        agents.append("email")
+        # News reads the user's own newsletters, so it follows the mailbox like Email.
+        agents.extend(["email", "news"])
     if is_finance_owner(user):
         agents.append("finance")
     return agents
@@ -35,7 +36,7 @@ async def agents_for(user: CurrentUser) -> list[str]:
 
 async def require_agent_access(user: CurrentUser, agent: str) -> None:
     """The one access rule for an agent's threads and streams."""
-    if agent == "email":
+    if agent in ("email", "news"):
         await require_email_access(user)
     elif agent == "finance":
         require_finance_owner(user)

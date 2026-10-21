@@ -108,3 +108,24 @@ class EmailGrounder(Grounder):
             "so it is not shown."
         ),
     }
+
+
+class NewsGrounder(Grounder):
+    user_answers: ClassVar[dict[str, str]] = {
+        MISSING_CITATIONS: (
+            "This answer had no cited newsletter items, so it is not shown. "
+            "Ask about a period or an AI topic."
+        ),
+        UNKNOWN_CHUNK: (
+            "A citation did not match a newsletter item read this turn, so those claims are "
+            "not shown. Try the question again, or name a period or topic."
+        ),
+        DUPLICATE_INDEX: (
+            "The citations on this answer were duplicated, so it is not shown. "
+            "Send the question again."
+        ),
+        INSUFFICIENT_WITH_CITATIONS: (
+            "Your newsletters do not cover this question, and the answer also included "
+            "citations, so it is not shown."
+        ),
+    }
