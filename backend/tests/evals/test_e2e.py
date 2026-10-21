@@ -19,7 +19,6 @@ from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer, EmailCitationRef
 from app.retrieval.email.queries import EmailSearchFilters
 from app.retrieval.email.retriever import EmailPassage, EmailRetriever
-from app.retrieval.news.retriever import NewsRetriever
 from evals.agent_run import run_agent
 from evals.modes.e2e import RecordingRetriever
 from evals.scoring import answer_scores, search_recall
@@ -157,7 +156,7 @@ def test_agent_run_records_every_search_it_made(
 
     retriever = RecordingRetriever(OWNERS, rerank=False)
     deps = EmailAgentDeps(
-        user_id=USER, thread_id=uuid.uuid4(), retriever=retriever, news=NewsRetriever()
+        user_id=USER, thread_id=uuid.uuid4(), retriever=retriever
     )
 
     record = asyncio.run(

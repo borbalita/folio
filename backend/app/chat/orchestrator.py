@@ -53,7 +53,7 @@ from app.news_assistant.outputs import NewsTurnResult
 from app.news_assistant.tools import READING_NEWSLETTERS
 from app.retrieval.documents.retriever import DocumentRetriever
 from app.retrieval.email.retriever import EmailRetriever
-from app.retrieval.news.retriever import NewsPassage, NewsRetriever
+from app.retrieval.news.retriever import NewsRetriever
 
 log = structlog.get_logger(__name__)
 
@@ -211,7 +211,6 @@ class _EmailChatAgent(_CitingChatAgent):
             user_id=user.id,
             thread_id=thread_id,
             retriever=EmailRetriever(),
-            news=NewsRetriever(),
             status_queue=status_queue,
         )
 
@@ -219,13 +218,6 @@ class _EmailChatAgent(_CitingChatAgent):
         return await run_email_agent(user_text, deps)
 
     def passage_fields(self, passage: Any) -> dict[str, Any]:
-        if isinstance(passage, NewsPassage):
-            return {
-                "title": passage.title,
-                "source": passage.source,
-                "date": passage.edition_date.isoformat(),
-                "url": passage.url,
-            }
         return {
             "from": passage.from_address,
             "subject": passage.subject,
@@ -234,8 +226,6 @@ class _EmailChatAgent(_CitingChatAgent):
         }
 
     def citation_target(self, chunk_id: uuid.UUID, passage: Any) -> dict[str, Any]:
-        if isinstance(passage, NewsPassage):
-            return {"email_chunk_id": None, "news_item_id": chunk_id}
         return {"email_chunk_id": chunk_id, "news_item_id": None}
 
     def save_citations(self, message_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:

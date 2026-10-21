@@ -30,12 +30,11 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
   email: {
     name: 'email',
     title: 'Email Assistant',
-    description: 'Search your mail and AI newsletters, with citations to each message.',
+    description: 'Search your mail, with citations to each message.',
     path: '/email',
     emptyTitle: 'Ask about your mail',
-    emptyHint:
-      'Start a new chat to search messages or see the big AI news of the week.',
-    placeholder: 'Ask about your mail or AI news…',
+    emptyHint: 'Start a new chat to search your messages.',
+    placeholder: 'Ask about your mail…',
     hasThreads: true,
     icon: Mail,
   },

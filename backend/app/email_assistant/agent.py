@@ -13,7 +13,7 @@ from app.chat_model import chat_model
 from app.config import settings
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.outputs import EmailAnswer, EmailTurnResult
-from app.email_assistant.tools import mail, news
+from app.email_assistant.tools import mail
 
 INSTRUCTIONS_PATH = Path(__file__).with_name("instructions.md")
 
@@ -37,8 +37,6 @@ def get_agent() -> Agent[EmailAgentDeps, EmailAnswer]:
         name="email-assistant",
     )
     agent.tool(mail.search_emails)
-    agent.tool(news.search_news)
-    agent.tool(news.list_big_news)
     return agent
 
 

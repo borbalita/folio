@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 class EmailCitationRef(BaseModel):
     chunk_id: UUID = Field(
-        description="The id in square brackets: a mail chunk id or a news item id."
+        description="The mail chunk id shown in square brackets."
     )
     citation_index: int
     excerpt: str | None = None

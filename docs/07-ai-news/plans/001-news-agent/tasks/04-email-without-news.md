@@ -16,3 +16,6 @@ The Email agent answers about mail only and points news questions to the News ag
 
 ## Dependencies
 001/02.
+
+## Notes
+- Implementation plan: [04-email-without-news.plan.md](04-email-without-news.plan.md).

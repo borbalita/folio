@@ -35,3 +35,20 @@ def test_prompt_defaults_to_today_in_the_configured_timezone(
 
     assert prompt.startswith(f"Today is 2026-03-15 in {settings.email_timezone}.")
     assert seen == [ZoneInfo(settings.email_timezone)]
+
+
+def test_email_agent_only_searches_mail() -> None:
+    from app.email_assistant.agent import get_agent
+
+    assert set(get_agent()._function_toolset.tools) == {"search_emails"}
+
+
+def test_instructions_point_news_questions_to_the_news_assistant() -> None:
+    from app.email_assistant.agent import INSTRUCTIONS_PATH
+
+    text = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+
+    assert "AI News assistant" in text
+    assert "insufficient_evidence" in text
+    assert "list_big_news" not in text
+    assert "search_news" not in text
