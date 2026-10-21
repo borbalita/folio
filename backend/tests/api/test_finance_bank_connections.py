@@ -2,15 +2,16 @@ from __future__ import annotations
 
 import uuid
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
 from app.database import bank_connections, job_runs, matches, transactions
+from app.database.models.finance.bank_account import BankAccount
+from app.database.models.finance.bank_connection import BankConnection
 from app.finance import enable_banking, transaction_sync
 from app.finance.enable_banking import (
     EbSession,
@@ -18,6 +19,7 @@ from app.finance.enable_banking import (
     EnableBankingNotConfigured,
 )
 from tests.conftest import TEST_USER_ID
+from tests.database.test_bank_connections import _FilteringSession
 
 CONNECTIONS = [{"bank": "N26", "accounts": []}]
 SESSION = EbSession(
@@ -260,8 +262,14 @@ def test_demo_user_cannot_start_a_connection(
 def test_demo_user_sync_now_fetches_nothing(
     authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    session = MagicMock()
-    session.scalars.return_value = []
+    connection = BankConnection(
+        id=uuid.uuid4(), user_id=TEST_USER_ID, bank="Demo Bank", session_id="demo",
+        valid_until=datetime.now(UTC) + timedelta(days=3650),
+    )
+    account = BankAccount(
+        id=uuid.uuid4(), connection_id=connection.id, uid="demo", identification_hash="demo"
+    )
+    session = _FilteringSession([connection], [account])
 
     @contextmanager
     def fake_get_session():

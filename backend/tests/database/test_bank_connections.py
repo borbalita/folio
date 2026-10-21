@@ -229,21 +229,40 @@ def test_connection_states_skip_the_demo_bank(monkeypatch: pytest.MonkeyPatch) -
     assert "bank IN ('N26', 'ING', 'PayPal')" in sql
 
 
+class _FilteringSession:
+    """Returns the Demo Bank row only when the statement lacks the BANKS filter."""
+
+    def __init__(self, connections: list, accounts: list) -> None:
+        self.connections = connections
+        self.accounts = accounts
+        self.returned: set = set()
+
+    def scalars(self, statement: object) -> list:
+        sql = str(statement.compile(dialect=postgresql.dialect()))  # type: ignore[attr-defined]
+        if "FROM bank_connections" in sql:
+            rows = [
+                c
+                for c in self.connections
+                if "bank IN (" not in sql or c.bank != "Demo Bank"
+            ]
+            self.returned = {c.id for c in rows}
+            return rows
+        return [a for a in self.accounts if a.connection_id in self.returned]
+
+
 def test_owner_still_syncs_all_real_banks(monkeypatch: pytest.MonkeyPatch) -> None:
     connections = [
         BankConnection(
             id=uuid.uuid4(), user_id=USER_ID, bank=bank, session_id="s",
             valid_until=datetime.now(UTC) + timedelta(days=60),
         )
-        for bank in ("N26", "ING", "PayPal")
+        for bank in ("N26", "ING", "PayPal", "Demo Bank")
     ]
     accounts = [
         BankAccount(id=uuid.uuid4(), connection_id=c.id, uid=c.bank, identification_hash="h")
         for c in connections
     ]
-    session = MagicMock()
-    session.scalars.side_effect = [connections, accounts]
-    _patch_session(monkeypatch, session)
+    _patch_session(monkeypatch, _FilteringSession(connections, accounts))  # type: ignore[arg-type]
 
     targets, skipped = bank_connections.sync_targets(USER_ID, datetime.now(UTC))
 
