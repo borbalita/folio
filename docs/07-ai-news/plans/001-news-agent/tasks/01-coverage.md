@@ -27,7 +27,7 @@ None.
 
 ## Verified
 
-2026-10-20, branch `feat/news-agent`.
+2026-10-20, branch `feat/news-agent`, PR [borbalita/folio#66](https://github.com/borbalita/folio/pull/66).
 
 - Big story vs single-newsletter stories with more items or days → big first, then sources, items, days, newest: `test_rank_puts_big_first_then_sources_items_days_newest`, ties `test_rank_breaks_full_ties_by_story_id`. Pass.
 - `big_only` → only big stories: `test_stories_big_only_and_dates_go_into_the_aggregate_query` (big = more than one newsletter among the user's own items). Pass.
