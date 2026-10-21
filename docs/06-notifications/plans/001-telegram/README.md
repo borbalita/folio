@@ -8,7 +8,7 @@
 
 - 2026-10-19: in chat, the owner chose push only, instant messages, new-invoice and due-soon events, big news only, and payee, amount and due date in messages. They approved the assumptions (3 days, quiet hours 22:00–07:00 Berlin, no flood at launch) and the outbox approach. Big-news messages carry a summary of both newsletters (owner's addition).
 - 2026-10-19: the owner approved the written spec; the plan is Ready.
-- 2026-10-19: after the code review, news is keyed per article (newsletter email and position) with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner to confirm).
+- 2026-10-19: after the code review, news is keyed per article (newsletter email and position) with a 2-day window, a `429` stops the run, and the tracing line is corrected (owner confirmed 2026-10-21). The owner decided not to fix the missing Alpha Signal links for now.
 
 ## Problem
 
