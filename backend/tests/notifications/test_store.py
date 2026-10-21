@@ -82,3 +82,16 @@ def test_only_recent_big_stories_are_read() -> None:
     sql = _sql(session.execute.call_args.args[0])
     assert "news_stories.is_big IS true" in sql
     assert "news_stories.last_seen >= " in sql
+
+
+def test_load_invoices_skips_demo_mailboxes() -> None:
+    session = MagicMock()
+    session.execute.return_value.all.return_value = []
+
+    store.load_invoices(session)
+
+    statement = session.execute.call_args.args[0]
+    sql = _sql(statement)
+    assert "mailboxes.provider !=" in sql
+    params = statement.compile(dialect=postgresql.dialect()).params
+    assert "demo" in params.values()

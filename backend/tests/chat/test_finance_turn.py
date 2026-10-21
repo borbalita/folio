@@ -50,7 +50,9 @@ def _invoice(id_: uuid.UUID) -> dict:
 @pytest.fixture
 def stored(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     rows: list[dict] = []
-    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    monkeypatch.setattr(
+        mailboxes, "invoice_mailbox_ids", lambda user_id: [uuid.uuid4()]
+    )
     monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
 
     def append(thread_id, messages):
@@ -160,11 +162,16 @@ def test_finance_turn_uses_the_invoice_scope(monkeypatch, stored) -> None:
     invoice_scope = [uuid.uuid4()]
     seen: list[list[uuid.UUID]] = []
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
-    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: invoice_scope)
-    _use(monkeypatch, _Agent(
-        [lambda deps: seen.append(deps.mailbox_ids)],
-        FinanceAnswer(answer="Nothing to pay.", cards=[]),
-    ))
+    monkeypatch.setattr(
+        mailboxes, "invoice_mailbox_ids", lambda user_id: invoice_scope
+    )
+    _use(
+        monkeypatch,
+        _Agent(
+            [lambda deps: seen.append(deps.mailbox_ids)],
+            FinanceAnswer(answer="Nothing to pay.", cards=[]),
+        ),
+    )
 
     _run("What do I owe?")
 

@@ -17,3 +17,10 @@ def test_demo_user_must_differ_from_the_owner() -> None:
 
     with pytest.raises(ValidationError, match="must not be the finance owner"):
         Settings(finance_owner_user_id=same, demo_user_id=same)
+
+
+def test_demo_user_must_differ_from_the_email_agent_owner() -> None:
+    same = uuid.uuid4()
+
+    with pytest.raises(ValidationError, match="must not be the email agent owner"):
+        Settings(email_agent_owner_user_id=same, demo_user_id=same)

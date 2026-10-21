@@ -87,6 +87,8 @@ class Settings(BaseSettings):
     def demo_user_is_not_the_owner(self) -> "Settings":
         if self.demo_user_id and self.demo_user_id == self.finance_owner_user_id:
             raise ValueError("DEMO_USER_ID must not be the finance owner")
+        if self.demo_user_id and self.demo_user_id == self.email_agent_owner_user_id:
+            raise ValueError("DEMO_USER_ID must not be the email agent owner")
         return self
 
     @field_validator("email_timezone")

@@ -4,6 +4,8 @@ Revision ID: 92567bf64557
 Revises: bff323139bdf
 Create Date: 2026-10-21 11:31:13.626980
 
+Downgrade requires deleting provider='demo' mailboxes first.
+
 """
 
 from collections.abc import Sequence

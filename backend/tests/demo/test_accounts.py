@@ -54,7 +54,7 @@ def test_ensure_demo_accounts_is_idempotent() -> None:
     assert (first.mailbox_id, first.account_id) == (mailbox.id, account.id)
     assert (mailbox.provider, mailbox.address, mailbox.display_name) == (
         "demo",
-        "demo@folio.example",
+        f"demo+{USER_ID}@folio.example",
         "Demo",
     )
     assert (connection.bank, connection.session_id) == ("Demo Bank", "demo")

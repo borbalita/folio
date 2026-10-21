@@ -284,6 +284,9 @@ async def sync_banks(
     request: Request,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, int]:
+    if is_demo_user(user.id):
+        # Nothing to fetch, and a demo press must neither hit nor start the owner's cooldown.
+        return {"accounts": 0, "fetched": 0, "added": 0, "skipped": 0, "unparsed": 0}
     last = await asyncio.to_thread(job_runs.last_started, "bank_sync")
     if last is not None and datetime.now(UTC) - last < SYNC_COOLDOWN:
         raise HTTPException(429, "Synced less than 10 minutes ago; try again later.")

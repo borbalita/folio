@@ -14,7 +14,6 @@ from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 
-DEMO_ADDRESS = "demo@folio.example"
 DEMO_IDENTIFICATION = "demo"
 
 
@@ -38,7 +37,7 @@ def ensure_demo_accounts(session: Session, user_id: uuid.UUID) -> DemoAccounts:
         mailbox = Mailbox(
             user_id=user_id,
             provider=MailboxProvider.DEMO,
-            address=DEMO_ADDRESS,
+            address=f"demo+{user_id}@folio.example",
             display_name="Demo",
         )
         session.add(mailbox)

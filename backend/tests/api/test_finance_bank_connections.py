@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import uuid
-from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.database import bank_connections, job_runs, matches, transactions
-from app.database.models.finance.bank_account import BankAccount
-from app.database.models.finance.bank_connection import BankConnection
+from app.database import bank_connections, job_runs
 from app.finance import enable_banking, transaction_sync
 from app.finance.enable_banking import (
     EbSession,
@@ -19,7 +16,6 @@ from app.finance.enable_banking import (
     EnableBankingNotConfigured,
 )
 from tests.conftest import TEST_USER_ID
-from tests.database.test_bank_connections import _FilteringSession
 
 CONNECTIONS = [{"bank": "N26", "accounts": []}]
 SESSION = EbSession(
@@ -259,33 +255,23 @@ def test_demo_user_cannot_start_a_connection(
     assert callback.status_code == 403
 
 
-def test_demo_user_sync_now_fetches_nothing(
+def test_demo_user_sync_now_ignores_the_owners_cooldown(
     authed_client: TestClient, demo_user: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    connection = BankConnection(
-        id=uuid.uuid4(), user_id=TEST_USER_ID, bank="Demo Bank", session_id="demo",
-        valid_until=datetime.now(UTC) + timedelta(days=3650),
-    )
-    account = BankAccount(
-        id=uuid.uuid4(), connection_id=connection.id, uid="demo", identification_hash="demo"
-    )
-    session = _FilteringSession([connection], [account])
+    def never(*_: Any, **__: Any) -> None:
+        pytest.fail("the demo user neither syncs nor records a job")
 
-    @contextmanager
-    def fake_get_session():
-        yield session
-
-    async def never(*_: Any, **__: Any) -> None:
-        pytest.fail("the demo user never reaches Enable Banking")
-
-    monkeypatch.setattr(bank_connections, "get_session", fake_get_session)
-    monkeypatch.setattr(job_runs, "last_started", lambda job: None)
-    monkeypatch.setattr(transaction_sync, "run_job", lambda name, fn: fn())
-    monkeypatch.setattr(transactions, "latest_booking_dates", lambda ids: {})
-    monkeypatch.setattr(matches, "match_for_user", lambda user_id, now=None: {})
-    monkeypatch.setattr(enable_banking, "fetch_transactions", never)
+    monkeypatch.setattr(job_runs, "last_started", lambda job: datetime.now(UTC))
+    monkeypatch.setattr(transaction_sync, "run_job", never)
+    monkeypatch.setattr(transaction_sync, "run_bank_sync", never)
 
     response = authed_client.post("/finance/bank-sync")
 
     assert response.status_code == 200
-    assert response.json()["fetched"] == 0
+    assert response.json() == {
+        "accounts": 0,
+        "fetched": 0,
+        "added": 0,
+        "skipped": 0,
+        "unparsed": 0,
+    }

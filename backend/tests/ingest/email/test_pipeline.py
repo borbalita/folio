@@ -176,11 +176,25 @@ class _MailboxLookupSession(_MemorySession):
 
 def test_yahoo_ingest_ignores_the_demo_mailbox(monkeypatch: pytest.MonkeyPatch) -> None:
     owner_id = uuid.uuid4()
-    monkeypatch.setattr("ingest.email.pipeline.settings.email_agent_owner_user_id", owner_id)
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", owner_id
+    )
     monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "me@yahoo.com")
     address = "me@yahoo.com"
-    demo = Mailbox(id=uuid.uuid4(), user_id=uuid.uuid4(), provider="demo", address=address, display_name="Demo")
-    yahoo = Mailbox(id=uuid.uuid4(), user_id=owner_id, provider="yahoo", address=address, display_name=address)
+    demo = Mailbox(
+        id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
+        provider="demo",
+        address=address,
+        display_name="Demo",
+    )
+    yahoo = Mailbox(
+        id=uuid.uuid4(),
+        user_id=owner_id,
+        provider="yahoo",
+        address=address,
+        display_name=address,
+    )
 
     found = upsert_yahoo_mailbox(_MailboxLookupSession([demo, yahoo]))  # type: ignore[arg-type]
 
