@@ -2,7 +2,7 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 003/01, 003/02 and 003/05 done
+- Current stage: Implementation; 003/01, 003/02, 003/03 and 003/05 done
 
 ## Approval state
 
@@ -95,7 +95,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 
 - [x] [003/01 — Demo user, access, demo mailbox and bank](tasks/01-demo-user.md)
 - [x] [003/02 — Vendor catalogue, PDF writer and email builder](tasks/02-invoice-builder.md)
-- [ ] [003/03 — Base state and reset](tasks/03-base-state-reset.md) — after 01, 02
+- [x] [003/03 — Base state and reset](tasks/03-base-state-reset.md) — after 01, 02
 - [ ] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
 - [x] [003/05 — Simulated bank booking](tasks/05-bank-booking.md) — after 01
 - [ ] [003/06 — Presenter page and list refresh](tasks/06-presenter-page.md) — after 03, 04, 05
