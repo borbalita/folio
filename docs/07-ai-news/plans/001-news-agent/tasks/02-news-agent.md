@@ -27,7 +27,7 @@ A `news` agent answers AI-news questions in its own threads from the user's news
 
 ## Verified
 
-2026-10-21, branch `feat/news-agent-chat`.
+2026-10-21, branch `feat/news-agent-chat`, PR [borbalita/folio#70](https://github.com/borbalita/folio/pull/70).
 
 - No dates → the 7 days up to the question's date: `test_no_dates_cover_the_seven_days_up_to_today` (both tools). Pass.
 - Scripted big-news turn → `list_big_news`, answer cites only returned items, stored as `news_item_id`: `test_big_news_cites_the_returned_items_as_news`. Pass.

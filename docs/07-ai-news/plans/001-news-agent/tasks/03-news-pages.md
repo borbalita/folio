@@ -17,7 +17,7 @@ The owner opens AI News from the picker and chats in their own news threads.
 
 ## Verified
 
-2026-10-21, branch `feat/news-agent-chat`, local backend and frontend against the real database.
+2026-10-21, branch `feat/news-agent-chat`, PR [borbalita/folio#70](https://github.com/borbalita/folio/pull/70), local backend and frontend against the real database.
 
 - Picker → AI News card shows ("Big AI stories and briefings from your newsletters, with citations.") and opens a `/news` thread. Pass.
 - "What were the big stories this week?" → "this week" = Oct 19–21; the one big story (OpenAI legacy-code modernization) with "both newsletters · 2 items · Oct 20", citing both items; the TLDR source opens its article ("Open article"); the Alpha Signal item has no link, as most don't. Pass.

@@ -22,7 +22,7 @@ The Email agent answers about mail only and points news questions to the News ag
 
 ## Verified
 
-2026-10-21, branch `feat/news-agent-chat`.
+2026-10-21, branch `feat/news-agent-chat`, PR [borbalita/folio#70](https://github.com/borbalita/folio/pull/70).
 
 - News question → the Email agent searches nothing and points to the News agent: `test_email_agent_only_searches_mail` and `test_instructions_point_news_questions_to_the_news_assistant`; in the browser "What were the big AI stories this week?" answered "The AI News assistant answers questions about big AI stories from newsletters like TLDR and Alpha Signal." with no embeddings call in the backend log. Pass.
 - Old Email thread with news citations → still shows them: a thread with 13 news citations opened, source 1 showed the Alpha Signal item. Pass.
