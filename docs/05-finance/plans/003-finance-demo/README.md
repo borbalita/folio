@@ -2,12 +2,13 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 003/01 and 003/05 done
+- Current stage: Implementation; 003/01, 003/02 and 003/05 done
 
 ## Approval state
 
 - 2026-10-20: settled in chat, one question at a time: the demo is shown live by the owner first and may become self-serve later; it shows a ready-made state plus one invoice that arrives live; the live invoice skips the mailbox and enters the real pipeline; the demo is a second user in the production app; invoices come from a fixed catalogue of fictional vendors; a simulated bank booking closes the payment loop; the controls sit on a separate presenter page; reset is a button there plus a command. Design sections 1–4 approved.
 - 2026-10-20: written spec and task breakdown approved; the plan is Ready.
+- 2026-10-21: 003/02's review found that an Online only email with a full invoice PDF would read as `to_pay`; at the owner's OK it becomes a notice without a PDF. Vendors sound real but are invented (owner's request).
 - 2026-10-21: added while planning 003/01, at the owner's OK: the demo user's Accounts page shows only the demo bank; sync and expiry checks skip it; Connect returns 403 for the demo user.
 
 ## Problem
@@ -75,7 +76,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 
   Plus about 40 transactions over 90 days (salary, rent, shops, all fictional) and the debits behind the matches.
 - **Reset:** one database transaction deletes the demo user's invoices, matches, payment drafts, transactions, emails with attachments and chunks, and Finance chat threads, then writes the base state. A failure changes nothing.
-- **New invoice:** the presenter picks Normal, Already paid, Online only or Random. The builder draws a vendor, an amount, an invoice number, dates and an IBAN with a valid checksum, and writes a German subject, body and `Rechnung_<number>.pdf`; Already paid says the amount was debited, Online only has no IBAN and points to the customer account. The message gets a fresh Message-ID and goes to `ingest_messages` with the demo mailbox, then `match_for_user` for the demo user. The request waits for the model calls (about 10–20 s) and returns the stored invoice. Traces stay content-free and carry the tag `demo`.
+- **New invoice:** the presenter picks Normal, Already paid, Online only or Random. The builder draws a vendor, an amount, an invoice number, dates and an IBAN with a valid checksum, and writes a German subject, body and `Rechnung_<number>.pdf`; Already paid says the amount was debited; Online only is a notice without a PDF that the invoice waits in the customer account (changed on 2026-10-21 at the owner's OK, to match the ingest check's definition of `online_only`). The message gets a fresh Message-ID and goes to `ingest_messages` with the demo mailbox, then `match_for_user` for the demo user. The request waits for the model calls (about 10–20 s) and returns the stored invoice. Traces stay content-free and carry the tag `demo`.
 - **Book payment:** the presenter page lists the demo user's approved payments. Book writes a booked debit (amount, payee, IBAN, reference, today) into the demo account and runs `match_for_user`; the strong match marks the invoice paid and completes the payment.
 - **Presenter page:** phone-sized, three blocks: New invoice (kind, Send, a log of recent sends), Payments to book, Reset demo (with confirmation). Not in the sidebar.
 - **Refresh:** invoice list, invoice page, payments and transactions refetch every 5 s while the tab is visible and on window focus.
@@ -93,7 +94,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 ## Tasks
 
 - [x] [003/01 — Demo user, access, demo mailbox and bank](tasks/01-demo-user.md)
-- [ ] [003/02 — Vendor catalogue, PDF writer and email builder](tasks/02-invoice-builder.md)
+- [x] [003/02 — Vendor catalogue, PDF writer and email builder](tasks/02-invoice-builder.md)
 - [ ] [003/03 — Base state and reset](tasks/03-base-state-reset.md) — after 01, 02
 - [ ] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
 - [x] [003/05 — Simulated bank booking](tasks/05-bank-booking.md) — after 01
