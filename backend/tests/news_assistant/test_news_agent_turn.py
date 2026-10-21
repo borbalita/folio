@@ -140,3 +140,22 @@ def test_citing_the_story_id_is_refused_with_news_wording(
     assert stored == []
     assert _streamed_text(body) == canned
     assert "newsletter" in canned
+
+
+class _EmptyAgent:
+    async def run(self, prompt: str, deps: NewsAgentDeps) -> SimpleNamespace:
+        return SimpleNamespace(
+            output=NewsAnswer(
+                answer="There were no big stories since Saturday.",
+                citations=[],
+                insufficient_evidence=True,
+            ),
+            usage=_Usage(),
+        )
+
+
+def test_an_empty_period_answer_is_shown(monkeypatch: pytest.MonkeyPatch) -> None:
+    body, stored = _run(monkeypatch, _EmptyAgent())  # type: ignore[arg-type]
+
+    assert stored == []
+    assert _streamed_text(body) == "There were no big stories since Saturday."

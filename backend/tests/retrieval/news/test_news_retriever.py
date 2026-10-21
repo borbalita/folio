@@ -209,8 +209,8 @@ def test_stories_big_only_and_dates_go_into_the_aggregate_query() -> None:
     assert stories == []
     sql, params = session.statements[0], session.params[0]
     assert "count(DISTINCT ni.source) > 1" in sql
-    assert "max(ni.edition_date) >= :since" in sql
-    assert "min(ni.edition_date) <= :until" in sql
+    assert "ni.edition_date >= :since" in sql
+    assert "ni.edition_date <= :until" in sql
     assert params["since"] == date(2026, 10, 12)
     assert params["until"] == date(2026, 10, 18)
     assert len(session.statements) == 1
@@ -295,3 +295,24 @@ def test_big_and_dates_come_from_the_users_own_items_only() -> None:
     assert "min(ni.edition_date) AS first_seen" in sql
     assert "max(ni.edition_date) AS last_seen" in sql
     assert "count(DISTINCT ni.source) > 1 AS is_big" in sql
+
+
+def test_items_outside_the_period_are_neither_counted_nor_loaded() -> None:
+    # A story that overlaps the period brings only its items from inside it.
+    session = _Queries(
+        [_aggregate(STORY_1)], [_row(A, STORY_1, "tldr", date(2026, 10, 20))]
+    )
+
+    NewsRetriever().stories(
+        filters=_filters(since="2026-10-19", until="2026-10-21"),
+        limit=10,
+        session=session,  # type: ignore[arg-type]
+    )
+
+    aggregate_sql, items_sql = session.statements
+    for sql in (aggregate_sql, items_sql):
+        where = sql.split("WHERE", 1)[1].split("GROUP BY", 1)[0]
+        assert "ni.edition_date >= :since" in where
+        assert "ni.edition_date <= :until" in where
+    assert session.params[1]["since"] == date(2026, 10, 19)
+    assert session.params[1]["until"] == date(2026, 10, 21)

@@ -23,3 +23,10 @@ def test_prompt_starts_with_todays_date() -> None:
 
     assert prompt.startswith("Today is 2026-10-21 in Europe/Berlin.")
     assert prompt.endswith("Catch me up")
+
+
+def test_an_empty_period_is_answered_as_insufficient_evidence() -> None:
+    text = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+
+    sentence = text[text.index("If a period has no stories") :].split(". ", 1)[0]
+    assert "insufficient_evidence" in sentence

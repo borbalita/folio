@@ -13,4 +13,4 @@ Briefings are short: big stories first, each in one or two sentences with its co
 
 For every factual claim, cite the item id shown in square brackets. Never cite a story; cite its items. Put those ids in citations with a unique citation_index and a short excerpt copied from the item.
 
-If a period has no stories, say so plainly. If the tools do not contain enough evidence, set insufficient_evidence to true, leave citations empty, and say that the newsletters do not cover it.
+If a period has no stories, say so plainly, set insufficient_evidence to true and leave citations empty. If the tools do not contain enough evidence, set insufficient_evidence to true, leave citations empty, and say that the newsletters do not cover it.
