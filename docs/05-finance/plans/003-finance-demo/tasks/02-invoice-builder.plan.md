@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No new dependencies; the PDF is written by hand (PDF 1.4, uncompressed, standard font Helvetica, WinAnsiEncoding).
-- Vendors are fictional; sender domains end in `.example` (reserved TLD), so no real company or domain is imitated.
+- Vendors sound real but are invented: plausible brand names (checked on 2026-10-21 that no company by that name turned up), real cities, invented street numbers; sender domains end in `.example` (reserved TLD), so no real company or domain is imitated. Never use a real company name, e.g. "Stadtwerke <city>".
 - German wording in subject, body and PDF.
 - Invoices and emails vary: each vendor has its own layout, number format, payment terms, VAT, line items and email tone, and every draw varies within that (number of items, wording). Every attachment filename still contains `Rechnung`, so the existing filename rule backs up labelling.
 - Totals add up: sum of line items (net) + VAT = total, each rounded to cents.
@@ -43,14 +43,14 @@
 
   | key | name | items (examples) | VAT | number format | due | layout | tone | filename |
   |---|---|---|---|---|---|---|---|---|
-  | `stadtwerke` | Stadtwerke Musterstadt GmbH | Abschlag Strom, Grundpreis, Zählermiete | 19 % | `{year}-{n:08d}` | 14 days | classic | formal | `Rechnung_{number}.pdf` |
-  | `mobilfunk` | Funkwelle Mobil GmbH | Tarif Smart M, EU-Roaming, Datenpaket 5 GB | 19 % | `FM{n:010d}` | 10 days | modern | friendly | `Funkwelle_Rechnung_{month}.pdf` |
-  | `hosting` | Serverhafen Hosting UG | Webhosting Pro, Domain `.de`, SSL-Zertifikat, Backup | 19 % | `INV-{year}-{n:05d}` | 7 days | compact | short | `Rechnung-INV-{number}.pdf` |
-  | `zahnarzt` | Zahnarztpraxis Dr. Lindqvist | Professionelle Zahnreinigung, Kontrolle, Röntgen | 0 % (medical, VAT-exempt) | `{n:04d}/{year}` | 30 days | classic | formal | `Rechnung {number}.pdf` |
-  | `fitness` | Kraftwerk Fitnessstudio | Mitgliedsbeitrag, Getränkeflatrate, Kurs Yoga | 19 % | `KW-{n:06d}` | 0 days ("sofort fällig") | modern | friendly | `Rechnung_KW.pdf` |
-  | `handwerk` | Malerbetrieb Özdemir & Söhne | Malerarbeiten Flur (Std.), Material, Anfahrt | 19 % | `R{year}{n:04d}` | 14 days | compact | formal | `Rechnung_{number}.pdf` |
+  | `strom` | Spreewerk Energie GmbH, Berlin | Abschlag Strom, Grundpreis, Zählermiete | 19 % | `{year}-{n:08d}` | 14 days | classic | formal | `Rechnung_{number}.pdf` |
+  | `mobilfunk` | Wellenfunk Mobil GmbH, Düsseldorf | Tarif Smart M, EU-Roaming, Datenpaket 5 GB | 19 % | `FM{n:010d}` | 10 days | modern | friendly | `Wellenfunk_Rechnung_{month}.pdf` |
+  | `hosting` | Nordhafen Hosting UG, Hamburg | Webhosting Pro, Domain `.de`, SSL-Zertifikat, Backup | 19 % | `INV-{year}-{n:05d}` | 7 days | compact | short | `Rechnung-INV-{number}.pdf` |
+  | `zahnarzt` | Zahnarztpraxis Dr. Rothenbach, Köln | Professionelle Zahnreinigung, Kontrolle, Röntgen | 0 % (medical, VAT-exempt) | `{n:04d}/{year}` | 30 days | classic | formal | `Rechnung {number}.pdf` |
+  | `fitness` | Eisenhalle Fitness, Leipzig | Mitgliedsbeitrag, Getränkeflatrate, Kurs Yoga | 19 % | `EH-{n:06d}` | 0 days ("sofort fällig") | modern | friendly | `Rechnung_Eisenhalle.pdf` |
+  | `handwerk` | Malerfachbetrieb Kaya & Brandt, Frankfurt am Main | Malerarbeiten Flur (Std.), Material, Anfahrt | 19 % | `R{year}{n:04d}` | 14 days | compact | formal | `Rechnung_{number}.pdf` |
 
-  `{n}` is drawn per invoice; `{month}` is the invoice month (`2026-10`). Senders like `rechnung@stadtwerke-musterstadt.example` and `service@funkwelle.example`, all ending in `.example`; `customer_portal` e.g. `kundenkonto.funkwelle.example`. Bank codes `0` + 7 digits, distinct per vendor.
+  `{n}` is drawn per invoice; `{month}` is the invoice month (`2026-10`). Senders like `rechnung@spreewerk-energie.example` and `service@wellenfunk.example`, all ending in `.example`; `customer_portal` e.g. `mein.wellenfunk.example`. Bank codes `0` + 7 digits, distinct per vendor.
 
 - [ ] **Step 1: Write failing tests**
   - `test_every_vendor_sends_from_an_example_domain`: `vendor.sender.endswith(".example")` for all; keys unique; 6 vendors.
@@ -77,7 +77,7 @@
 
 - [ ] **Step 1: Write failing tests**
   - `test_pdf_has_header_xref_and_trailer`: starts with `b"%PDF-1.4"`, ends with `b"%%EOF\n"`; every xref offset points at `b"<n> 0 obj"`; `startxref` points at `b"xref"`.
-  - `test_text_round_trips_with_umlauts_and_euro`: `render_pdf([Text(56, 800, "Malerbetrieb Özdemir & Söhne – 1.234,50 €, Straße")])` → `pdf_strings` returns exactly that text (the en dash is in WinAnsi too).
+  - `test_text_round_trips_with_umlauts_and_euro`: `render_pdf([Text(56, 800, "Zahnarztpraxis Dr. Rothenbach, Köln – 1.234,50 €, Hauptstraße")])` → `pdf_strings` returns exactly that text (the en dash is in WinAnsi too).
   - `test_parentheses_and_backslashes_are_escaped`: `"Strom (Grundversorgung) C:\\x"` round-trips and the raw bytes contain `\\(`.
   - `test_rule_draws_a_line`: the content stream contains `56 700 m 539 700 l S` for `Rule(700)`.
   - `test_text_outside_winansi_is_refused`: a character like `"✓"` raises `ValueError` (better than a silently broken PDF).
@@ -101,7 +101,7 @@
   - `@dataclass(frozen=True, slots=True) class Line: label: str; quantity: int; unit_price: Decimal` (net)
   - `@dataclass(frozen=True, slots=True) class DemoInvoice: vendor: Vendor; kind: InvoiceKind; number: str; lines: tuple[Line, ...]; net: Decimal; vat: Decimal; amount: Decimal; invoice_date: date; due_date: date; iban: str | None; customer_number: str`
   - `draw_invoice(rng: random.Random, kind: InvoiceKind, today: date, vendor: Vendor | None = None) -> DemoInvoice`: vendor from `rng` when `None`; 1..`max_items` distinct items, each with quantity 1 (hourly items 1–8) and a unit price uniform in its range, quantized to `0.01`; `net` = sum, `vat = (net * vat_rate).quantize(0.01, ROUND_HALF_UP)`, `amount = net + vat`; `number` from the vendor's `number_format`; `invoice_date = today - rng.randint(0, 3)` days; `due_date = invoice_date + due_days`; `customer_number` like `KD-{6 digits}`; `iban = None` only for `online_only`.
-  - `invoice_pdf(invoice: DemoInvoice) -> bytes`, laid out per `vendor.layout`:
+  - `invoice_pdf(invoice: DemoInvoice) -> bytes`, addressed to the demo persona `RECIPIENT = ("Kim Albrecht", "Lindenstraße 12", "10969 Berlin")`, laid out per `vendor.layout`:
     - **classic**: letterhead top left, recipient window block, "Rechnung" heading, a meta block (Rechnungsnummer, Kundennummer, Rechnungsdatum), an item table (Pos., Bezeichnung, Menge, Einzelpreis, Gesamt) with rules, net/VAT/total block, footer with bank details and register line.
     - **modern**: name large top right, "RECHNUNG" in bold, meta in two columns, items without position numbers, the total emphasised in bold, bank details inline above the footer.
     - **compact**: one-line letterhead, meta on one line, items as "label … amount" lines, only "Gesamtbetrag (inkl. MwSt.)", payment text directly under it.
