@@ -117,6 +117,14 @@ def test_run_reset_keeps_the_old_state_on_error(
     assert session.commits == 0
 
 
+@pytest.fixture
+def quiet_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    # configure_logging() turns structlog's logger cache back on (tests/conftest.py turns
+    # it off), so later tests' capture_logs would miss loggers first used after this one.
+    monkeypatch.setattr(reset, "configure_logging", lambda: None)
+
+
+@pytest.mark.usefixtures("quiet_logging")
 def test_command_needs_a_demo_user(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -126,6 +134,7 @@ def test_command_needs_a_demo_user(
     assert "Set DEMO_USER_ID first." in capsys.readouterr().err
 
 
+@pytest.mark.usefixtures("quiet_logging")
 def test_command_needs_a_signed_in_demo_user(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -137,6 +146,7 @@ def test_command_needs_a_signed_in_demo_user(
     assert "Sign in once as the demo user first." in capsys.readouterr().err
 
 
+@pytest.mark.usefixtures("quiet_logging")
 def test_command_resets_and_prints_the_counts(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

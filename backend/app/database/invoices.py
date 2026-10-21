@@ -38,7 +38,7 @@ def _summary(email: EmailMessage) -> dict[str, Any]:
     }
 
 
-def _invoice(row: Invoice) -> dict[str, Any]:
+def serialize_invoice(row: Invoice) -> dict[str, Any]:
     return {
         "id": str(row.id),
         "emailId": str(row.email_id),
@@ -71,7 +71,7 @@ def list_invoices(mailbox_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
         found = matches.for_invoices(session, [row.Invoice.id for row in rows])
         return [
             {
-                **_invoice(row.Invoice),
+                **serialize_invoice(row.Invoice),
                 **found[row.Invoice.id],
                 "email": _summary(row.EmailMessage),
             }
@@ -118,7 +118,7 @@ def get_invoice(email_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, 
             **_summary(email),
             "body": email.body,
             "attachments": attachments,
-            "invoices": [{**_invoice(row), **found[row.id]} for row in rows],
+            "invoices": [{**serialize_invoice(row), **found[row.id]} for row in rows],
         }
 
 
@@ -148,7 +148,7 @@ def update_invoice(
         [row] = _owned_invoices(session, [invoice_id], mailbox_ids)
         apply_edit(row, changes)
         session.commit()
-        return _invoice(row)
+        return serialize_invoice(row)
 
 
 def get_invoice_item(
@@ -157,7 +157,7 @@ def get_invoice_item(
     """One invoice with its match and suggestions."""
     with get_session() as session:
         [row] = _owned_invoices(session, [invoice_id], mailbox_ids)
-        return {**_invoice(row), **matches.for_invoices(session, [row.id])[row.id]}
+        return {**serialize_invoice(row), **matches.for_invoices(session, [row.id])[row.id]}
 
 
 def set_invoices_paid(
@@ -173,7 +173,7 @@ def set_invoices_paid(
             matches.reject_links(session, invoice_ids)
         session.commit()
         found = matches.for_invoices(session, invoice_ids)
-        return [{**_invoice(row), **found[row.id]} for row in rows]
+        return [{**serialize_invoice(row), **found[row.id]} for row in rows]
 
 
 def get_attachment_file(
