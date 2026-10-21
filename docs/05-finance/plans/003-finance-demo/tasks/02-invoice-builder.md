@@ -22,4 +22,5 @@ Code that produces a realistic, fictional invoice email with a PDF, for each kin
 None.
 
 ## Notes
+- Implementation plan: [02-invoice-builder.plan.md](02-invoice-builder.plan.md).
 - Sending the PDF to the extraction model is checked in 003/04.
