@@ -21,3 +21,6 @@ A `news` agent answers AI-news questions in its own threads from the user's news
 
 ## Dependencies
 001/01.
+
+## Notes
+- Implementation plan: [02-news-agent.plan.md](02-news-agent.plan.md).
