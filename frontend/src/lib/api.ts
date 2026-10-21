@@ -42,6 +42,9 @@ export interface InvoiceAttachment {
 
 export type InvoiceStatus = 'open' | 'needs_info' | 'paid'
 
+/** What the app shows: an open invoice whose approved payment is on its way is pending. */
+export type DisplayStatus = InvoiceStatus | 'pending'
+
 /** One invoice extracted from an email. `amount` is a decimal string, dates are `YYYY-MM-DD`. */
 export interface Invoice {
   id: string
@@ -65,6 +68,8 @@ export interface Invoice {
    * `invoice` when the invoice itself says it is paid.
    */
   paidBy: string | null
+  /** Open, with a payment approved in the last 5 days whose debit hasn't arrived yet. */
+  paymentPending: boolean
   /** The linked payment, set when `paidBy` is `match`. */
   match: InvoiceMatch | null
   /** Possible payments for the owner to confirm or reject. */
@@ -182,6 +187,31 @@ export interface BankSyncCounts {
   unparsed: number
 }
 
+export type DemoInvoiceKind = 'normal' | 'already_paid' | 'online_only' | 'random'
+
+export interface DemoSendResult {
+  sent: { kind: Exclude<DemoInvoiceKind, 'random'>; vendor: string; number: string; amount: string }
+  invoices: Invoice[]
+  failures: number
+  error: string | null
+}
+
+export interface DemoPayment {
+  id: string
+  invoiceId: string
+  payee: string
+  amount: string
+  currency: string
+  reference: string | null
+  approvedAt: string | null
+}
+
+export interface DemoBookResult {
+  booked: boolean
+  paymentStatus: PaymentDraftStatus
+  invoiceStatus: InvoiceStatus | null
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -234,4 +264,13 @@ export const api = {
   listTransactions: () => http.get<Transaction[]>('/finance/transactions'),
 
   getAttachment: (attachmentId: string) => http.getBlob(`/finance/attachments/${attachmentId}`),
+
+  sendDemoInvoice: (kind: DemoInvoiceKind) =>
+    http.post<DemoSendResult>('/finance/demo/invoices', { kind }, { timeoutMs: 90_000 }),
+
+  listDemoPayments: () => http.get<DemoPayment[]>('/finance/demo/payments'),
+
+  bookDemoPayment: (id: string) => http.post<DemoBookResult>(`/finance/demo/payments/${id}/book`),
+
+  resetDemo: () => http.post<Record<string, number>>('/finance/demo/reset', undefined, { timeoutMs: 60_000 }),
 }

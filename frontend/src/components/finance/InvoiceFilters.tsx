@@ -1,10 +1,10 @@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { InvoiceStatus } from '@/lib/api'
+import type { DisplayStatus } from '@/lib/api'
 import { type Filters, STATUS_LABELS } from '@/lib/invoices'
 
-const STATUSES: InvoiceStatus[] = ['open', 'needs_info', 'paid']
+const STATUSES: DisplayStatus[] = ['open', 'pending', 'needs_info', 'paid']
 
 interface Props {
   filters: Filters
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function InvoiceFilters({ filters, onChange }: Props) {
-  function toggleStatus(status: InvoiceStatus, checked: boolean) {
+  function toggleStatus(status: DisplayStatus, checked: boolean) {
     const statuses = checked
       ? [...filters.statuses, status]
       : filters.statuses.filter((item) => item !== status)
