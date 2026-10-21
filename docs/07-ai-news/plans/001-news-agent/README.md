@@ -2,12 +2,13 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: All four tasks done; success criterion 5 (a demo account) waits for demo newsletters
+- Current stage: 001/01–04 done; 001/05 (demo newsletters) added, waits for finance 003/03
 
 ## Approval state
 
 - 2026-10-20: in chat, the owner asked for a chatbot only about AI news that knows what big or important news means. They chose: a focused place for news, judged importance, briefings, demo-friendly; importance by coverage only; briefings on request in chat; owner-only; news moves out of the Email agent. Approach 1 (rank by coverage, grouping unchanged) chosen over grouping same-newsletter items across days. Design sections 1–3 approved. No evals for this agent.
 - 2026-10-20: the owner approved the written spec and asked to build it; the plan is Ready.
+- 2026-10-21: the owner approved 001/05, demo newsletters for the finance demo user: two fictional newsletters ("The Daily Tensor", "AI Detective"), AI News reads the demo mailbox, seeded by 003's reset with precomputed embeddings.
 - 2026-10-21: final review: stories count only items inside the period, so big means both newsletters within it (owner's spec says "all from that period").
 - 2026-10-20: demo data comes from a separate plan; this agent must work for a demo account's own invented newsletters.
 
@@ -83,9 +84,11 @@ chat orchestrator ── agent "news" ──► PydanticAI agent (app/news_assis
 - [x] [001/02 — News agent, tools and chat turn](tasks/02-news-agent.md) — after 01
 - [x] [001/03 — News pages and picker card](tasks/03-news-pages.md) — after 02
 - [x] [001/04 — News moves out of the Email agent](tasks/04-email-without-news.md) — after 02
+- [ ] [001/05 — Demo newsletters](tasks/05-demo-newsletters.md) — after finance 003/03
 
 ## Open questions and risks
 
 - **Recurring single-newsletter stories** are never big. Next action: watch real briefings; if it matters, a follow-up plan pairs same-newsletter items across days with a check on real data.
 - **Briefing size:** in the 001/03 run, three days gave 21 stories; long but readable. Next action: watch real use; lower the cap or ask for fewer themes if briefings feel long.
-- **Demo data** must include stories in both newsletters, single-newsletter stories and multi-day ones. Next action: add demo newsletters to the demo user of [finance plan 003](../../../05-finance/plans/003-finance-demo/README.md) once it lands; then check success criterion 5.
+- **Demo data:** finance 003/01 keeps the demo mailbox out of `active_mailbox_ids`, so AI News needs its own mailbox rule for the demo user. Next action: [001/05](tasks/05-demo-newsletters.md); success criterion 5 is checked there.
+- **Web search for story details** (asked 2026-10-21, not now): OpenAI's built-in web search via PydanticAI's `WebSearchTool`; needs web pages as a second citation kind (grounding, storage, source panel) and a rule to search only for details on a story. About 2 days.
