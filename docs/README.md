@@ -1,6 +1,6 @@
 # Docs
 
-Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `07-`.
+Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `08-`.
 
 ## Platform
 
@@ -55,6 +55,12 @@ Messages to the owner outside the app: Telegram notifications about invoices and
 
 - [Overview](06-notifications/overview.md)
 - [Plans](06-notifications/plans/README.md)
+
+## 07-ai-news
+
+The AI News agent: big stories and briefings from the AI newsletters, with citations.
+
+- [Plans](07-ai-news/plans/README.md)
 
 ## Legal
 

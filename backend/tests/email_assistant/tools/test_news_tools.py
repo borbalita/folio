@@ -9,7 +9,7 @@ from app.database import mailboxes
 from app.email_assistant.deps import EmailAgentDeps
 from app.email_assistant.tools.news import execute_list_big_news, execute_search_news
 from app.retrieval.news.queries import NewsSearchFilters
-from app.retrieval.news.retriever import BigStory, NewsPassage, NewsRetriever
+from app.retrieval.news.retriever import NewsPassage, NewsRetriever, Story
 
 USER = UUID("00000000-0000-0000-0000-000000000001")
 THREAD = UUID("00000000-0000-0000-0000-000000000002")
@@ -42,15 +42,19 @@ class _News(NewsRetriever):
             return []
         return [_item(TLDR_ITEM, "tldr")]
 
-    def big_stories(self, *, filters, session=None):  # type: ignore[override]
+    def stories(self, *, filters, limit, session=None):  # type: ignore[override]
         self.filters = filters
+        self.limit = limit
         if not filters.mailbox_ids:
             return []
         return [
-            BigStory(
+            Story(
                 story_id=STORY,
                 first_seen=date(2026, 9, 21),
                 last_seen=date(2026, 9, 22),
+                is_big=True,
+                sources=["alpha_signal", "tldr"],
+                item_count=2,
                 items=[_item(ALPHA_ITEM, "alpha_signal"), _item(TLDR_ITEM, "tldr")],
             )
         ]
@@ -94,7 +98,8 @@ def test_list_big_news_remembers_every_item_but_not_the_story(
 
     assert deps.seen_ids == {TLDR_ITEM, ALPHA_ITEM}
     assert STORY not in deps.seen_ids
-    assert "alpha_signal + tldr" in output
+    assert "Big — both newsletters · 2 items · Sep 21–22" in output
+    assert deps.news.filters.big_only is True  # type: ignore[attr-defined]
 
 
 def test_no_active_mailbox_returns_the_empty_texts(
@@ -105,3 +110,17 @@ def test_no_active_mailbox_returns_the_empty_texts(
     assert execute_search_news(deps, "robots") == "No matching news."
     assert execute_list_big_news(deps) == "No big stories in that range."
     assert deps.seen_ids == set()
+
+
+def test_list_big_news_without_dates_covers_the_last_seven_days(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    deps = _deps(monkeypatch, [OWNED])
+    monkeypatch.setattr(
+        "app.email_assistant.tools.news.berlin_today", lambda: date(2026, 10, 20)
+    )
+
+    execute_list_big_news(deps)
+
+    filters = deps.news.filters  # type: ignore[attr-defined]
+    assert (filters.since, filters.until) == (date(2026, 10, 14), date(2026, 10, 20))
