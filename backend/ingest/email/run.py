@@ -8,11 +8,15 @@ import sys
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
+import structlog
 from langfuse import propagate_attributes
 
 from app.config import settings
 from app.database.job_runs import run_job
+from app.database.matches import match_for_user
 from app.logging import configure_logging
+from app.notifications.store import record_notifications
+from app.notifications.telegram import send_pending
 from app.observability import configure_tracing, shutdown_tracing
 from ingest.email.pipeline import ingest_fetched, open_session, upsert_yahoo_mailbox
 from ingest.email.yahoo import YahooImapAdapter
@@ -57,6 +61,39 @@ def scheduled_since(last_synced_at: datetime | None, now: datetime) -> date:
     return (last_synced_at - timedelta(days=1)).astimezone(UTC).date()
 
 
+def _match_invoices() -> dict[str, int]:
+    """New invoices may already be paid by a synced transaction."""
+    matched = match_for_user(settings.email_agent_owner_user_id)
+    print(f"invoices matched: {matched['linked']}, suggested: {matched['suggested']}")
+    return matched
+
+
+log = structlog.get_logger(__name__)
+
+
+def _notify() -> dict[str, int]:
+    """Record and send Telegram notifications. A side channel: it never fails ingest."""
+    session = open_session()
+    try:
+        now = datetime.now(UTC)
+        new = record_notifications(session, now)
+        sent = send_pending(session, now)
+    except Exception as exc:  # noqa: BLE001
+        # Deliberately broad: whatever breaks here, the mail is already ingested. The type
+        # only: database errors carry bound parameters, which would put message text in logs.
+        session.rollback()
+        log.error("notifications_failed", error=type(exc).__name__)
+        return {"notifications_error": 1}
+    finally:
+        session.close()
+    return {
+        "notifications_new": new,
+        "notifications_sent": sent["sent"],
+        "notifications_failed": sent["failed"],
+        "notifications_held": sent["held"],
+    }
+
+
 def run_scheduled() -> None:
     def work() -> dict[str, Any]:
         adapter = YahooImapAdapter(
@@ -77,7 +114,7 @@ def run_scheduled() -> None:
         finally:
             session.close()
         print(summary.render())
-        return dataclasses.asdict(summary)
+        return {**dataclasses.asdict(summary), **_match_invoices(), **_notify()}
 
     run_job("email_ingest", work)
 
@@ -128,4 +165,5 @@ def _run(argv: list[str] | None) -> int:
     finally:
         session.close()
     print(summary.render())
+    _match_invoices()
     return 0

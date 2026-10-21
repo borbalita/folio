@@ -7,7 +7,9 @@ from ingest.email.labels import LabelDecision, label, label_message, newsletter_
 from ingest.email.parse import ParsedMessage
 
 
-def _parsed(from_address: str = "person@example.com") -> ParsedMessage:
+def _parsed(
+    from_address: str = "person@example.com", attachments: tuple[str, ...] = ("note.pdf",)
+) -> ParsedMessage:
     return ParsedMessage(
         message_id="id@example.com",
         provider_message_id="1",
@@ -18,7 +20,7 @@ def _parsed(from_address: str = "person@example.com") -> ParsedMessage:
         to_addresses=["you@yahoo.com"],
         sent_at=datetime(2026, 1, 1, tzinfo=UTC),
         body="Please see the note.",
-        attachment_filenames=("invoice.pdf",),
+        attachment_filenames=attachments,
     )
 
 
@@ -84,3 +86,23 @@ def test_invalid_label_retries_once_then_falls_back_to_other() -> None:
 
     assert label(_parsed(), classifier=classifier) is EmailLabel.OTHER
     assert calls["n"] == 2
+
+
+@pytest.mark.parametrize(
+    "filename",
+    ["Rechnung_2026-10.pdf", "INVOICE-77.PDF", "faktura 12.pdf", "számla.pdf", "szamla_1.pdf"],
+)
+def test_pdf_named_as_an_invoice_is_an_invoice_without_the_classifier(filename: str) -> None:
+    def fail(_prompt: str) -> str:
+        raise AssertionError("classifier should not run")
+
+    label, source = label_message(_parsed(attachments=(filename,)), classifier=fail)
+
+    assert (label, source) == (EmailLabel.INVOICE, None)
+
+
+@pytest.mark.parametrize("filename", ["Rechnung.docx", "rechnungsadresse.txt", "agb.pdf"])
+def test_other_attachments_still_go_to_the_classifier(filename: str) -> None:
+    label, _ = label_message(_parsed(attachments=(filename,)), classifier=lambda _p: "other")
+
+    assert label is EmailLabel.OTHER

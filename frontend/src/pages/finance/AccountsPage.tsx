@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { api, type BankConnection, type BankName } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiErrorDetail } from '@/lib/http'
+import {
+  clearReconnectQueue,
+  expiryMessage,
+  goToBank,
+  needsReconnect,
+  reconnectAll,
+} from '@/lib/reconnect'
 
 type State = { connections: BankConnection[] } | { error: string } | null
 
@@ -41,6 +48,8 @@ export function AccountsPage() {
     function onPageShow(event: PageTransitionEvent) {
       if (event.persisted) {
         setStarting(null)
+        // Back from a bank page without its callback: Reconnect all was abandoned.
+        clearReconnectQueue()
       }
     }
     window.addEventListener('pageshow', onPageShow)
@@ -48,11 +57,28 @@ export function AccountsPage() {
   }, [])
 
   async function start(bank: BankName) {
+    // A single connect must not pick up banks left queued by an abandoned Reconnect all.
+    clearReconnectQueue()
     setStarting(bank)
     setStartError(null)
     try {
-      const { url } = await api.startBankConnection(bank)
-      window.location.assign(url)
+      await goToBank(bank)
+    } catch (caught: unknown) {
+      setStartError(describeApiErrorDetail(caught))
+      setStarting(null)
+    }
+  }
+
+  const toReconnect =
+    state && 'connections' in state
+      ? state.connections.filter(needsReconnect).map((connection) => connection.bank)
+      : []
+
+  async function startReconnectAll() {
+    setStarting(toReconnect[0] ?? null)
+    setStartError(null)
+    try {
+      await reconnectAll(toReconnect)
     } catch (caught: unknown) {
       setStartError(describeApiErrorDetail(caught))
       setStarting(null)
@@ -79,9 +105,16 @@ export function AccountsPage() {
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-lg font-semibold">Accounts</h1>
-        <Button variant="outline" disabled={syncing} onClick={() => void syncNow()}>
-          {syncing ? 'Syncing…' : 'Sync now'}
-        </Button>
+        <div className="flex gap-2">
+          {toReconnect.length > 0 ? (
+            <Button disabled={starting !== null} onClick={() => void startReconnectAll()}>
+              Reconnect all
+            </Button>
+          ) : null}
+          <Button variant="outline" disabled={syncing} onClick={() => void syncNow()}>
+            {syncing ? 'Syncing…' : 'Sync now'}
+          </Button>
+        </div>
       </div>
       {syncResult ? (
         <p
@@ -106,6 +139,9 @@ export function AccountsPage() {
               <CardContent className="flex flex-col gap-3">
                 {connection.connected ? (
                   <>
+                    {expiryMessage(connection) ? (
+                      <p className="text-sm text-destructive">{expiryMessage(connection)}</p>
+                    ) : null}
                     {connection.validUntil ? (
                       <p className="text-sm text-muted-foreground">
                         Valid until{' '}

@@ -1,20 +1,44 @@
 import { ChevronLeft } from 'lucide-react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { ChatIcon } from '@/components/chat/ChatIcon'
+import { AgentIcon } from '@/components/AgentIcon'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { AGENTS } from '@/lib/agents'
+import { api } from '@/lib/api'
 import { useAuth } from '@/lib/auth'
+import { expiryMessage } from '@/lib/reconnect'
 
 const SECTIONS = [
   { to: '/finance/invoices', label: 'Invoices' },
+  { to: '/finance/chat', label: 'Chat' },
   { to: '/finance/transactions', label: 'Transactions' },
   { to: '/finance/accounts', label: 'Accounts' },
 ]
 
 export function FinanceLayout() {
   const { user, signOut } = useAuth()
+  const { pathname } = useLocation()
+  const [warnings, setWarnings] = useState<string[]>([])
+
+  // Re-read on navigation, so a reconnect clears the warning without a reload.
+  useEffect(() => {
+    let cancelled = false
+    api
+      .listBankConnections()
+      .then((connections) => {
+        if (!cancelled) {
+          setWarnings(connections.flatMap((c) => expiryMessage(c) ?? []))
+        }
+      })
+      .catch(() => {
+        // The warning is a convenience; the Accounts page shows the real error.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [pathname])
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -25,7 +49,7 @@ export function FinanceLayout() {
             aria-label={`${AGENTS.finance.title}. Back to all assistants`}
             className="group flex items-center gap-2 rounded-md p-1 outline-none hover:bg-sidebar-accent/60 focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <ChatIcon className="size-8" />
+            <AgentIcon agent={AGENTS.finance} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{AGENTS.finance.title}</p>
               <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
@@ -64,7 +88,25 @@ export function FinanceLayout() {
           <ThemeToggle />
         </div>
       </aside>
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto p-6">
+      <main
+        className={
+          // The chat fills the pane and scrolls its own message list.
+          pathname.startsWith('/finance/chat')
+            ? 'flex min-h-0 min-w-0 flex-1 flex-col'
+            : 'flex min-h-0 min-w-0 flex-1 flex-col overflow-auto p-6'
+        }
+      >
+        {warnings.length > 0 ? (
+          <div
+            role="status"
+            className="mx-auto mb-4 flex w-full max-w-4xl flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm"
+          >
+            <span>{warnings.join(' ')}</span>
+            <Link to="/finance/accounts" className="underline">
+              Reconnect on Accounts
+            </Link>
+          </div>
+        ) : null}
         <Outlet />
       </main>
     </div>

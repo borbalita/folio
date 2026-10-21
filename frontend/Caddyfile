@@ -4,6 +4,17 @@
 
 :{$PORT}
 
+# The app only talks to itself, the API and Supabase; PDFs open from blob: URLs in a frame,
+# and the GiroCode is a data: image. Nothing may frame the app (a hidden Pay button).
+header {
+	Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' {$VITE_API_BASE_URL} {$VITE_SUPABASE_URL}; frame-src blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	X-Content-Type-Options "nosniff"
+	X-Frame-Options "DENY"
+	Referrer-Policy "strict-origin-when-cross-origin"
+	-Server
+}
+
 handle /health* {
 	reverse_proxy {$BACKEND_UPSTREAM}
 }

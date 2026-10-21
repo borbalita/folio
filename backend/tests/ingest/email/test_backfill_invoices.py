@@ -5,7 +5,7 @@ from decimal import Decimal
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.finance.invoice import Invoice
-from ingest.email.backfill_invoices import backfill
+from ingest.email.backfill_invoices import backfill, detect
 from ingest.email.invoices import ExtractedInvoice, InvoiceSource
 
 
@@ -39,7 +39,9 @@ class _Session:
     def scalars(self, statement) -> list[object]:
         entity = statement.column_descriptions[0]["entity"]
         name = statement.column_descriptions[0]["name"]
-        ids = set(statement.compile().params.values())
+        ids: set[object] = set()
+        for value in statement.compile().params.values():
+            ids.update(value if isinstance(value, list) else [value])
         if entity is EmailMessage:
             return list(self.emails)
         if entity is Invoice and name == "email_id":
@@ -77,7 +79,7 @@ def test_default_run_extracts_only_emails_without_invoices() -> None:
         assert source.files == [("r.pdf", b"%PDF-1")]
         return [ExtractedInvoice(payee="Stadtwerke", amount=5)]
 
-    counts = backfill(session, everything=False, extract=extract)  # type: ignore[arg-type]
+    counts = backfill(session, everything=False, extract=extract, check=lambda _s: "to_pay")  # type: ignore[arg-type]
 
     assert seen == ["todo"]
     assert counts == {"emails": 1, "invoices": 1, "invoice_failures": 0}
@@ -104,6 +106,7 @@ def test_rerun_of_all_keeps_edited_fields() -> None:
     counts = backfill(
         session,  # type: ignore[arg-type]
         everything=True,
+        check=lambda _source: "to_pay",
         extract=lambda _source: [
             ExtractedInvoice(payee="Model", iban="XX00", amount=1, currency="USD")
         ],
@@ -116,3 +119,51 @@ def test_rerun_of_all_keeps_edited_fields() -> None:
     assert edited.amount == Decimal("99.00")
     assert edited.currency == "EUR"
     assert edited.status == "open"
+
+
+def _pdf(email: EmailMessage, content: bytes | None = b"%PDF-1") -> EmailAttachment:
+    return EmailAttachment(
+        id=uuid.uuid4(),
+        email_id=email.id,
+        filename="document.pdf",
+        content_type="application/pdf",
+        size_bytes=6,
+        content=content,
+    )
+
+
+def test_detect_relabels_stored_mail_whose_pdf_holds_an_invoice() -> None:
+    praxis, letter, newsletter, bill = (
+        _email("praxis"), _email("letter"), _email("tldr"), _email("bill")
+    )
+    praxis.label = letter.label = EmailLabel.OTHER
+    newsletter.label = EmailLabel.AI_NEWSLETTER
+    session = _Session(
+        [praxis, letter, newsletter, bill],
+        [_pdf(praxis), _pdf(letter), _pdf(newsletter), _pdf(bill)],
+        [],
+    )
+    seen: list[str] = []
+
+    def extract(source: InvoiceSource) -> list[ExtractedInvoice]:
+        seen.append(source.subject)
+        return [ExtractedInvoice(payee="Praxis", amount=45.0)] if source.subject == "praxis" else []
+
+    counts = detect(session, extract=extract, check=lambda _s: "to_pay")
+
+    # Invoices and AI newsletters are never sent; only mail with a PDF is checked.
+    assert seen == ["praxis", "letter"]
+    assert counts == {"checked": 2, "relabelled": 1, "invoices": 1}
+    assert praxis.label == EmailLabel.INVOICE
+    assert letter.label == EmailLabel.OTHER
+    assert [row.email_id for row in session.invoices] == [praxis.id]
+
+
+def test_detect_skips_mail_whose_pdfs_were_not_stored() -> None:
+    big = _email("big")
+    big.label = EmailLabel.OTHER
+    session = _Session([big], [_pdf(big, content=None)], [])
+
+    counts = detect(session, check=lambda _s: "to_pay", extract=lambda _s: [ExtractedInvoice(payee="X", amount=1.0)])
+
+    assert counts == {"checked": 0, "relabelled": 0, "invoices": 0}

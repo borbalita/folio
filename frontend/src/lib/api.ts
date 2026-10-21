@@ -60,8 +60,33 @@ export interface Invoice {
   /** Names of the failed checks, e.g. `invalid_iban`. */
   issues: string[]
   paidAt: string | null
-  /** `owner` when marked by hand. */
+  /**
+   * `owner` when marked by hand, `match` when a bank transaction is linked,
+   * `invoice` when the invoice itself says it is paid.
+   */
   paidBy: string | null
+  /** The linked payment, set when `paidBy` is `match`. */
+  match: InvoiceMatch | null
+  /** Possible payments for the owner to confirm or reject. */
+  suggestions: InvoiceMatch[]
+}
+
+export type MatchSignal = 'amount' | 'iban' | 'reference' | 'name'
+
+/** A bank transaction linked to, or suggested for, an invoice. `amount` is signed. */
+export interface InvoiceMatch {
+  id: string
+  /** `auto` when the rules linked it, `owner` when confirmed by hand. */
+  source: 'auto' | 'owner'
+  signals: MatchSignal[]
+  transaction: {
+    id: string
+    date: string
+    bank: BankName
+    counterparty: string | null
+    amount: string
+    currency: string
+  }
 }
 
 export interface InvoiceRow extends Invoice {
@@ -90,6 +115,35 @@ export interface InvoiceDetail extends InvoiceSummary {
 
 export type BankName = 'N26' | 'ING' | 'PayPal'
 
+export type PaymentDraftStatus = 'draft' | 'approved' | 'completed' | 'cancelled'
+
+/** A payment prepared for an invoice; payee, IBAN, amount and reference are frozen. */
+export interface PaymentDraft {
+  id: string
+  invoiceId: string
+  emailId: string
+  attachmentId: string | null
+  payee: string
+  iban: string
+  bic: string | null
+  amount: string
+  currency: string
+  reference: string | null
+  status: PaymentDraftStatus
+}
+
+export interface ApprovedPayment extends PaymentDraft {
+  /** The EPC069-12 text the QR code carries. */
+  payload: string
+  /** The QR code as an SVG data URI. */
+  qr: string
+}
+
+export interface PaymentDraftsResult {
+  drafts: PaymentDraft[]
+  skipped: { invoiceId: string; reason: string }[]
+}
+
 export interface BankAccount {
   id: string
   name: string | null
@@ -97,10 +151,14 @@ export interface BankAccount {
   currency: string | null
 }
 
+export type ConnectionStatus = 'active' | 'expiring' | 'expired'
+
 export interface BankConnection {
   bank: BankName
   connected: boolean
   validUntil: string | null
+  /** Null when the bank was never connected. */
+  status: ConnectionStatus | null
   accounts: BankAccount[]
 }
 
@@ -144,6 +202,24 @@ export const api = {
     http.post<Invoice[]>('/finance/invoices/items/paid', { ids, paid }),
 
   getInvoice: (emailId: string) => http.get<InvoiceDetail>(`/finance/invoices/${emailId}`),
+
+  confirmMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/confirm`),
+
+  rejectMatch: (matchId: string) => http.post<Invoice>(`/finance/matches/${matchId}/reject`),
+
+  createPaymentDrafts: (invoiceIds: string[]) =>
+    http.post<PaymentDraftsResult>('/finance/payment-drafts', { invoiceIds }),
+
+  getPaymentDrafts: (ids: string[]) =>
+    http.get<PaymentDraft[]>(
+      `/finance/payment-drafts?${ids.map((id) => `ids=${encodeURIComponent(id)}`).join('&')}`,
+    ),
+
+  approvePaymentDraft: (id: string) =>
+    http.post<ApprovedPayment>(`/finance/payment-drafts/${id}/approve`),
+
+  cancelPaymentDraft: (id: string) =>
+    http.post<PaymentDraft>(`/finance/payment-drafts/${id}/cancel`),
 
   listBankConnections: () => http.get<BankConnection[]>('/finance/bank-connections'),
 

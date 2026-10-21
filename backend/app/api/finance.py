@@ -11,7 +11,7 @@ from typing import Annotated, Any
 from urllib.parse import quote
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
@@ -19,7 +19,14 @@ from pydantic.alias_generators import to_camel
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import require_email_access
 from app.auth.finance_access import require_finance_owner
-from app.database import bank_connections, invoices, job_runs, transactions
+from app.database import (
+    bank_connections,
+    invoices,
+    job_runs,
+    matches,
+    payments,
+    transactions,
+)
 from app.finance import enable_banking, transaction_sync
 
 log = structlog.get_logger(__name__)
@@ -107,9 +114,10 @@ async def update_invoice(
 ) -> dict[str, Any]:
     mailbox_ids = await require_email_access(user)
     changes = body.model_dump(exclude_unset=True)
-    return await asyncio.to_thread(
-        invoices.update_invoice, invoice_id, changes, mailbox_ids
-    )
+    await asyncio.to_thread(invoices.update_invoice, invoice_id, changes, mailbox_ids)
+    # An edited amount, IBAN or reference can make or break a match.
+    await asyncio.to_thread(matches.match_for_user, user.id)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
 
 @router.post("/invoices/items/paid")
@@ -121,6 +129,70 @@ async def set_invoices_paid(
     return await asyncio.to_thread(
         invoices.set_invoices_paid, body.ids, body.paid, mailbox_ids
     )
+
+
+@router.post("/matches/{match_id}/confirm")
+async def confirm_match(
+    match_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    invoice_id = await asyncio.to_thread(matches.confirm, match_id, mailbox_ids)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
+
+
+@router.post("/matches/{match_id}/reject")
+async def reject_match(
+    match_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    invoice_id = await asyncio.to_thread(matches.reject, match_id, mailbox_ids)
+    return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
+
+
+class DraftsRequest(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid")
+
+    invoice_ids: list[uuid.UUID]
+
+
+@router.post("/payment-drafts")
+async def create_payment_drafts(
+    body: DraftsRequest,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    return await asyncio.to_thread(
+        payments.create_drafts, body.invoice_ids, mailbox_ids
+    )
+
+
+@router.get("/payment-drafts")
+async def get_payment_drafts(
+    ids: Annotated[list[uuid.UUID], Query()],
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> list[dict[str, Any]]:
+    mailbox_ids = await require_email_access(user)
+    return await asyncio.to_thread(payments.get_drafts, ids, mailbox_ids)
+
+
+@router.post("/payment-drafts/{draft_id}/approve")
+async def approve_payment_draft(
+    draft_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    return await asyncio.to_thread(payments.approve, draft_id, mailbox_ids)
+
+
+@router.post("/payment-drafts/{draft_id}/cancel")
+async def cancel_payment_draft(
+    draft_id: uuid.UUID,
+    user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> dict[str, Any]:
+    mailbox_ids = await require_email_access(user)
+    return await asyncio.to_thread(payments.cancel, draft_id, mailbox_ids)
 
 
 class CallbackBody(BaseModel):

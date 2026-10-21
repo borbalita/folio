@@ -1,55 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { CloseInvoice } from '@/components/finance/CloseInvoice'
 import { EmailMessage } from '@/components/finance/EmailMessage'
 import { InvoiceFields } from '@/components/finance/InvoiceFields'
+import { InvoicePayment } from '@/components/finance/InvoicePayment'
+import { PdfViewer } from '@/components/finance/PdfViewer'
 import { Button } from '@/components/ui/button'
 import { api, type Invoice, type InvoiceAttachment, type InvoiceDetail } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
-
-function PdfViewer({ attachment }: { attachment: InvoiceAttachment }) {
-  const [state, setState] = useState<{ url: string } | { error: string } | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    let url: string | null = null
-    api
-      .getAttachment(attachment.id)
-      .then((blob) => {
-        if (cancelled) {
-          return
-        }
-        url = URL.createObjectURL(blob)
-        setState({ url })
-      })
-      .catch((caught: unknown) => {
-        if (!cancelled) {
-          setState({ error: describeApiError(caught) })
-        }
-      })
-    return () => {
-      cancelled = true
-      if (url) {
-        URL.revokeObjectURL(url)
-      }
-    }
-  }, [attachment.id])
-
-  return (
-    <figure className="flex flex-col gap-2">
-      {state === null ? <p className="text-sm text-muted-foreground">Loading PDF…</p> : null}
-      {state && 'error' in state ? <p className="text-sm text-destructive">{state.error}</p> : null}
-      {state && 'url' in state ? (
-        <iframe
-          src={state.url}
-          title={attachment.filename}
-          className="h-[80vh] w-full rounded-md border border-border"
-        />
-      ) : null}
-    </figure>
-  )
-}
 
 function SkippedAttachment({ attachment }: { attachment: InvoiceAttachment }) {
   const reason =
@@ -136,12 +96,15 @@ export function InvoicePage() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <article className="mx-auto flex max-w-7xl flex-col gap-6 p-6">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
-          <p className="text-sm text-muted-foreground">
-            From {loaded.from}
-            {sent ? ` · ${sent}` : ''}
-          </p>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="text-lg font-semibold">{loaded.subject || '(no subject)'}</h1>
+            <p className="text-sm text-muted-foreground">
+              From {loaded.from}
+              {sent ? ` · ${sent}` : ''}
+            </p>
+          </div>
+          <CloseInvoice />
         </header>
 
         {loaded.invoices.map((invoice) => {
@@ -151,7 +114,10 @@ export function InvoicePage() {
               key={invoice.id}
               className="grid grid-cols-1 gap-6 border-t border-border pt-6 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
             >
-              <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
+              <div className="flex flex-col gap-6">
+                <InvoiceFields invoice={invoice} onChange={replaceInvoice} />
+                <InvoicePayment invoice={invoice} onChange={replaceInvoice} />
+              </div>
               {pdf ? (
                 <PdfViewer attachment={pdf} />
               ) : (

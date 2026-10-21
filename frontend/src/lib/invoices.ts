@@ -30,6 +30,8 @@ const ISSUE_LABELS: Record<string, string> = {
   currency_not_eur: 'Currency is not EUR',
   extraction_failed: 'Extraction failed',
   no_invoice_found: 'No invoice found in this email',
+  invoice_online:
+    'The invoice is only available online: download it, or check whether you have to pay',
 }
 
 export function describeIssue(issue: string): string {

@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
@@ -24,11 +25,29 @@ class EnableBankingNotConfigured(Exception):
     pass
 
 
+# Enable Banking's codes for a session that can no longer be used; only a reconnect helps.
+SESSION_INVALID_CODES = frozenset(
+    {"EXPIRED_SESSION", "CLOSED_SESSION", "REVOKED_SESSION", "SESSION_DOES_NOT_EXIST"}
+)
+
+
 class EnableBankingError(Exception):
     def __init__(self, status: int, body: str) -> None:
         super().__init__(f"Enable Banking returned {status}")
         self.status = status
         self.body = body
+
+    @property
+    def code(self) -> str | None:
+        try:
+            data = json.loads(self.body)
+        except ValueError:
+            return None
+        return data.get("error") if isinstance(data, dict) else None
+
+    @property
+    def session_invalid(self) -> bool:
+        return self.code in SESSION_INVALID_CODES
 
 
 @dataclass(frozen=True)

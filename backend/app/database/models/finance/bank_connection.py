@@ -22,6 +22,12 @@ class BankConnection(Base):
     valid_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Set when Enable Banking reports the session gone; cleared on reconnect.
+    invalidated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Last expiry email stage sent (14d, 3d, expired); cleared on reconnect.
+    expiry_notice: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # One-time OAuth state while a connection is in flight; cleared on completion.
     pending_state: Mapped[str | None] = mapped_column(Text, nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(

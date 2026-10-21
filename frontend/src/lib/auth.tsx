@@ -16,7 +16,6 @@ interface AuthContextValue {
   session: Session | null
   user: User | null
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -47,11 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
-  async function signUp(email: string, password: string) {
-    const { error } = await supabase.auth.signUp({ email, password })
-    return { error: error?.message ?? null }
-  }
-
   async function signOut() {
     await supabase.auth.signOut()
   }
@@ -63,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         user: session?.user ?? null,
         signIn,
-        signUp,
         signOut,
       }}
     >

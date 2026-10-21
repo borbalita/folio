@@ -1,6 +1,6 @@
 # Docs
 
-Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `06-`.
+Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `07-`.
 
 ## Platform
 
@@ -48,6 +48,12 @@ Shared by both agents: thread history sent to the model, and long-term memories 
 The finance agent: invoices from mail, bank and PayPal transactions, categories, and payments you approve.
 
 - [Plans](05-finance/plans/README.md)
+
+## 06-notifications
+
+Messages to the owner outside the app: Telegram notifications about invoices and big AI news.
+
+- [Plans](06-notifications/plans/README.md)
 
 ## Legal
 

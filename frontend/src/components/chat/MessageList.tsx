@@ -5,7 +5,13 @@ import { AssistantMarkdown } from '@/components/chat/AssistantMarkdown'
 import { ChatIcon } from '@/components/chat/ChatIcon'
 import { PendingReply, ReplyError } from '@/components/chat/ChatStatus'
 import { CitationChips } from '@/components/chat/CitationChips'
-import { citationsOf, textOf, type CopilotUIMessage } from '@/lib/chat-messages'
+import { FinanceChatCard } from '@/components/finance/FinanceChatCard'
+import {
+  citationsOf,
+  financeCardsOf,
+  textOf,
+  type CopilotUIMessage,
+} from '@/lib/chat-messages'
 
 export type SelectedCitation = {
   messageId: string
@@ -51,7 +57,8 @@ export function MessageList({
           const isUser = message.role === 'user'
           const body = textOf(message)
           const citations = citationsOf(message)
-          if (!isUser && body.length === 0) {
+          const cards = isUser ? [] : financeCardsOf(message)
+          if (!isUser && body.length === 0 && cards.length === 0) {
             return null
           }
           return (
@@ -91,6 +98,11 @@ export function MessageList({
                         onSelect(message.id, citationIndex)
                       }}
                     />
+                    {cards.map((card, index) => (
+                      <div key={`${card.kind}-${index}`} className="mt-3">
+                        <FinanceChatCard card={card} />
+                      </div>
+                    ))}
                   </>
                 )}
               </div>

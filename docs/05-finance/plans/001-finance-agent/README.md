@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation; 001/03 to 001/07 done
+- Current stage: Implementation; 001/03 to 001/08 done
 
 ## Approval state
 
@@ -32,7 +32,7 @@ Goals:
 - Every invoice email has its payment data extracted, checked, and editable.
 - Transactions from the N26 main account, ING and PayPal arrive on a schedule.
 - An invoice turns paid when a matching debit appears, or when the owner marks it.
-- The owner selects open invoices, picks an account, checks each payment beside its invoice, and pays it by QR in the bank app.
+- The owner selects open invoices, checks each payment beside its invoice, and pays it by QR in the banking app, which pays from its own account (no account is picked in Finance, changed on 2026-10-16 at the owner's request: the QR code names none).
 - The Finance chat answers "what do I still need to pay?" and prepares payments, but cannot approve them.
 - Email ingest runs on a schedule.
 
@@ -54,7 +54,7 @@ Sources and the real-data and payment tests: [research.md](research.md).
 
 - **Invoices live in Finance.** Rejected: keeping them in Email, which splits one invoice over two agents.
 - **This plan syncs the N26 main account, ING and PayPal through Enable Banking**, not N26 Spaces (no IBAN, no payments of their own). Reversible: Spaces are already in the N26 consent.
-- **Payments leave through a GiroCode QR.** Approve unlocks only after the owner ticks that payee, IBAN, amount and reference match the invoice shown beside it; copy buttons are the fallback. Rejected for now: payment initiation, which the app cannot use (`403 ACCESS_DENIED`, only `AIS` enabled). Reversible if Enable Banking enables `PIS`.
+- **Payments leave through a GiroCode QR.** The payment card shows payee, IBAN, amount and reference beside the invoice; pressing Approve is the owner's confirmation that they match (changed on 2026-10-16 at the owner's request: no separate tick). Copy buttons are the fallback. Rejected for now: payment initiation, which the app cannot use (`403 ACCESS_DENIED`, only `AIS` enabled). Reversible if Enable Banking enables `PIS`.
 - **A strong match marks an invoice paid automatically:** equal amount and equal IBAN or reference. Equal amount and a similar name is a suggestion. Automatic links are labelled and undone in one click. Rejected: confirming every match, since real transfers always carry IBAN and reference.
 - **Invoice PDFs go to the model as files,** so scans work and no PDF library is added. Rejected: local text extraction.
 - **One extraction call on `gpt-6.1-sol`,** its own setting, `gpt-6-astra` next if weak. Guarded by the IBAN checksum, plausibility checks, the owner's tick and the bank's payee-name check; the owner tests by hand once built. Rejected for now: a second extraction compared field by field, added if hand testing finds wrong amounts.
@@ -87,7 +87,7 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 2. An invoice paid through its QR turns paid on its own after the next bank sync.
 3. A spot check of the last 90 days shows every invoice as matched, suggested, or genuinely open.
 4. An expiring connection triggers emails at 14 and 3 days and a warning, and Reconnect all restores every connection without losing history.
-5. In chat, "what do I still need to pay?" and "pay them all from N26" show invoice and payment cards, and nothing can be approved there.
+5. In chat, "what do I still need to pay?" and "pay them all" show invoice and payment cards, and nothing can be approved there.
 6. Nobody but the owner can reach a Finance route or see the Finance card.
 7. The owner's hand test of real invoices finds the extracted values correct.
 
@@ -95,17 +95,17 @@ Dashboard or chat ─► payment draft ─► owner ticks "checked" ─► Appro
 
 Before 001/05: [eval plan 004 — content-free tracing](../../../02-evaluation/plans/004-content-free-tracing/README.md), tasks 01–03.
 
-- [ ] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
-- [ ] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)
+- [x] [001/01 — Privacy and terms pages](tasks/01-legal-pages.md)
+- [x] [001/02 — Email ingest runs on a schedule](tasks/02-scheduled-email-ingest.md)
 - [x] [001/03 — Finance agent shell, owner only](tasks/03-finance-shell.md)
 - [x] [001/04 — Invoices move from Email to Finance](tasks/04-invoices-move.md) — after 03
 - [x] [001/05 — Payment data extracted from invoice emails](tasks/05-invoice-extraction.md) — after 04, tracing change
 - [x] [001/06 — Invoice dashboard with extracted fields](tasks/06-invoice-dashboard.md) — after 05
 - [x] [001/07 — Connect bank accounts through Enable Banking](tasks/07-bank-connection.md) — after 03
-- [ ] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
+- [x] [001/08 — Transactions sync from all connected accounts](tasks/08-transaction-sync.md) — after 07, 02
 - [ ] [001/09 — Invoices matched to transactions](tasks/09-matching.md) — after 06, 08
 - [ ] [001/10 — Pay invoices with a GiroCode QR](tasks/10-qr-payments.md) — after 09
-- [ ] [001/11 — Consent expiry alerts and Reconnect all](tasks/11-expiry-alerts.md) — after 08
+- [ ] [001/11 — Consent expiry alerts and Reconnect all](tasks/11-expiry-alerts.md) — after 08; merged, manual Reconnect all check skipped at the owner's request
 - [ ] [001/12 — Finance chat with cards](tasks/12-finance-chat.md) — after 10, tracing change
 - [ ] [001/13 — Finance overview and end-to-end check](tasks/13-overview.md) — after all
 
@@ -123,7 +123,7 @@ Critical path: 03 → 07 → 08 → 09 → 10 → 12 → 13. The invoice line (0
 
 - **Wrong extracted amounts,** guarded only by the owner's tick. Next action: the hand test in 001/13; add the second extraction if it finds errors.
 - **Enable Banking's free mode changes or ends.** Next action: none until it happens; the client is the only provider-specific code.
-- **Duplicates where banks give no id:** the fallback key assumes banks return a day's rows in a stable order. Next action: 001/08's second-run check.
+- **Duplicates where banks give no id:** the fallback key assumes banks return a day's rows in a stable order. 001/08's second runs, locally and the first Railway cron run, added nothing (2026-10-15).
 - **Consent friction:** three approvals every 180 days; one ING attempt failed with `invalid_grant` and a fresh link worked. Next action: 001/11.
 - **False-alarm invoice emails** (receipts, already-paid notices) stay `needs_info` with `no_invoice_found`; the first backfill gave 5 of 6. Next action: after 001/06, plan a "Not an invoice" action (relabel the email, drop its invoices) and per-sender rules (ignore, or always paid by direct debit), shaped by how the list feels in use.
 - **Highlighting extracted values in the PDF** would speed up the owner's tick before Approve. Text PDFs only (pdf.js text layer plus per-field format matching); scans can't be highlighted. About a day. Next action: decide in 001/10, for the payment card.

@@ -34,7 +34,7 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
         sent_at=datetime(2026, 1, 1, tzinfo=UTC),
         body="Please pay.",
         attachments=(
-            ParsedAttachment("invoice.pdf", "application/pdf", small),
+            ParsedAttachment("letter.pdf", "application/pdf", small),
             ParsedAttachment("statement.pdf", "application/pdf", large),
         ),
     )
@@ -48,14 +48,16 @@ def test_small_pdf_is_stored_and_over_cap_is_skipped(
             [0.0] * settings.openai_embedding_dimensions for _ in texts
         ],
         classifier=lambda _prompt: "other",
+        invoice_extract=lambda _source: [],
+        invoice_check=lambda _source: "none",
     )
     stored = [row for row in session.added if isinstance(row, EmailAttachment)]
     by_name = {row.filename: row for row in stored}
     assert summary.attachments_saved == 1
     assert summary.attachments_skipped == 1
-    assert by_name["invoice.pdf"].content == small
-    assert by_name["invoice.pdf"].size_bytes == len(small)
-    assert by_name["invoice.pdf"].skipped_reason is None
+    assert by_name["letter.pdf"].content == small
+    assert by_name["letter.pdf"].size_bytes == len(small)
+    assert by_name["letter.pdf"].skipped_reason is None
     assert by_name["statement.pdf"].content is None
     assert by_name["statement.pdf"].size_bytes == len(large)
     assert by_name["statement.pdf"].skipped_reason == "too_large"
@@ -131,6 +133,7 @@ def test_invoice_email_gets_its_invoices_extracted(
         ],
         classifier=lambda _prompt: "invoice",
         invoice_extract=extract,
+        invoice_check=lambda _source: "to_pay",
     )
 
     assert [source.files for source in seen] == [[("invoice.pdf", b"%PDF-1")]]
@@ -172,6 +175,92 @@ def test_other_email_is_not_sent_for_invoice_extraction(
         ],
         classifier=lambda _prompt: "other",
         invoice_extract=lambda _source: pytest.fail("not an invoice"),
+        invoice_check=lambda _source: pytest.fail("no PDF to check"),
+    )
+
+    assert summary.invoices == 0
+
+
+def _other_with_pdf(filename: str = "document.pdf") -> ParsedMessage:
+    return ParsedMessage(
+        message_id="doc@example.com",
+        provider_message_id="7",
+        folder="INBOX",
+        subject="Your documents",
+        from_address="praxis@example.com",
+        from_name="",
+        to_addresses=["you@yahoo.com"],
+        sent_at=datetime(2026, 1, 1, tzinfo=UTC),
+        body="Attached.",
+        attachments=(ParsedAttachment(filename, "application/pdf", b"%PDF-2"),),
+    )
+
+
+def _ingest(session, parsed, extract):
+    return ingest_fetched(
+        session,
+        [parsed],
+        uidvalidity=1,
+        highest_uid=7,
+        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        classifier=lambda _prompt: "other",
+        invoice_extract=extract,
+        invoice_check=lambda _source: "to_pay",
+    )
+
+
+def test_invoice_found_in_the_pdf_of_other_mail_relabels_it(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com")
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", uuid.uuid4()
+    )
+    session = _MemorySession()
+
+    summary = _ingest(
+        session,
+        _other_with_pdf(),
+        lambda _source: [ExtractedInvoice(payee="Praxis", amount=45.0, source_file=1)],
+    )
+
+    email = next(row for row in session.added if getattr(row, "message_id", None))
+    assert email.label == EmailLabel.INVOICE
+    [invoice] = [row for row in session.added if isinstance(row, Invoice)]
+    assert invoice.payee == "Praxis"
+    assert summary.invoices == 1
+    assert summary.labels == {"invoice": 1}
+
+
+def test_other_mail_whose_pdf_holds_no_invoice_stays_other(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com")
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", uuid.uuid4()
+    )
+    session = _MemorySession()
+
+    summary = _ingest(session, _other_with_pdf(), lambda _source: [])
+
+    email = next(row for row in session.added if getattr(row, "message_id", None))
+    assert email.label == EmailLabel.OTHER
+    assert not [row for row in session.added if isinstance(row, Invoice)]
+    assert summary.invoices == 0
+
+
+def test_check_saying_no_keeps_other_mail_from_extraction(monkeypatch) -> None:
+    monkeypatch.setattr("ingest.email.pipeline.settings.yahoo_email", "you@yahoo.com")
+    monkeypatch.setattr(
+        "ingest.email.pipeline.settings.email_agent_owner_user_id", uuid.uuid4()
+    )
+    session = _MemorySession()
+
+    summary = ingest_fetched(
+        session,
+        [_other_with_pdf()],
+        uidvalidity=1,
+        highest_uid=7,
+        embed=lambda texts: [[0.0] * settings.openai_embedding_dimensions for _ in texts],
+        classifier=lambda _prompt: "other",
+        invoice_extract=lambda _source: pytest.fail("the check said no"),
+        invoice_check=lambda _source: "none",
     )
 
     assert summary.invoices == 0

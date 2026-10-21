@@ -347,3 +347,18 @@ def test_fetch_sends_psu_headers_when_given(configured):
     assert seen[0].headers["Psu-Ip-Address"] == "1.2.3.4"
     assert seen[0].headers["Psu-User-Agent"] == "UA"
     assert seen[0].headers["Authorization"].startswith("Bearer ")
+
+
+def test_error_code_parsed_from_body() -> None:
+    error = EnableBankingError(401, '{"code":401,"error":"EXPIRED_SESSION"}')
+
+    assert error.code == "EXPIRED_SESSION"
+    assert error.session_invalid
+
+
+def test_aspsp_error_is_not_session_invalid() -> None:
+    error = EnableBankingError(400, '{"code":400,"error":"ASPSP_ERROR"}')
+
+    assert error.code == "ASPSP_ERROR"
+    assert not error.session_invalid
+    assert EnableBankingError(0, "connection reset").code is None

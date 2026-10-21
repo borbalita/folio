@@ -11,16 +11,24 @@ interface Props {
   today: string
   selected: Set<string>
   onToggle: (id: string, checked: boolean) => void
+  onToggleAll: (checked: boolean) => void
 }
 
-export function InvoiceList({ invoices, today, selected, onToggle }: Props) {
+export function InvoiceList({ invoices, today, selected, onToggle, onToggleAll }: Props) {
+  const chosen = invoices.filter((invoice) => selected.has(invoice.id)).length
+  const all = chosen > 0 && chosen === invoices.length
   return (
     <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
         <thead className="text-left text-xs text-muted-foreground">
           <tr className="border-b border-border">
             <th className="w-8 px-3 py-2">
-              <span className="sr-only">Select</span>
+              <Checkbox
+                aria-label="Select all shown invoices"
+                checked={all}
+                indeterminate={chosen > 0 && !all}
+                onCheckedChange={(checked) => onToggleAll(checked)}
+              />
             </th>
             <th className="px-3 py-2 font-medium">Payee</th>
             <th className="px-3 py-2 font-medium">Invoice no.</th>
@@ -59,7 +67,22 @@ export function InvoiceList({ invoices, today, selected, onToggle }: Props) {
                   {overdue ? ' · overdue' : ''}
                 </td>
                 <td className="px-3 py-2">
-                  <InvoiceStatusBadge status={invoice.status} />
+                  <div className="flex flex-col items-start gap-0.5">
+                    <InvoiceStatusBadge status={invoice.status} />
+                    {invoice.match?.source === 'auto' ? (
+                      <span className="text-xs text-muted-foreground">Matched automatically</span>
+                    ) : null}
+                    {invoice.paidBy === 'invoice' ? (
+                      <span className="text-xs text-muted-foreground">Paid before it arrived</span>
+                    ) : null}
+                    {!invoice.match && invoice.suggestions.length > 0 ? (
+                      <span className="text-xs text-primary">
+                        {invoice.suggestions.length === 1
+                          ? 'Possible payment found'
+                          : `${invoice.suggestions.length} possible payments`}
+                      </span>
+                    ) : null}
+                  </div>
                 </td>
               </tr>
             )

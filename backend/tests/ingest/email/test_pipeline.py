@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from structlog.testing import capture_logs
 
 from app.config import settings
 from app.database.models.email.chunk import EmailChunk
@@ -69,19 +70,23 @@ def test_fake_fetch_feeds_the_pipeline(monkeypatch) -> None:
     session = _MemorySession()
     parsed = _parsed()
     missing = _parsed(message_id=None, provider_message_id="9", subject="No id")
-    summary = ingest_fetched(
-        session,
-        [parsed, missing],
-        uidvalidity=42,
-        highest_uid=9,
-        embed=lambda texts: [
-            [0.0] * settings.openai_embedding_dimensions for _ in texts
-        ],
-        classifier=lambda _prompt: "other",
-    )
+    with capture_logs() as logs:
+        summary = ingest_fetched(
+            session,
+            [parsed, missing],
+            uidvalidity=42,
+            highest_uid=9,
+            embed=lambda texts: [
+                [0.0] * settings.openai_embedding_dimensions for _ in texts
+            ],
+            classifier=lambda _prompt: "other",
+        )
     assert summary.fetched == 2
     assert summary.new == 1
     assert summary.missing_message_id == 1
+    # Subjects are third-party content and stay out of the logs.
+    missing_log = next(e for e in logs if e["event"] == "email_missing_message_id")
+    assert "subject" not in missing_log
     mailbox = next(row for row in session.added if isinstance(row, Mailbox))
     assert mailbox.sync_cursor == {"uidvalidity": 42, "highest_uid": 9}
     assert mailbox.last_synced_at is not None

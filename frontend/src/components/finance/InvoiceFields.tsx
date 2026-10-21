@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 
 import { InvoiceStatusBadge } from '@/components/finance/InvoiceStatusBadge'
+import { PayInvoices } from '@/components/finance/PayInvoices'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -50,6 +51,10 @@ interface Props {
 export function InvoiceFields({ invoice, onChange }: Props) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Edits not saved yet, for this version of the invoice; saving re-keys the form.
+  const version = JSON.stringify(invoice)
+  const [editedVersion, setEditedVersion] = useState<string | null>(null)
+  const edited = editedVersion === version
   const paidOn = invoice.paidAt ? formatTimestamp(invoice.paidAt) : null
 
   async function run(action: () => Promise<Invoice>) {
@@ -83,8 +88,12 @@ export function InvoiceFields({ invoice, onChange }: Props) {
   return (
     // Keyed on the saved values so the inputs reset to what the server stored.
     <form
-      key={JSON.stringify(invoice)}
+      key={version}
       onSubmit={save}
+      onChange={(event) => {
+        const dirty = Object.keys(changes(new FormData(event.currentTarget), invoice)).length > 0
+        setEditedVersion(dirty ? version : null)
+      }}
       className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -92,6 +101,11 @@ export function InvoiceFields({ invoice, onChange }: Props) {
         {invoice.status === 'paid' && invoice.paidBy === 'owner' ? (
           <span className="text-xs text-muted-foreground">
             Marked paid by you{paidOn ? ` on ${paidOn}` : ''}
+          </span>
+        ) : null}
+        {invoice.status === 'paid' && invoice.paidBy === 'invoice' ? (
+          <span className="text-xs text-muted-foreground">
+            Paid before it arrived, according to the invoice
           </span>
         ) : null}
       </div>
@@ -122,15 +136,16 @@ export function InvoiceFields({ invoice, onChange }: Props) {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="submit" size="sm" disabled={saving}>
-          Save
-        </Button>
+        {invoice.status === 'open' ? (
+          // Pay and mark only what was saved: unsaved edits would be lost.
+          <PayInvoices invoiceIds={[invoice.id]} label="Pay" disabled={edited} />
+        ) : null}
         {invoice.status === 'paid' ? (
           <Button
             type="button"
             size="sm"
             variant="outline"
-            disabled={saving}
+            disabled={saving || edited}
             onClick={() => setPaid(false)}
           >
             Mark unpaid
@@ -140,12 +155,15 @@ export function InvoiceFields({ invoice, onChange }: Props) {
             type="button"
             size="sm"
             variant="outline"
-            disabled={saving}
+            disabled={saving || edited}
             onClick={() => setPaid(true)}
           >
             Mark paid
           </Button>
         )}
+        <Button type="submit" size="sm" variant={edited ? 'default' : 'outline'} disabled={saving}>
+          Save
+        </Button>
         {error ? <span className="text-sm text-destructive">{error}</span> : null}
       </div>
     </form>

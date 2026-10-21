@@ -11,9 +11,11 @@ import { LegacyChatRedirect } from '@/pages/chat/LegacyChatRedirect'
 import { LegacyInvoiceRedirect } from '@/pages/email/LegacyInvoiceRedirect'
 import { AccountsPage } from '@/pages/finance/AccountsPage'
 import { BankCallbackPage } from '@/pages/finance/BankCallbackPage'
+import { FinanceChatEmpty, FinanceChatPage } from '@/pages/finance/FinanceChatPage'
 import { FinanceLayout } from '@/pages/finance/FinanceLayout'
 import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
+import { PaymentsPage } from '@/pages/finance/PaymentsPage'
 import { TransactionsPage } from '@/pages/finance/TransactionsPage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
@@ -47,9 +49,14 @@ export default function App() {
                   <Route index element={<Navigate to="invoices" replace />} />
                   <Route path="invoices" element={<InvoicesPage />} />
                   <Route path="invoices/:emailId" element={<InvoicePage />} />
+                  <Route path="payments" element={<PaymentsPage />} />
                   <Route path="transactions" element={<TransactionsPage />} />
                   <Route path="accounts" element={<AccountsPage />} />
                   <Route path="accounts/callback" element={<BankCallbackPage />} />
+                  <Route path="chat" element={<FinanceChatPage />}>
+                    <Route index element={<FinanceChatEmpty />} />
+                    <Route path=":threadId" element={<ChatThreadPage />} />
+                  </Route>
                 </Route>
               </Route>
               <Route path="/chat" element={<LegacyChatRedirect />} />

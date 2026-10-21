@@ -104,3 +104,24 @@ def test_fallback_key_ignores_amount_formatting_and_padding() -> None:
     )
 
     assert plain == reformatted
+
+
+def test_search_transactions_filters_by_owner_and_text(monkeypatch: pytest.MonkeyPatch) -> None:
+    session = MagicMock()
+    session.execute.return_value.all.return_value = []
+
+    @contextmanager
+    def fake_get_session():
+        yield session
+
+    monkeypatch.setattr(transactions, "get_session", fake_get_session)
+
+    transactions.search_transactions(
+        uuid.uuid4(), text="rewe", since=date(2026, 9, 1), until=None, limit=5
+    )
+
+    sql = str(session.execute.call_args.args[0].compile(dialect=postgresql.dialect()))
+    assert "bank_connections.user_id = " in sql
+    assert "ILIKE" in sql.upper()
+    assert "transactions.booking_date >= " in sql
+    assert "LIMIT" in sql

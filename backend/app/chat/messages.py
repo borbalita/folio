@@ -60,15 +60,13 @@ def assistant_message_for_storage(
     text: str,
     *,
     usage: dict[str, int] | None = None,
-    citations: list[dict[str, Any]] | None = None,
+    parts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    parts: list[dict[str, Any]] = [{"type": "text", "text": text}]
-    if citations:
-        parts.extend(citations)
+    stored_parts: list[dict[str, Any]] = [{"type": "text", "text": text}, *(parts or [])]
     stored: dict[str, Any] = {
         "role": "assistant",
         "content": text,
-        "parts": parts,
+        "parts": stored_parts,
     }
     if usage is not None:
         stored["usage"] = usage

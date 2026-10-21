@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     enable_banking_app_id: str | None = None
     enable_banking_private_key: str | None = None
     enable_banking_redirect_url: str | None = None
+    # Telegram notifications; off unless all three are set.
+    telegram_bot_token: str | None = None
+    telegram_chat_id: str | None = None
+    app_url: str | None = None
     typesafe_label_model: str = "jev-latest"
     email_rerank: bool = True
     email_rerank_candidates: int = Field(default=20, gt=0)
@@ -58,6 +62,9 @@ class Settings(BaseSettings):
     news_extraction_model: str | None = None
     news_extraction_reasoning_effort: ReasoningEffort | None = None
     invoice_extraction_model: str = "gpt-6.1-sol"
+    # A cheap first look: is there an invoice to pay at all? Extraction runs only on a yes.
+    invoice_check_model: str = "gpt-6-luna"
+    invoice_check_reasoning_effort: ReasoningEffort | None = "none"
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
 
     @field_validator("allowed_origins", mode="before")
@@ -96,6 +103,9 @@ class Settings(BaseSettings):
         "enable_banking_app_id",
         "enable_banking_private_key",
         "enable_banking_redirect_url",
+        "telegram_bot_token",
+        "telegram_chat_id",
+        "app_url",
         mode="before",
     )
     @classmethod

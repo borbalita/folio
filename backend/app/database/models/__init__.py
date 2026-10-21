@@ -14,8 +14,11 @@ from app.database.models.email.story import NewsStory
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.database.models.finance.invoice import Invoice
+from app.database.models.finance.invoice_match import InvoiceMatch
+from app.database.models.finance.payment_draft import PaymentDraft
 from app.database.models.finance.transaction import Transaction
 from app.database.models.job_run import JobRun
+from app.database.models.notification import Notification
 from app.database.models.user import User
 
 __all__ = [
@@ -30,11 +33,14 @@ __all__ = [
     "EmailCitation",
     "EmailMessage",
     "Invoice",
+    "InvoiceMatch",
     "JobRun",
     "Mailbox",
     "MessageCitation",
     "NewsItem",
     "NewsStory",
+    "Notification",
+    "PaymentDraft",
     "SourceDocument",
     "Transaction",
     "User",
