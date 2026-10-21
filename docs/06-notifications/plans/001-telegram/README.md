@@ -2,7 +2,7 @@
 
 - Created: 2026-10-19
 - Status: Ready
-- Current stage: Implementation; 001/01 to 001/04 done, 001/05 in progress
+- Current stage: Done; 001/05 unticked because success criteria 1, 2 and 4 were skipped at the owner's request (2026-10-21)
 
 ## Approval state
 
@@ -99,7 +99,7 @@ Email ingest (cron, 30 min)
 - [x] [001/02 — Big-news summaries](tasks/02-news-summary.md) — after 01
 - [x] [001/03 — Telegram sender with quiet hours and retries](tasks/03-sender.md) — after 01
 - [x] [001/04 — Wire into email ingest; settings and setup command](tasks/04-wiring.md) — after 02, 03
-- [ ] [001/05 — Overview and end-to-end check](tasks/05-overview.md) — after 04
+- [ ] [001/05 — Overview and end-to-end check](tasks/05-overview.md) — after 04; success criteria 1, 2 and 4 skipped at the owner's request
 
 ```text
 01 ─┬─► 02 ─┐
