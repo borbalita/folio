@@ -49,6 +49,7 @@ def test_drawn_values_are_sane_over_many_seeds() -> None:
             assert (invoice.vat == 0) == (vendor.vat_rate == 0)
             assert 1 <= len(invoice.lines) <= vendor.max_items
             assert len({line.label for line in invoice.lines}) == len(invoice.lines)
+            assert invoice.debit_date <= TODAY
             assert (invoice.iban is None) == (kind == "online_only")
             if invoice.iban is not None:
                 assert iban_valid(invoice.iban)
@@ -156,3 +157,35 @@ def test_format_euro() -> None:
     assert format_euro(Decimal("84.2")) == "84,20 €"
     assert format_euro(Decimal("1234.5")) == "1.234,50 €"
     assert format_euro(Decimal("0.99")) == "0,99 €"
+
+
+def test_every_layout_prints_net_vat_and_total_consistently() -> None:
+    for vendor in VENDORS:
+        invoice = draw_invoice(random.Random(9), "normal", TODAY, vendor)
+        text = pdf_text(invoice_pdf(invoice))
+
+        assert format_euro(invoice.amount) in text
+        if vendor.vat_rate:
+            assert format_euro(invoice.net) in text, vendor.key
+            assert "zzgl." in text, vendor.key
+            assert "enthält" not in text, vendor.key
+
+
+def test_already_paid_gives_no_transfer_cue() -> None:
+    for vendor in VENDORS:
+        rng = random.Random(6)
+        invoice = draw_invoice(rng, "already_paid", TODAY, vendor)
+        message = invoice_message(invoice, rng=rng, to_address=TO, sent_at=SENT)
+        text = pdf_text(invoice_pdf(invoice))
+
+        assert IBAN_PATTERN.search(text) is None, vendor.key
+        assert "Mandatsreferenz" in text, vendor.key
+        assert "überweis" not in text + message.body, vendor.key
+
+
+def test_normal_body_names_the_same_reference_as_the_pdf() -> None:
+    for seed in range(40):
+        invoice, message = _message(seed, "normal")
+        if invoice.vendor.tone == "formal":
+            assert invoice.reference in message.body
+            assert "Angabe der Rechnungsnummer" not in message.body

@@ -99,7 +99,8 @@ def draw_invoice(
         else demo_iban(vendor.bank_code, vendor.account),
         customer_number=customer_number,
         reference=rng.choice((number, f"{customer_number} / {number}")),
-        debit_date=invoice_date + timedelta(days=rng.randint(0, 1)),
+        # Already debited, so never later than today.
+        debit_date=min(invoice_date + timedelta(days=rng.randint(0, 1)), today),
     )
 
 
@@ -178,9 +179,20 @@ def _footer(invoice: DemoInvoice) -> list[Text]:
             7,
         ),
     ]
-    if invoice.kind != "online_only":
+    if invoice.kind == "normal":
         iban = demo_iban(vendor.bank_code, vendor.account)
         items.append(Text(56, 40, f"Bankverbindung: IBAN {_grouped(iban)}", 7))
+    elif invoice.kind == "already_paid":
+        # A direct-debit footer, so nothing on the page reads like a transfer request.
+        items.append(
+            Text(
+                56,
+                40,
+                f"Gläubiger-ID DE98ZZZ0{vendor.account[:9]} · "
+                f"Mandatsreferenz {invoice.customer_number}",
+                7,
+            )
+        )
     return items
 
 
@@ -257,10 +269,12 @@ def _modern(invoice: DemoInvoice) -> list[Text | Rule]:
     vat_label, vat_value = _vat_line(invoice)
     out += [
         Rule(y + 6),
-        Text(330, y - 10, vat_label, 9),
-        Text(470, y - 10, vat_value, 9),
-        Text(330, y - 34, "Gesamt", 14, bold=True),
-        Text(470, y - 34, format_euro(invoice.amount), 14, bold=True),
+        Text(330, y - 10, "Netto", 9),
+        Text(470, y - 10, format_euro(invoice.net), 9),
+        Text(330, y - 24, vat_label, 9),
+        Text(470, y - 24, vat_value, 9),
+        Text(330, y - 48, "Gesamt", 14, bold=True),
+        Text(470, y - 48, format_euro(invoice.amount), 14, bold=True),
     ]
     out += [
         Text(56, 140 - 14 * i, line, 9)
@@ -290,10 +304,10 @@ def _compact(invoice: DemoInvoice) -> list[Text | Rule]:
         label = line.label if line.quantity == 1 else f"{line.quantity} × {line.label}"
         out += [Text(56, y, f"{label} …", 9), Text(470, y, format_euro(line.total), 9)]
         y -= 14
-    total = f"Gesamtbetrag (inkl. MwSt.): {format_euro(invoice.amount)}"
     if vendor.vat_rate:
-        total += (
-            f" – enthält {vendor.vat_rate * 100:.0f} % USt.: {format_euro(invoice.vat)}"
+        total = (
+            f"Gesamtbetrag: {format_euro(invoice.amount)} (Netto {format_euro(invoice.net)}"
+            f" zzgl. {vendor.vat_rate * 100:.0f} % USt. {format_euro(invoice.vat)})"
         )
     else:
         total = f"Gesamtbetrag: {format_euro(invoice.amount)} – Umsatzsteuerfrei gem. § 4 Nr. 14 UStG"
@@ -351,7 +365,9 @@ def _key_fact(invoice: DemoInvoice) -> str:
     portal = invoice.vendor.customer_portal
     facts = {
         "normal": {
-            "formal": f"Bitte überweisen Sie den Betrag {due} unter Angabe der Rechnungsnummer.",
+            "formal": (
+                f"Bitte überweisen Sie den Betrag {due} mit der Referenz {invoice.reference}."
+            ),
             "friendly": f"Bitte überweise den Betrag {due}.",
             "short": f"Zahlbar {due}.",
         },

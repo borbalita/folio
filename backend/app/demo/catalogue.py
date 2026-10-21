@@ -48,10 +48,10 @@ def _item(label: str, low: str, high: str) -> Item:
 VENDORS: tuple[Vendor, ...] = (
     Vendor(
         key="strom",
-        name="Spreewerk Energie GmbH",
-        sender="rechnung@spreewerk-energie.example",
-        street="Am Spreeufer 18",
-        city="10179 Berlin",
+        name="Havelwatt Energie GmbH",
+        sender="rechnung@havelwatt.example",
+        street="Am Havelufer 18",
+        city="14467 Potsdam",
         bank_code="01020304",
         account="4400128801",
         items=(
@@ -66,7 +66,7 @@ VENDORS: tuple[Vendor, ...] = (
         layout="classic",
         tone="formal",
         filename="Rechnung_{number}.pdf",
-        customer_portal="kundenportal.spreewerk-energie.example",
+        customer_portal="kundenportal.havelwatt.example",
     ),
     Vendor(
         key="mobilfunk",

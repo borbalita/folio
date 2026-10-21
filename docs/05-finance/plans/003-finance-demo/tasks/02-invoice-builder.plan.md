@@ -43,14 +43,14 @@
 
   | key | name | items (examples) | VAT | number format | due | layout | tone | filename |
   |---|---|---|---|---|---|---|---|---|
-  | `strom` | Spreewerk Energie GmbH, Berlin | Abschlag Strom, Grundpreis, Zählermiete | 19 % | `{year}-{n:08d}` | 14 days | classic | formal | `Rechnung_{number}.pdf` |
+  | `strom` | Havelwatt Energie GmbH, Potsdam | Abschlag Strom, Grundpreis, Zählermiete | 19 % | `{year}-{n:08d}` | 14 days | classic | formal | `Rechnung_{number}.pdf` |
   | `mobilfunk` | Wellenfunk Mobil GmbH, Düsseldorf | Tarif Smart M, EU-Roaming, Datenpaket 5 GB | 19 % | `FM{n:010d}` | 10 days | modern | friendly | `Wellenfunk_Rechnung_{month}.pdf` |
   | `hosting` | Nordhafen Hosting UG, Hamburg | Webhosting Pro, Domain `.de`, SSL-Zertifikat, Backup | 19 % | `INV-{year}-{n:05d}` | 7 days | compact | short | `Rechnung-INV-{number}.pdf` |
   | `zahnarzt` | Zahnarztpraxis Dr. Rothenbach, Köln | Professionelle Zahnreinigung, Kontrolle, Röntgen | 0 % (medical, VAT-exempt) | `{n:04d}/{year}` | 30 days | classic | formal | `Rechnung {number}.pdf` |
   | `fitness` | Eisenhalle Fitness, Leipzig | Mitgliedsbeitrag, Getränkeflatrate, Kurs Yoga | 19 % | `EH-{n:06d}` | 0 days ("sofort fällig") | modern | friendly | `Rechnung_Eisenhalle.pdf` |
   | `handwerk` | Malerfachbetrieb Kaya & Brandt, Frankfurt am Main | Malerarbeiten Flur (Std.), Material, Anfahrt | 19 % | `R{year}{n:04d}` | 14 days | compact | formal | `Rechnung_{number}.pdf` |
 
-  `{n}` is drawn per invoice; `{month}` is the invoice month (`2026-10`). Senders like `rechnung@spreewerk-energie.example` and `service@wellenfunk.example`, all ending in `.example`; `customer_portal` e.g. `mein.wellenfunk.example`. Bank codes `0` + 7 digits, distinct per vendor.
+  `{n}` is drawn per invoice; `{month}` is the invoice month (`2026-10`). Senders like `rechnung@havelwatt.example` and `service@wellenfunk.example`, all ending in `.example`; `customer_portal` e.g. `mein.wellenfunk.example`. Bank codes `0` + 7 digits, distinct per vendor.
 
 - [ ] **Step 1: Write failing tests**
   - `test_every_vendor_sends_from_an_example_domain`: `vendor.sender.endswith(".example")` for all; keys unique; 6 vendors.
