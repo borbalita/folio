@@ -2,7 +2,7 @@
 
 - Created: 2026-10-06
 - Status: In progress
-- Current stage: Implementation; 001/03 to 001/08 done
+- Current stage: End-to-end check (001/13); all tasks built. Open: success criteria 2 and 5 not fully shown; 4 and 7 skipped at the owner's request
 
 ## Approval state
 

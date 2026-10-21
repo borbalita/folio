@@ -47,6 +47,7 @@ Shared by both agents: thread history sent to the model, and long-term memories 
 
 The finance agent: invoices from mail, bank and PayPal transactions, categories, and payments you approve.
 
+- [Overview](05-finance/overview.md)
 - [Plans](05-finance/plans/README.md)
 
 ## 06-notifications
