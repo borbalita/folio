@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends
 
 from app.auth.demo_access import require_demo_user
 from app.auth.dependencies import CurrentUser
-from app.demo import booking
+from app.database import chats
+from app.demo import booking, reset
 
 router = APIRouter(prefix="/finance/demo", tags=["demo"])
 
@@ -28,3 +29,12 @@ async def book_payment(
     user: Annotated[CurrentUser, Depends(require_demo_user)],
 ) -> dict[str, Any]:
     return await asyncio.to_thread(booking.book, user.id, payment_id)
+
+
+@router.post("/reset")
+async def reset_demo(
+    user: Annotated[CurrentUser, Depends(require_demo_user)],
+) -> dict[str, int]:
+    # The base state's rows hang off the users row, which Auth alone doesn't write.
+    await asyncio.to_thread(chats.ensure_user, user.id, user.email)
+    return await asyncio.to_thread(reset.run_reset, user.id, user.email)
