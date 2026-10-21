@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from app.auth.demo_access import require_demo_user
 from app.auth.dependencies import CurrentUser
+from app.database import chats
 from app.demo import booking, live
 
 router = APIRouter(prefix="/finance/demo", tags=["demo"])
@@ -41,4 +42,6 @@ async def send_invoice(
     user: Annotated[CurrentUser, Depends(require_demo_user)],
 ) -> dict[str, Any]:
     """Waits for the real models (about 10–20 s) and returns what was stored."""
+    # Auth writes only auth.users; the demo mailbox needs the app's users row.
+    await asyncio.to_thread(chats.ensure_user, user.id, user.email)
     return await asyncio.to_thread(live.send_invoice, user.id, body.kind)

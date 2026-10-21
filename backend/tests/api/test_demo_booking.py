@@ -83,12 +83,19 @@ def test_the_demo_user_sends_a_live_invoice(
         }
 
     monkeypatch.setattr(live, "send_invoice", send)
+    ensured: list[tuple[uuid.UUID, str]] = []
+    monkeypatch.setattr(
+        "app.api.demo.chats.ensure_user",
+        lambda user_id, email: ensured.append((user_id, email)),
+    )
 
     sent = authed_client.post("/finance/demo/invoices", json={"kind": "random"})
     refused = authed_client.post("/finance/demo/invoices", json={"kind": "lottery"})
 
     assert sent.status_code == 200
     assert seen == [(TEST_USER_ID, "random")]
+    # A demo user who never chatted has no users row; the demo mailbox needs one.
+    assert ensured == [(TEST_USER_ID, "test@example.com")]
     assert refused.status_code == 422
 
 
