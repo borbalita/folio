@@ -9,6 +9,7 @@
 - 2026-10-20: settled in chat, one question at a time: the demo is shown live by the owner first and may become self-serve later; it shows a ready-made state plus one invoice that arrives live; the live invoice skips the mailbox and enters the real pipeline; the demo is a second user in the production app; invoices come from a fixed catalogue of fictional vendors; a simulated bank booking closes the payment loop; the controls sit on a separate presenter page; reset is a button there plus a command. Design sections 1–4 approved.
 - 2026-10-20: written spec and task breakdown approved; the plan is Ready.
 - 2026-10-21: 003/02's review found that an Online only email with a full invoice PDF would read as `to_pay`; at the owner's OK it becomes a notice without a PDF. Vendors sound real but are invented (owner's request).
+- 2026-10-21: added during 003/06 at the owner's request: invoices with a payment approved in the last 5 days show as Pending (display only), so the demo reads open → pending → paid.
 - 2026-10-21: added while planning 003/01, at the owner's OK: the demo user's Accounts page shows only the demo bank; sync and expiry checks skip it; Connect returns 403 for the demo user.
 
 ## Problem
