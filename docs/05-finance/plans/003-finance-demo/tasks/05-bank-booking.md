@@ -23,7 +23,7 @@ An approved demo payment can be "booked" into the demo account, and the real mat
 
 ## Verified
 
-2026-10-21, branch `feat/demo-bank-booking`.
+2026-10-21, branch `feat/demo-bank-booking`, PR [borbalita/folio#73](https://github.com/borbalita/folio/pull/73).
 
 - Approved payment booked → debit exists, invoice paid with an automatic link, payment completed: `test_booking_an_approved_payment_inserts_once_and_runs_matching` (one debit inserted, committed, matching run for the demo user, statuses read after it) and `test_the_booking_is_a_strong_match_for_its_invoice` (the debit, through the real `propose`, is a `linked` proposal with the IBAN signal, booked today). The automatic link, paid status and completed payment are what `match_for_user` does for a linked proposal (existing matching tests). Pass; the full run on real rows comes with the presenter page (003/06) and rehearsal (003/07).
 - Already booked → nothing changes: `test_a_payment_already_booked_and_matched_changes_nothing`, `test_a_second_booking_before_matching_adds_no_debit` (dedup key `demo-booking:<payment id>`). Pass.
