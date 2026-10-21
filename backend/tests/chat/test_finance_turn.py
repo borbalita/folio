@@ -50,7 +50,7 @@ def _invoice(id_: uuid.UUID) -> dict:
 @pytest.fixture
 def stored(monkeypatch: pytest.MonkeyPatch) -> list[dict]:
     rows: list[dict] = []
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [uuid.uuid4()])
     monkeypatch.setattr(chats, "ensure_user", lambda *_args, **_kwargs: None)
 
     def append(thread_id, messages):
@@ -154,3 +154,18 @@ def test_unknown_card_id_is_dropped_and_logged(monkeypatch, stored) -> None:
     dropped = [entry for entry in logs if entry["event"] == "finance_card_id_dropped"]
     assert {(entry["kind"], entry["count"]) for entry in dropped} == {("invoices", 1), ("payments", 1)}
     assert all(str(invented) not in json.dumps(entry, default=str) for entry in dropped)
+
+
+def test_finance_turn_uses_the_invoice_scope(monkeypatch, stored) -> None:
+    invoice_scope = [uuid.uuid4()]
+    seen: list[list[uuid.UUID]] = []
+    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: invoice_scope)
+    _use(monkeypatch, _Agent(
+        [lambda deps: seen.append(deps.mailbox_ids)],
+        FinanceAnswer(answer="Nothing to pay.", cards=[]),
+    ))
+
+    _run("What do I owe?")
+
+    assert seen == [invoice_scope]

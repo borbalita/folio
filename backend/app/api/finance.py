@@ -17,8 +17,7 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.auth.email_access import require_email_access
-from app.auth.finance_access import require_finance_user
+from app.auth.finance_access import require_finance_user, require_invoice_mailboxes
 from app.database import (
     bank_connections,
     invoices,
@@ -53,7 +52,7 @@ router = APIRouter(
 async def list_invoices(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(invoices.list_invoices, mailbox_ids)
 
 
@@ -62,7 +61,7 @@ async def get_invoice(
     email_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(invoices.get_invoice, email_id, mailbox_ids)
 
 
@@ -71,7 +70,7 @@ async def get_attachment(
     attachment_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> Response:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     file = await asyncio.to_thread(
         invoices.get_attachment_file, attachment_id, mailbox_ids
     )
@@ -112,7 +111,7 @@ async def update_invoice(
     body: InvoiceEdit,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     changes = body.model_dump(exclude_unset=True)
     await asyncio.to_thread(invoices.update_invoice, invoice_id, changes, mailbox_ids)
     # An edited amount, IBAN or reference can make or break a match.
@@ -125,7 +124,7 @@ async def set_invoices_paid(
     body: InvoicesPaid,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(
         invoices.set_invoices_paid, body.ids, body.paid, mailbox_ids
     )
@@ -136,7 +135,7 @@ async def confirm_match(
     match_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     invoice_id = await asyncio.to_thread(matches.confirm, match_id, mailbox_ids)
     return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
@@ -146,7 +145,7 @@ async def reject_match(
     match_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     invoice_id = await asyncio.to_thread(matches.reject, match_id, mailbox_ids)
     return await asyncio.to_thread(invoices.get_invoice_item, invoice_id, mailbox_ids)
 
@@ -162,7 +161,7 @@ async def create_payment_drafts(
     body: DraftsRequest,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(
         payments.create_drafts, body.invoice_ids, mailbox_ids
     )
@@ -173,7 +172,7 @@ async def get_payment_drafts(
     ids: Annotated[list[uuid.UUID], Query()],
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[dict[str, Any]]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.get_drafts, ids, mailbox_ids)
 
 
@@ -182,7 +181,7 @@ async def approve_payment_draft(
     draft_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.approve, draft_id, mailbox_ids)
 
 
@@ -191,7 +190,7 @@ async def cancel_payment_draft(
     draft_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> dict[str, Any]:
-    mailbox_ids = await require_email_access(user)
+    mailbox_ids = await require_invoice_mailboxes(user)
     return await asyncio.to_thread(payments.cancel, draft_id, mailbox_ids)
 
 
