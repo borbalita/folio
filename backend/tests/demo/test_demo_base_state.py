@@ -97,6 +97,25 @@ def test_base_state_is_realistic() -> None:
             assert invoice.paid_at.date() == tx.booking_date
 
 
+def test_the_invoice_paid_before_it_arrived_has_its_debit_unlinked() -> None:
+    rows = _build()
+    (invoice,) = [i for i in rows.invoices if i.paid_by == PAID_BY_INVOICE]
+    debits = [
+        tx
+        for tx in rows.transactions
+        if tx.amount == -invoice.amount and tx.remittance == invoice.reference
+    ]
+
+    assert len(debits) == 1
+    debit = debits[0]
+    assert debit.booking_date == invoice.invoice_date
+    assert debit.counterparty_name == invoice.payee
+    assert debit.counterparty_iban == invoice.iban
+    # The app links a payment only to invoices it marks paid by match.
+    assert invoice.id not in {m.invoice_id for m in rows.matches}
+    assert debit.id not in {m.transaction_id for m in rows.matches}
+
+
 def test_rows_reference_each_other() -> None:
     rows = _build()
     emails = {e.id for e in rows.emails}

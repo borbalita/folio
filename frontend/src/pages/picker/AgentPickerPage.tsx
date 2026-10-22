@@ -12,8 +12,8 @@ import { useAuth } from '@/lib/auth'
 import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
-// The everyday assistants first; Document Copilot is the original demo.
-const PICKER_ORDER: AgentName[] = ['finance', 'email', 'news', 'documents']
+// Document Copilot is left out: it stays reachable at /documents but is no longer offered.
+const PICKER_ORDER: AgentName[] = ['finance', 'email', 'news']
 
 function AgentCard({
   agent,
@@ -115,6 +115,9 @@ export function AgentPickerPage() {
             />
           ))}
         </div>
+        {available.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No assistants are available for your account yet.</p>
+        ) : null}
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
       </main>
       <footer className="flex justify-center px-4 pb-4">
