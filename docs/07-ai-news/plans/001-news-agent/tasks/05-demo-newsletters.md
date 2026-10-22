@@ -32,3 +32,20 @@ The demo user of [finance plan 003](../../../../05-finance/plans/003-finance-dem
 - Implementation plan: [05-demo-newsletters.plan.md](05-demo-newsletters.plan.md).
 - Decided 2026-10-21 in chat: fictional names, not real newsletters; "AI Detective" at the owner's request. Source keys stay neutral so a rename is one line.
 - Precomputed embeddings depend on the embedding model and dimensions; changing either means rerunning the script.
+
+## Verified
+
+2026-10-22, branch `feat/news-demo` (fast suite: 855 passed; ruff, `tsc`, lint clean; integration tests against the local eval database pass). Built subagent-driven: six task reviews and one whole-branch review, whose three Important findings were fixed (display names in citations, real newsletter names in the prompt, read order in the story build).
+
+- Demo user's agents: `documents`, `news`, `finance`, no `email`: `tests/api/test_news_access.py`; browser: the start page shows Finance, AI News, Document Copilot. Pass.
+- News tools read only the demo mailbox for the demo user, only the owner's for the owner: `test_news_access.py`, news tool filter tests. Pass.
+- Dates move with today: `tests/demo/test_demo_news_state.py`. Pass.
+- Big, single-newsletter and multi-day stories after a reset: fixture and state tests (7 big, 3 multi-day). Pass.
+- The story build never reads or changes demo items or stories: `test_rebuild_stories_never_touches_demo_stories`, `test_rebuild_stories_reads_stories_before_demo_story_ids`; reset integration test (fails with 29 orphaned stories when the story delete is removed). Pass.
+- Telegram summaries skip demo stories: `test_big_stories_exclude_demo_mailboxes`. Pass.
+- Pair rule for "big": `test_news_stories.py` parametrised cases. Pass.
+- Browser, local build against the shared database (migration `01b8354147e4` applied by the owner), signed in as the demo user, after a reset: "What were the big stories this week?" lists three big stories (TLS certificates, scorpion binders, COBOL) with "both newsletters" coverage lines; citations read "AI Detective" and "The Daily Tensor" and open the original article. "Any security news in the last two weeks?" and "Which new models were announced recently?" answer from the demo items. Pass.
+- Added at the owner's request on 2026-10-22: news are listed newest first (tool output sorted; briefings keep big stories on top, newest first within): `test_search_hits_are_listed_newest_first`, `test_stories_are_listed_big_first_then_newest_first`, `test_items_within_a_story_are_listed_newest_first`; browser: the security answer runs 21 → 20 → 13 → 9 Oct. Pass.
+- Telegram button: **pending** — the owner presses it on the presenter page (manual).
+- Privacy page: unchanged — invented demo news to the owner's existing chat; no new data, recipient or service.
+- PR: see the branch's pull request.
