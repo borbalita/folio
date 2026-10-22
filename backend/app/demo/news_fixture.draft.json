@@ -1,0 +1,374 @@
+{
+ "items": [
+  {
+   "key": "cyber-tensor",
+   "story": "cyber-verification",
+   "source": "demo_tensor",
+   "days_ago": 14,
+   "title": "Anthropic widens its Cyber Verification Program to three access tiers",
+   "blurb": "Vetted security teams can now get stronger cyber capabilities and fewer blocking classifiers on Claude, on Anthropic's own platform as well as through Vertex AI and Microsoft Foundry.",
+   "url": "https://www.anthropic.com/news/cyber-verification-program",
+   "position": 0
+  },
+  {
+   "key": "cyber-detective",
+   "story": "cyber-verification",
+   "source": "demo_detective",
+   "days_ago": 13,
+   "title": "Claude opens up for verified pen testers and red teams",
+   "blurb": "Under the expanded program, verified defenders get tiered access with relaxed safety limits for red-teaming, incident response and work on critical infrastructure.",
+   "url": "https://www.anthropic.com/news/cyber-verification-program",
+   "position": 0
+  },
+  {
+   "key": "tls-tensor",
+   "story": "tls-certs",
+   "source": "demo_tensor",
+   "days_ago": 1,
+   "title": "Eight flawed intermediate certificates put the web on alert",
+   "blurb": "Researchers found eight defective intermediate TLS certificates issued by the Indian certificate authority eMudhra, with a flaw engineers had considered impossible; browsers and CAs are moving to revoke them.",
+   "url": "https://arstechnica.com/security/2026/10/the-internet-goes-on-high-alert-after-discovery-of-8-compromised-tls-certs/",
+   "position": 0
+  },
+  {
+   "key": "tls-detective",
+   "story": "tls-certs",
+   "source": "demo_detective",
+   "days_ago": 1,
+   "title": "eMudhra certificate flaw forces emergency revocations",
+   "blurb": "Eight intermediate certificates from eMudhra were found broken in a way that could let attackers impersonate websites; admins are told to check which chains their services rely on.",
+   "url": "https://arstechnica.com/security/2026/10/the-internet-goes-on-high-alert-after-discovery-of-8-compromised-tls-certs/",
+   "position": 0
+  },
+  {
+   "key": "argon-detective",
+   "story": "gemini-argon",
+   "source": "demo_detective",
+   "days_ago": 8,
+   "title": "Gemini 4 Argon ships with 30% fewer bad commits",
+   "blurb": "Google says its new model lifts agent coding output by about a third and cuts the bugs that slip through code review by 30%, with completions of up to one million tokens.",
+   "url": "https://venturebeat.com/technology/google-makes-gemini-4-argon-broadly-available-with-limited-time-low-api-pricing-of-2-10-per-1m-token",
+   "position": 0
+  },
+  {
+   "key": "argon-tensor",
+   "story": "gemini-argon",
+   "source": "demo_tensor",
+   "days_ago": 7,
+   "title": "How Long Decode lets Gemini 4 Argon write a million tokens",
+   "blurb": "Google's developer guide explains Long Decode, which spreads one very long completion across several model calls, and the model is broadly available at a discounted $2/$10 per million tokens for now.",
+   "url": "https://ai.google.dev/",
+   "position": 0
+  },
+  {
+   "key": "muse-detective",
+   "story": "muse-spark-open",
+   "source": "demo_detective",
+   "days_ago": 6,
+   "title": "Meta open-sources an 816B model aimed at coding agents",
+   "blurb": "Muse Spark Open activates 42 billion of its 816 billion parameters per request, reads up to a million tokens of context and is built for long agentic coding tasks.",
+   "url": "https://venturebeat.com/technology/meta-unveils-muse-spark-open-the-new-top-u-s-open-weights-model-and-it-runs-on-two-paired-mac-desktops",
+   "position": 0
+  },
+  {
+   "key": "muse-tensor",
+   "story": "muse-spark-open",
+   "source": "demo_tensor",
+   "days_ago": 6,
+   "title": "Muse Spark Open becomes the strongest US open-weights model",
+   "blurb": "Meta's new release runs locally on two linked Mac Studio desktops, putting a frontier-class open model on hardware a small team can buy.",
+   "url": "https://venturebeat.com/technology/meta-unveils-muse-spark-open-the-new-top-u-s-open-weights-model-and-it-runs-on-two-paired-mac-desktops",
+   "position": 0
+  },
+  {
+   "key": "scion-detective",
+   "story": "scion",
+   "source": "demo_detective",
+   "days_ago": 8,
+   "title": "Anthropic drops Git for an in-house version control system",
+   "blurb": "After Claude-driven development pushed daily merges from about 2,500 to more than 30,000, Anthropic built Scion, a server-centric system, to keep its monorepo fast.",
+   "url": "https://www.anthropic.com/engineering/redesigning-source-control",
+   "position": 1
+  },
+  {
+   "key": "scion-tensor-1",
+   "story": "scion",
+   "source": "demo_tensor",
+   "days_ago": 8,
+   "title": "Inside Scion, the source control behind 30,000 merges a day",
+   "blurb": "Anthropic describes why Git stopped scaling for its monorepo and how it migrated to Scion without pausing development.",
+   "url": "https://www.anthropic.com/engineering/redesigning-source-control",
+   "position": 0
+  },
+  {
+   "key": "scion-tensor-2",
+   "story": "scion",
+   "source": "demo_tensor",
+   "days_ago": 7,
+   "title": "Scion cuts CI checkouts from minutes to seconds",
+   "blurb": "Anthropic reports that its new version control uses 200 times less CPU and memory than the Git setup it replaced.",
+   "url": "https://www.anthropic.com/engineering/redesigning-source-control",
+   "position": 1
+  },
+  {
+   "key": "cobol-detective",
+   "story": "legacy-code",
+   "source": "demo_detective",
+   "days_ago": 2,
+   "title": "OpenAI tunes its model for COBOL, Fortran and Visual Basic",
+   "blurb": "OpenAI updated its flagship model to help companies modernize decades-old business software written in legacy languages.",
+   "url": "https://openai.com/news/",
+   "position": 0
+  },
+  {
+   "key": "cobol-tensor",
+   "story": "legacy-code",
+   "source": "demo_tensor",
+   "days_ago": 2,
+   "title": "GPT-6.1 Sol jumps to 86.6% on COBOL migration",
+   "blurb": "New evaluations across 20 programming languages show the model migrating COBOL correctly 86.6% of the time at low reasoning effort, up from 5.4% for the previous generation.",
+   "url": "https://openai.com/news/",
+   "position": 0
+  },
+  {
+   "key": "scorpion-detective",
+   "story": "scorpion-binders",
+   "source": "demo_detective",
+   "days_ago": 1,
+   "title": "Claude designs 300,000 proteins against scorpion venom",
+   "blurb": "Working largely on its own, Claude generated and ranked candidate binders; 17 of the 211 designs tested in the lab met strict binding criteria.",
+   "url": "https://www.anthropic.com/research/claude-scorpion-toxin-binder-design",
+   "position": 1
+  },
+  {
+   "key": "scorpion-tensor",
+   "story": "scorpion-binders",
+   "source": "demo_tensor",
+   "days_ago": 1,
+   "title": "AI-designed mini-binders take a first step toward toxin research",
+   "blurb": "Anthropic stresses that the promising designs are an early research result, not a working antivenom.",
+   "url": "https://www.anthropic.com/research/claude-scorpion-toxin-binder-design",
+   "position": 1
+  },
+  {
+   "key": "oss-scanner",
+   "story": "oss-scanner",
+   "source": "demo_detective",
+   "days_ago": 2,
+   "title": "Anthropic's free scanner flags 77 critical bugs in open source",
+   "blurb": "In its first week, the AI-based OSS Scanner reported 77 critical and 803 high-severity vulnerabilities to project maintainers.",
+   "url": "https://www.anthropic.com/news",
+   "position": 1
+  },
+  {
+   "key": "cisco-zero-day",
+   "story": "cisco-zero-day",
+   "source": "demo_tensor",
+   "days_ago": 2,
+   "title": "Cisco email gateway zero-day under active attack again",
+   "blurb": "A critical path traversal flaw lets unauthenticated attackers write files and run commands as root on Secure Email Gateway appliances with File Reputation enabled.",
+   "url": "https://diesec.com/2026/10/cisco-secure-email-gateway-zero-day-cve-2026-76519/",
+   "position": 1
+  },
+  {
+   "key": "beyondtrust",
+   "story": "beyondtrust",
+   "source": "demo_tensor",
+   "days_ago": 6,
+   "title": "Google warns of China-linked attacks on a BeyondTrust flaw",
+   "blurb": "Google expects wider exploitation of a Remote Support vulnerability; hosted customers are patched, self-hosted ones should update now.",
+   "url": "https://cloud.google.com/blog/topics/threat-intelligence",
+   "position": 1
+  },
+  {
+   "key": "guardian-agents",
+   "story": "guardian-agents",
+   "source": "demo_tensor",
+   "days_ago": 1,
+   "title": "Microsoft treats AI agents like potential insider threats",
+   "blurb": "New Guardian Agents and agent detection in Defender monitor AI agents independently, on the premise that frontier models can't simply be trusted.",
+   "url": "https://techcrunch.com/2026/10/19/microsoft-says-ai-agents-are-like-insider-threats-as-frontier-models-cant-be-trusted/",
+   "position": 2
+  },
+  {
+   "key": "agent-cves",
+   "story": "agent-cves",
+   "source": "demo_tensor",
+   "days_ago": 9,
+   "title": "Why CVE tracking misses most AI agent risks",
+   "blurb": "A security researcher argues that agent permissions, prompt injection, shared identities and tool chains need tracking that CVE numbers alone don't give.",
+   "url": "https://aminrj.com/posts/why-cve-programs-miss-most-ai-agent-vulnerabilities/",
+   "position": 0
+  },
+  {
+   "key": "opencode",
+   "story": "opencode",
+   "source": "demo_tensor",
+   "days_ago": 2,
+   "title": "Attackers breach an old OpenCode system and run up AI bills",
+   "blurb": "The coding tool says 1.4% of Console users were affected after attackers got into a legacy system and charged usage to their AI accounts.",
+   "url": "https://techcrunch.com/2026/10/19/hackers-hit-ai-coding-tool-opencode-running-up-charges-on-users-ai-accounts/",
+   "position": 2
+  },
+  {
+   "key": "php-flaws",
+   "story": "php-flaws",
+   "source": "demo_tensor",
+   "days_ago": 1,
+   "title": "PHP prepares emergency patches for two critical flaws",
+   "blurb": "Two remote code execution bugs are thought to affect PHP 5 through 8; maintainers have announced fixes for the next day.",
+   "url": "https://www.php.net/",
+   "position": 3
+  },
+  {
+   "key": "haiku",
+   "story": "haiku",
+   "source": "demo_detective",
+   "days_ago": 14,
+   "title": "Claude Haiku 5.5 brings frontier speed at a quarter of the price",
+   "blurb": "Anthropic's new small model costs $0.10 per million input tokens below 100,000 tokens and supports a one-million-token context window.",
+   "url": "https://www.anthropic.com/claude-haiku-5-5",
+   "position": 0
+  },
+  {
+   "key": "deepseek-flash",
+   "story": "deepseek-flash",
+   "source": "demo_detective",
+   "days_ago": 2,
+   "title": "DeepSeek releases a faster open Flash model with free search",
+   "blurb": "V4.1-Flash is trained with reinforcement learning from self-feedback and ships alongside public Search and Fetch APIs.",
+   "url": "https://api-docs.deepseek.com/news",
+   "position": 2
+  },
+  {
+   "key": "liquid-24b",
+   "story": "liquid-24b",
+   "source": "demo_detective",
+   "days_ago": 8,
+   "title": "LiquidAI fits a 24B reasoning model on the device",
+   "blurb": "The new model keeps only 2 billion parameters active at a time, so reasoning runs locally on laptops and phones.",
+   "url": "https://www.liquid.ai/blog",
+   "position": 2
+  },
+  {
+   "key": "drama-3",
+   "story": "drama-3",
+   "source": "demo_detective",
+   "days_ago": 8,
+   "title": "Fish Audio's Drama 3 voice model takes stage directions",
+   "blurb": "The open-weight text-to-speech model follows plain-English directions and controls emotion and pacing word by word, and can be self-hosted.",
+   "url": "https://fish.audio/blog",
+   "position": 3
+  },
+  {
+   "key": "personaplex",
+   "story": "personaplex",
+   "source": "demo_detective",
+   "days_ago": 9,
+   "title": "NVIDIA open-sources a voice model that talks while it listens",
+   "blurb": "PersonaPlex-7B handles full-duplex conversation with low latency on a single GPU.",
+   "url": "https://developer.nvidia.com/blog",
+   "position": 0
+  },
+  {
+   "key": "glm-legal",
+   "story": "glm-legal",
+   "source": "demo_detective",
+   "days_ago": 9,
+   "title": "Z.ai's GLM-Legal rivals frontier models on legal work",
+   "blurb": "The specialised model targets end-to-end legal workflows at a fraction of the per-task cost of general frontier models.",
+   "url": "https://z.ai/blog",
+   "position": 1
+  },
+  {
+   "key": "bfl-56b",
+   "story": "bfl-56b",
+   "source": "demo_detective",
+   "days_ago": 6,
+   "title": "Black Forest Labs releases a 5.6B open image model",
+   "blurb": "The open-weights model handles text-to-image generation and editing with several reference images.",
+   "url": "https://bfl.ai/blog",
+   "position": 1
+  },
+  {
+   "key": "gpt6-ui",
+   "story": "gpt6-ui",
+   "source": "demo_detective",
+   "days_ago": 14,
+   "title": "GPT-6 turns ChatGPT answers into interactive mini apps",
+   "blurb": "With Intelligent UI, ChatGPT can answer with live diagrams, calculators, buttons and forms instead of plain text.",
+   "url": "https://openai.com/news/",
+   "position": 1
+  },
+  {
+   "key": "managed-agents",
+   "story": "managed-agents",
+   "source": "demo_detective",
+   "days_ago": 10,
+   "title": "Claude managed agents coordinate up to 1,000 agents per run",
+   "blurb": "Anthropic's new orchestration runs huge parallel jobs such as codebase-wide bug hunts.",
+   "url": "https://www.anthropic.com/news",
+   "position": 0
+  },
+  {
+   "key": "anthropic-s1",
+   "story": "anthropic-s1",
+   "source": "demo_tensor",
+   "days_ago": 1,
+   "title": "Anthropic's IPO filing shows steep growth and huge compute bills",
+   "blurb": "The draft prospectus pairs fast revenue growth with an $80 billion-plus loss in the first half and plans for up to $750 billion in compute.",
+   "url": "https://www.sec.gov/edgar/search/",
+   "position": 4
+  },
+  {
+   "key": "copilot-claude",
+   "story": "copilot-claude",
+   "source": "demo_tensor",
+   "days_ago": 3,
+   "title": "Microsoft to pay Anthropic $2B a year for Claude in Copilot",
+   "blurb": "Copilot will rely on Claude models for much of its work while sending some workloads to OpenAI to keep costs down.",
+   "url": "https://cryptobriefing.com/microsoft-anthropic-2b-copilot-deal/",
+   "position": 0
+  },
+  {
+   "key": "waymo-fleet",
+   "story": "waymo-fleet",
+   "source": "demo_tensor",
+   "days_ago": 2,
+   "title": "Waymo plans to grow its robotaxi fleet fivefold",
+   "blurb": "Backed by a fresh $5 billion, Waymo aims for 20,000 vehicles by the end of next year.",
+   "url": "https://www.semafor.com/article/10/19/2026/waymo-plans-to-quintuple-its-fleet",
+   "position": 3
+  },
+  {
+   "key": "agent-protocol",
+   "story": "agent-protocol",
+   "source": "demo_tensor",
+   "days_ago": 14,
+   "title": "Meta and Sierra propose an open protocol for personal agents",
+   "blurb": "The Personal Agent Protocol, backed by Shopify, Stripe and Walmart among others, defines how personal AI agents authenticate with businesses.",
+   "url": "https://sierra.ai/blog/introducing-personal-agent-protocol",
+   "position": 1
+  },
+  {
+   "key": "labs-playground",
+   "story": "labs-playground",
+   "source": "demo_detective",
+   "days_ago": 14,
+   "title": "Google Labs lets anyone build games by describing them",
+   "blurb": "Playground, a US-only experiment, turns natural-language descriptions into playable games without code or a game engine.",
+   "url": "https://labs.google/",
+   "position": 2
+  },
+  {
+   "key": "homeview",
+   "story": "homeview",
+   "source": "demo_tensor",
+   "days_ago": 8,
+   "title": "Apple unveils HomeView, a $299 tablet for the home",
+   "blurb": "The seven-inch device recognises household members and personalises what it shows; it ships on November 13.",
+   "url": "https://www.apple.com/newsroom/",
+   "position": 1
+  }
+ ]
+}

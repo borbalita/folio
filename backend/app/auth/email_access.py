@@ -23,12 +23,20 @@ async def require_email_access(user: CurrentUser) -> list[uuid.UUID]:
     return ids
 
 
+async def require_news_access(user: CurrentUser) -> list[uuid.UUID]:
+    """The user's active mailbox ids for newsletters, demo included; 403 when there are none."""
+    ids = await asyncio.to_thread(mailboxes.news_mailbox_ids, user.id)
+    if not ids:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    return ids
+
+
 async def agents_for(user: CurrentUser) -> list[str]:
     agents = ["documents"]
-    ids = await asyncio.to_thread(mailboxes.active_mailbox_ids, user.id)
-    if ids:
-        # News reads the user's own newsletters, so it follows the mailbox like Email.
-        agents.extend(["email", "news"])
+    if await asyncio.to_thread(mailboxes.active_mailbox_ids, user.id):
+        agents.append("email")
+    if await asyncio.to_thread(mailboxes.news_mailbox_ids, user.id):
+        agents.append("news")
     if is_finance_user(user):
         agents.append("finance")
     return agents
@@ -36,7 +44,9 @@ async def agents_for(user: CurrentUser) -> list[str]:
 
 async def require_agent_access(user: CurrentUser, agent: str) -> None:
     """The one access rule for an agent's threads and streams."""
-    if agent in ("email", "news"):
+    if agent == "email":
         await require_email_access(user)
+    elif agent == "news":
+        await require_news_access(user)
     elif agent == "finance":
         require_finance_user(user)

@@ -63,7 +63,7 @@ class _News(NewsRetriever):
 
 
 def _deps(monkeypatch: pytest.MonkeyPatch, mailbox_ids: list[UUID]) -> NewsAgentDeps:
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda _user_id: mailbox_ids)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda _user_id: mailbox_ids)
     monkeypatch.setattr("app.news_assistant.tools.berlin_today", lambda: TODAY)
     return NewsAgentDeps(user_id=USER, thread_id=THREAD, news=_News())
 

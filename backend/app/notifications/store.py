@@ -62,7 +62,13 @@ def load_big_stories(session: Session, since: date) -> list[StoryFacts]:
     rows = session.execute(
         select(NewsItem)
         .join(NewsStory, NewsStory.id == NewsItem.story_id)
-        .where(NewsStory.is_big.is_(True), NewsStory.last_seen >= since)
+        .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
+        .join(Mailbox, Mailbox.id == EmailMessage.mailbox_id)
+        .where(
+            NewsStory.is_big.is_(True),
+            NewsStory.last_seen >= since,
+            Mailbox.provider != MailboxProvider.DEMO,
+        )
         .order_by(NewsStory.first_seen, NewsItem.edition_date, NewsItem.position)
     ).scalars()
     stories: dict[object, list[NewsItemFacts]] = {}

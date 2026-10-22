@@ -17,6 +17,8 @@ from zoneinfo import ZoneInfo
 from app.config import settings
 from app.database.models.email.attachment import EmailAttachment
 from app.database.models.email.message import EmailLabel, EmailMessage
+from app.database.models.email.news_item import NewsItem
+from app.database.models.email.story import NewsStory
 from app.database.models.finance.invoice import Invoice, InvoiceStatus
 from app.database.models.finance.invoice_match import (
     InvoiceMatch,
@@ -33,6 +35,7 @@ from app.demo.emails import (
     draw_invoice,
     invoice_message,
 )
+from app.demo.news_state import build_news_rows
 from app.finance.invoice_edits import PAID_BY_INVOICE, PAID_BY_MATCH
 from ingest.email.parse import ParsedMessage, content_hash
 
@@ -85,11 +88,17 @@ class BaseRows:
     invoices: list[Invoice]
     transactions: list[Transaction]
     matches: list[InvoiceMatch]
+    news_emails: list[EmailMessage]
+    stories: list[NewsStory]
+    news_items: list[NewsItem]
 
     def groups(self) -> tuple[list, ...]:
         """Rows by table, parents before children; insert each group before the next."""
         return (
             self.emails,
+            self.news_emails,
+            self.stories,
+            self.news_items,
             self.attachments,
             self.invoices,
             self.transactions,
@@ -309,4 +318,14 @@ def build_base_state(
                 )
             )
     _everyday(ledger, today)
-    return BaseRows(emails, attachments, invoices, ledger.rows, matches)
+    news = build_news_rows(today, accounts, to_address=to_address)
+    return BaseRows(
+        emails,
+        attachments,
+        invoices,
+        ledger.rows,
+        matches,
+        news.emails,
+        news.stories,
+        news.items,
+    )

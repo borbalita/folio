@@ -221,6 +221,7 @@ def test_routes_default_to_documents_and_pass_email(
     monkeypatch.setattr(chats, "create_thread_for_user", create)
     monkeypatch.setattr(chats, "list_threads", list_threads)
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [uuid.uuid4()])
 
     assert authed_client.post("/threads", json={}).status_code == 200
     assert authed_client.post("/threads", json={"agent": "email"}).status_code == 200

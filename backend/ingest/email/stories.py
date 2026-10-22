@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ from datetime import date
 from itertools import combinations
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 from typesafe_sdk import (
     Noul,
@@ -20,7 +21,8 @@ from typesafe_sdk import (
 )
 
 from app.config import settings
-from app.database.models.email.message import NewsletterSource
+from app.database.models.email.mailbox import Mailbox, MailboxProvider
+from app.database.models.email.message import EmailMessage, NewsletterSource
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
 
@@ -64,12 +66,19 @@ def cluster_items(
     return list(groups.values()), decisions
 
 
+# A story is big when both newsletters of one pair covered it. A user only ever
+# has one pair, so the pairs never mix.
+NEWSLETTER_PAIRS: tuple[frozenset[str], ...] = (
+    frozenset({NewsletterSource.TLDR.value, NewsletterSource.ALPHA_SIGNAL.value}),
+    frozenset(
+        {NewsletterSource.DEMO_TENSOR.value, NewsletterSource.DEMO_DETECTIVE.value}
+    ),
+)
+
+
 def is_big(items: list[NewsItem]) -> bool:
     sources = {item.source for item in items}
-    return (
-        NewsletterSource.TLDR.value in sources
-        and NewsletterSource.ALPHA_SIGNAL.value in sources
-    )
+    return any(pair <= sources for pair in NEWSLETTER_PAIRS)
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,8 +118,14 @@ def plan_stories(
 def rebuild_stories(
     session: Session, edition: date, *, same_story: SameStory | None = None
 ) -> int:
-    """Delete stories that touch this edition's window and write them again."""
-    items = _rows(session, NewsItem)
+    """Delete stories that touch this edition's window and write them again.
+
+    Stories have no owner, so demo items and the stories only they reference are
+    never loaded, replanned or deleted.
+    """
+    items = [
+        row for row in session.scalars(owner_items_query()) if isinstance(row, NewsItem)
+    ]
     planned, decisions = plan_stories(
         items,
         edition,
@@ -128,13 +143,59 @@ def rebuild_stories(
     for plan in planned:
         for item in plan.items:
             item.story_id = None
-    for story in _rows(session, NewsStory):
-        if story.id in replaced or story.id not in referenced:
+    # Read late (planning calls a model and can take minutes), stories first:
+    # a demo reset commits atomically, so a demo story seen here has its items
+    # visible to the next read and cannot look orphaned.
+    stories = _rows(session, NewsStory)
+    demo_referenced = set(session.scalars(demo_story_ids_query()))
+    doomed = stories_to_delete(
+        [story.id for story in stories],
+        replaced=replaced,
+        referenced=referenced,
+        demo_referenced=demo_referenced,
+    )
+    for story in stories:
+        if story.id in doomed:
             session.delete(story)
     session.flush()
     for plan in planned:
         _add_story(session, plan)
     return len(planned)
+
+
+def owner_items_query() -> Select:
+    return (
+        select(NewsItem)
+        .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
+        .join(Mailbox, Mailbox.id == EmailMessage.mailbox_id)
+        .where(Mailbox.provider != MailboxProvider.DEMO)
+    )
+
+
+def demo_story_ids_query() -> Select:
+    return (
+        select(NewsItem.story_id)
+        .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
+        .join(Mailbox, Mailbox.id == EmailMessage.mailbox_id)
+        .where(Mailbox.provider == MailboxProvider.DEMO, NewsItem.story_id.is_not(None))
+        .distinct()
+    )
+
+
+def stories_to_delete(
+    story_ids: list[uuid.UUID],
+    *,
+    replaced: set[uuid.UUID],
+    referenced: set[uuid.UUID],
+    demo_referenced: set[uuid.UUID],
+) -> set[uuid.UUID]:
+    """Replaced stories and orphans go; a story any demo item points at stays."""
+    return {
+        story_id
+        for story_id in story_ids
+        if (story_id in replaced or story_id not in referenced)
+        and story_id not in demo_referenced
+    }
 
 
 def same_story_with_jev(left: NewsItem, right: NewsItem) -> bool | None:

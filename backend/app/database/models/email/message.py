@@ -32,6 +32,8 @@ class EmailLabel(StrEnum):
 class NewsletterSource(StrEnum):
     TLDR = "tldr"
     ALPHA_SIGNAL = "alpha_signal"
+    DEMO_TENSOR = "demo_tensor"
+    DEMO_DETECTIVE = "demo_detective"
 
 
 def _in_list(column: str, members: type[StrEnum]) -> str:

@@ -63,7 +63,7 @@ class _Agent:
 def _run(monkeypatch: pytest.MonkeyPatch, agent: _Agent) -> tuple[str, list[dict]]:
     stored: list[dict] = []
     monkeypatch.setattr("app.news_assistant.agent.get_agent", lambda: agent)
-    monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [uuid.uuid4()])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [uuid.uuid4()])
     monkeypatch.setattr(
         "app.retrieval.news.retriever.NewsRetriever.stories",
         lambda self, *, filters, limit, session=None: [

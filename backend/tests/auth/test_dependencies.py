@@ -48,6 +48,7 @@ def test_me_returns_current_user(
         lambda: _mock_auth_client(get_user=get_user),
     )
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [])
 
     response = client.get("/me", headers={"Authorization": "Bearer good-token"})
 

@@ -55,12 +55,18 @@ def test_reset_deletes_only_the_demo_users_rows() -> None:
 
     reset.reset_demo(session, USER, email="demo@example.com", today=TODAY)
 
-    assert len(session.statements) == 4
-    lock, emails, transactions, threads = session.statements
+    assert len(session.statements) == 5
+    lock, stories, emails, transactions, threads = session.statements
     # A second reset waits for the first, so two base states can't pile up.
     assert lock.startswith("SELECT mailboxes.id")
     assert f"mailboxes.id = '{ACCOUNTS.mailbox_id}'" in lock
     assert lock.endswith("FOR UPDATE")
+    # Stories aren't removed by the email cascade, so they go first, found through the
+    # demo mailbox's items.
+    assert stories.startswith("DELETE FROM news_stories")
+    assert "news_items.story_id" in stories
+    assert f"emails.mailbox_id = '{ACCOUNTS.mailbox_id}'" in stories
+    assert session.statements.index(stories) < session.statements.index(emails)
     assert emails.startswith("DELETE FROM emails")
     assert f"emails.mailbox_id = '{ACCOUNTS.mailbox_id}'" in emails
     assert transactions.startswith("DELETE FROM transactions")
@@ -168,6 +174,9 @@ def test_reset_flushes_parents_before_children() -> None:
 
     assert session.flushes == [
         ["EmailMessage"],
+        ["EmailMessage"],
+        ["NewsStory"],
+        ["NewsItem"],
         ["EmailAttachment"],
         ["Invoice"],
         ["Transaction"],

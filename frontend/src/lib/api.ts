@@ -212,6 +212,11 @@ export interface DemoBookResult {
   invoiceStatus: InvoiceStatus | null
 }
 
+export interface DemoNewsSummaryResult {
+  sent: boolean
+  headline: string
+}
+
 /** Product-level API calls. Auth and error handling live in the http client. */
 export const api = {
   getMe: () => http.get<Me>('/me'),
@@ -271,6 +276,9 @@ export const api = {
   listDemoPayments: () => http.get<DemoPayment[]>('/finance/demo/payments'),
 
   bookDemoPayment: (id: string) => http.post<DemoBookResult>(`/finance/demo/payments/${id}/book`),
+
+  sendDemoNewsSummary: () =>
+    http.post<DemoNewsSummaryResult>('/finance/demo/news-summary', undefined, { timeoutMs: 60_000 }),
 
   resetDemo: () => http.post<Record<string, number>>('/finance/demo/reset', undefined, { timeoutMs: 60_000 }),
 }
