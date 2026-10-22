@@ -5,12 +5,14 @@ import pytest
 from sqlalchemy.dialects import postgresql
 
 from app.database.models.email.news_item import NewsItem
+from app.database.models.email.story import NewsStory
 from ingest.email.stories import (
     PlannedStory,
     demo_story_ids_query,
     is_big,
     owner_items_query,
     plan_stories,
+    rebuild_stories,
     stories_to_delete,
 )
 
@@ -206,17 +208,50 @@ def test_story_referenced_only_by_demo_items_survives() -> None:
     assert doomed == {orphan, replaced}
 
 
-def test_owner_and_demo_items_on_one_day_never_share_a_story() -> None:
+class _FakeSession:
+    """Answers each statement by its compiled SQL and records deletes."""
+
+    def __init__(self, owner_items, demo_story_ids, stories) -> None:
+        self.owner_items = owner_items
+        self.demo_story_ids = demo_story_ids
+        self.stories = stories
+        self.statements: list[str] = []
+        self.deleted: list[NewsStory] = []
+        self.added: list[NewsStory] = []
+
+    def scalars(self, statement):
+        sql = _sql(statement)
+        self.statements.append(sql)
+        if "mailboxes.provider != 'demo'" in sql:
+            return list(self.owner_items)
+        if "mailboxes.provider = 'demo'" in sql:
+            return list(self.demo_story_ids)
+        return list(self.stories)
+
+    def delete(self, story) -> None:
+        self.deleted.append(story)
+
+    def add(self, story) -> None:
+        story.id = uuid.uuid4()
+        self.added.append(story)
+
+    def flush(self) -> None:
+        pass
+
+
+def test_rebuild_stories_never_touches_demo_stories() -> None:
     day = date(2026, 9, 28)
-    owner = _item("tldr", day, [1.0, 0.0], "Same news")
-    demo = _item("demo_tensor", day, [1.0, 0.0], "Same news")
-    # rebuild_stories loads only owner items, so the demo item is never passed in.
-    owner_only = [owner]
+    demo_story = NewsStory(id=uuid.uuid4(), first_seen=day, last_seen=day, is_big=True)
+    orphan = NewsStory(id=uuid.uuid4(), first_seen=day, last_seen=day, is_big=False)
+    old = NewsStory(id=uuid.uuid4(), first_seen=day, last_seen=day, is_big=False)
+    tldr = _item("tldr", day, [1.0, 0.0], "Owner news")
+    tldr.story_id = old.id
+    session = _FakeSession([tldr], [demo_story.id], [demo_story, orphan, old])
 
-    planned, decisions = plan_stories(
-        owner_only, day, same_story=lambda _l, _r: True, window_hours=48
-    )
+    count = rebuild_stories(session, day, same_story=lambda _l, _r: True)  # type: ignore[arg-type]
 
-    assert [_ids(story) for story in planned] == [{owner.id}]
-    assert decisions == []
-    assert demo.id not in _ids(planned[0])
+    assert "mailboxes.provider != 'demo'" in session.statements[0]
+    assert demo_story not in session.deleted
+    assert set(map(id, session.deleted)) == {id(orphan), id(old)}
+    assert count == 1
+    assert tldr.story_id == session.added[0].id

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -122,10 +123,7 @@ def rebuild_stories(
     Stories have no owner, so demo items and the stories only they reference are
     never loaded, replanned or deleted.
     """
-    items = [
-        row for row in session.scalars(owner_items_query()) if isinstance(row, NewsItem)
-    ]
-    demo_referenced = set(session.scalars(demo_story_ids_query()))
+    items = list(session.scalars(owner_items_query()))
     planned, decisions = plan_stories(
         items,
         edition,
@@ -143,6 +141,9 @@ def rebuild_stories(
     for plan in planned:
         for item in plan.items:
             item.story_id = None
+    # Read late: planning calls a model and can take minutes, and a demo reset
+    # committing meanwhile must not leave its new story looking orphaned.
+    demo_referenced = set(session.scalars(demo_story_ids_query()))
     stories = _rows(session, NewsStory)
     doomed = stories_to_delete(
         [story.id for story in stories],
@@ -179,12 +180,12 @@ def demo_story_ids_query() -> Select:
 
 
 def stories_to_delete(
-    story_ids: list,
+    story_ids: list[uuid.UUID],
     *,
-    replaced: set,
-    referenced: set,
-    demo_referenced: set,
-) -> set:
+    replaced: set[uuid.UUID],
+    referenced: set[uuid.UUID],
+    demo_referenced: set[uuid.UUID],
+) -> set[uuid.UUID]:
     """Replaced stories and orphans go; a story any demo item points at stays."""
     return {
         story_id
