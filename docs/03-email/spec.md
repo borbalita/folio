@@ -60,7 +60,7 @@ docs/
 
 | Route | Behavior |
 |---|---|
-| `/` | Agent picker. One card per agent the user can open. Documents is always there. Email is there only when `/me` includes `email`. Choosing a card goes to that agent's route. |
+| `/` | Agent picker. One card per agent the user can open, except Documents, which is reachable only at `/documents` (owner, 2026-10-22). Email is there only when `/me` includes `email`. Choosing a card goes to that agent's route. |
 | `/documents`, `/documents/:threadId` | Document copilot |
 | `/email`, `/email/:threadId` | Email agent (owner only; others redirect to `/`) |
 | `/email/invoices/:emailId` | Redirects to `/finance/invoices/:emailId` |
