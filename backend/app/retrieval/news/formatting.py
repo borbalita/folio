@@ -56,7 +56,7 @@ def _item_block(passage: NewsPassage) -> str:
     return "\n".join(
         [
             f"[{passage.item_id}]",
-            f"Source: {passage.source}",
+            f"Source: {_NEWSLETTER_NAMES.get(passage.source, passage.source)}",
             f"Edition: {passage.edition_date.isoformat()}",
             f"Title: {passage.title}",
             f"Link: {passage.url}",

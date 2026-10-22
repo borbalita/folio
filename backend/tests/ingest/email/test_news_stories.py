@@ -255,3 +255,17 @@ def test_rebuild_stories_never_touches_demo_stories() -> None:
     assert set(map(id, session.deleted)) == {id(orphan), id(old)}
     assert count == 1
     assert tldr.story_id == session.added[0].id
+
+
+def test_rebuild_stories_reads_stories_before_demo_story_ids() -> None:
+    day = date(2026, 9, 28)
+    session = _FakeSession([], [], [])
+
+    rebuild_stories(session, day, same_story=lambda _l, _r: True)  # type: ignore[arg-type]
+
+    kinds = [
+        "demo" if "mailboxes.provider = 'demo'" in sql else "other"
+        for sql in session.statements
+        if "mailboxes.provider != 'demo'" not in sql
+    ]
+    assert kinds == ["other", "demo"]

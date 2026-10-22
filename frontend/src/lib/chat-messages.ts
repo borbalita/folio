@@ -40,6 +40,8 @@ export function citationKind(data: CitationData): CitationKind {
 const NEWS_SOURCES: Record<string, string> = {
   tldr: 'TLDR',
   alpha_signal: 'Alpha Signal',
+  demo_tensor: 'The Daily Tensor',
+  demo_detective: 'AI Detective',
 }
 
 export function newsSourceName(source: string | undefined): string | null {

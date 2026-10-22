@@ -41,11 +41,24 @@ def test_item_lists_id_source_edition_title_link_and_blurb() -> None:
     output = format_news_passages([_item(TLDR_ITEM, "tldr")])
 
     assert f"[{TLDR_ITEM}]" in output
-    assert "Source: tldr" in output
+    assert "Source: TLDR" in output
     assert "Edition: 2026-09-22" in output
     assert "Title: Robot hands learn to fold laundry" in output
     assert "Link: https://example.com/robots" in output
     assert output.endswith("A new policy folds shirts at home.")
+
+
+def test_item_shows_the_demo_newsletter_display_name() -> None:
+    output = format_news_passages([_item(ALPHA_ITEM, "demo_tensor")])
+
+    assert "Source: The Daily Tensor" in output
+    assert "demo_tensor" not in output
+
+
+def test_item_falls_back_to_the_raw_source_key() -> None:
+    assert "Source: other_news" in format_news_passages(
+        [_item(ALPHA_ITEM, "other_news")]
+    )
 
 
 def _story(

@@ -143,10 +143,11 @@ def rebuild_stories(
     for plan in planned:
         for item in plan.items:
             item.story_id = None
-    # Read late: planning calls a model and can take minutes, and a demo reset
-    # committing meanwhile must not leave its new story looking orphaned.
-    demo_referenced = set(session.scalars(demo_story_ids_query()))
+    # Read late (planning calls a model and can take minutes), stories first:
+    # a demo reset commits atomically, so a demo story seen here has its items
+    # visible to the next read and cannot look orphaned.
     stories = _rows(session, NewsStory)
+    demo_referenced = set(session.scalars(demo_story_ids_query()))
     doomed = stories_to_delete(
         [story.id for story in stories],
         replaced=replaced,
