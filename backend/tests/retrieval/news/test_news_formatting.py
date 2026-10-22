@@ -135,3 +135,69 @@ def test_format_marks_big_stories_and_lists_every_item_id() -> None:
     assert f"[{TLDR_ITEM}]" in output
     assert f"[{ALPHA_ITEM}]" in output
     assert f"[{STORY}]" not in output
+
+
+def _dated(item_id: UUID, day: str) -> NewsPassage:
+    return _item(item_id, "tldr").model_copy(
+        update={"edition_date": date.fromisoformat(day)}
+    )
+
+
+def _ids_in_order(output: str, ids: list[UUID]) -> list[UUID]:
+    return sorted(ids, key=lambda item_id: output.index(f"[{item_id}]"))
+
+
+def test_search_hits_are_listed_newest_first() -> None:
+    old, new, middle = (UUID(int=n) for n in (1, 2, 3))
+    passages = [
+        _dated(old, "2026-10-08"),
+        _dated(new, "2026-10-21"),
+        _dated(middle, "2026-10-13"),
+    ]
+
+    output = format_news_passages(passages)
+
+    assert _ids_in_order(output, [old, new, middle]) == [new, middle, old]
+
+
+def test_stories_are_listed_big_first_then_newest_first() -> None:
+    old_big = _story(
+        ["alpha_signal", "tldr"], 1, "2026-10-08", "2026-10-09", is_big=True
+    )
+    old_big.items.append(_dated(UUID(int=1), "2026-10-09"))
+    new_big = _story(
+        ["alpha_signal", "tldr"], 1, "2026-10-20", "2026-10-21", is_big=True
+    )
+    new_big.items.append(_dated(UUID(int=2), "2026-10-21"))
+    newest_small = _story(["tldr"], 1, "2026-10-22", "2026-10-22")
+    newest_small.items.append(_dated(UUID(int=3), "2026-10-22"))
+    older_small = _story(["tldr"], 1, "2026-10-14", "2026-10-14")
+    older_small.items.append(_dated(UUID(int=4), "2026-10-14"))
+
+    output = format_stories([old_big, older_small, new_big, newest_small], empty="none")
+
+    assert _ids_in_order(output, [UUID(int=n) for n in (1, 2, 3, 4)]) == [
+        UUID(int=2),
+        UUID(int=1),
+        UUID(int=3),
+        UUID(int=4),
+    ]
+
+
+def test_items_within_a_story_are_listed_newest_first() -> None:
+    story = _story(["alpha_signal", "tldr"], 3, "2026-10-14", "2026-10-16", is_big=True)
+    story.items.extend(
+        [
+            _dated(UUID(int=1), "2026-10-14"),
+            _dated(UUID(int=2), "2026-10-16"),
+            _dated(UUID(int=3), "2026-10-15"),
+        ]
+    )
+
+    output = format_stories([story], empty="none")
+
+    assert _ids_in_order(output, [UUID(int=n) for n in (1, 2, 3)]) == [
+        UUID(int=2),
+        UUID(int=3),
+        UUID(int=1),
+    ]
