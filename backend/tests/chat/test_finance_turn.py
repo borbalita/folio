@@ -162,6 +162,7 @@ def test_finance_turn_uses_the_invoice_scope(monkeypatch, stored) -> None:
     invoice_scope = [uuid.uuid4()]
     seen: list[list[uuid.UUID]] = []
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [])
     monkeypatch.setattr(
         mailboxes, "invoice_mailbox_ids", lambda user_id: invoice_scope
     )

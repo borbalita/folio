@@ -39,3 +39,10 @@ def test_invoice_mailbox_ids_includes_demo(monkeypatch: pytest.MonkeyPatch) -> N
     assert "mailboxes.provider" not in sql.split("WHERE")[1]
     assert "demo" not in params.values()
     assert "mailboxes.is_active" in sql
+
+
+def test_news_mailbox_ids_includes_demo(monkeypatch: pytest.MonkeyPatch) -> None:
+    sql, params = _sql_of(monkeypatch, mailboxes.news_mailbox_ids)
+
+    assert "mailboxes.provider" not in sql.split("WHERE")[1]
+    assert "demo" not in params.values()

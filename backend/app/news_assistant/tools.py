@@ -1,4 +1,4 @@
-"""list_big_news, catch_up and search_news, scoped to the user's active mailboxes."""
+"""list_big_news, catch_up and search_news, scoped to the user's news mailboxes."""
 
 from __future__ import annotations
 
@@ -125,7 +125,7 @@ def _filters(
 ) -> NewsSearchFilters:
     return NewsSearchFilters(
         user_id=deps.user_id,
-        mailbox_ids=mailboxes.active_mailbox_ids(deps.user_id),
+        mailbox_ids=mailboxes.news_mailbox_ids(deps.user_id),
         since=since,
         until=until,
         big_only=big_only,

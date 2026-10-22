@@ -28,6 +28,7 @@ def test_me_lists_documents_only_without_a_mailbox(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _no_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _no_mailbox)
 
     response = authed_client.get("/me")
 
@@ -40,6 +41,7 @@ def test_me_includes_email_for_an_active_mailbox(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _owns_mailbox)
 
     response = authed_client.get("/me")
 
@@ -54,6 +56,7 @@ def test_email_routes_are_forbidden_without_a_mailbox(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _no_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _no_mailbox)
     monkeypatch.setattr(chats, "get_thread_for_user", _email_thread)
 
     listed = authed_client.get("/threads", params={"agent": "email"})
@@ -73,6 +76,7 @@ def test_owner_can_list_create_and_post_to_email(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _owns_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _owns_mailbox)
     monkeypatch.setattr(chats, "list_threads", lambda user_id, agent: [])
     monkeypatch.setattr(
         chats,
@@ -122,6 +126,7 @@ def test_document_routes_stay_open_without_a_mailbox(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _no_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _no_mailbox)
     monkeypatch.setattr(chats, "list_threads", lambda user_id, agent: [])
     monkeypatch.setattr(
         chats,
@@ -160,6 +165,7 @@ def test_news_routes_are_forbidden_without_a_mailbox(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", _no_mailbox)
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", _no_mailbox)
     monkeypatch.setattr(chats, "get_thread_for_user", _news_thread)
 
     listed = authed_client.get("/threads", params={"agent": "news"})

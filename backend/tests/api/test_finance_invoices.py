@@ -321,6 +321,7 @@ def test_finance_invoices_use_the_invoice_scope(
 ) -> None:
     monkeypatch.setattr(settings, "finance_owner_user_id", TEST_USER_ID)
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [])
     monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [uuid.uuid4()])
     monkeypatch.setattr(invoices, "list_invoices", lambda mailbox_ids: [])
 

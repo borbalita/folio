@@ -1,4 +1,4 @@
-"""Mailbox lookups: which mailboxes the email agent and Finance may read."""
+"""Mailbox lookups: which mailboxes the email agent, Finance and AI News may read."""
 
 from __future__ import annotations
 
@@ -38,3 +38,8 @@ def invoice_mailbox_ids(user_id: uuid.UUID) -> list[uuid.UUID]:
                 )
             )
         )
+
+
+# Same scope as invoices today: the demo mailbox holds fixture newsletters too. Kept as its own
+# name so News can narrow its scope without touching Finance.
+news_mailbox_ids = invoice_mailbox_ids

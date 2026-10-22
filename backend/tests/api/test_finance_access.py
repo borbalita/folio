@@ -13,6 +13,7 @@ from tests.conftest import TEST_USER_ID
 @pytest.fixture(autouse=True)
 def no_mailbox(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mailboxes, "active_mailbox_ids", lambda user_id: [])
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [])
     monkeypatch.setattr(mailboxes, "invoice_mailbox_ids", lambda user_id: [])
 
 
