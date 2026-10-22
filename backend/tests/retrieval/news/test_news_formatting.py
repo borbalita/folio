@@ -81,6 +81,20 @@ def _story(
             "Alpha Signal only · 2 items · Sep 30–Oct 2",
         ),
         (
+            ["demo_tensor"],
+            1,
+            "2026-10-12",
+            "2026-10-12",
+            "The Daily Tensor only · 1 item · Oct 12",
+        ),
+        (
+            ["demo_detective"],
+            1,
+            "2026-10-12",
+            "2026-10-12",
+            "AI Detective only · 1 item · Oct 12",
+        ),
+        (
             ["demo_daily"],
             1,
             "2026-10-12",

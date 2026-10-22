@@ -64,12 +64,19 @@ def cluster_items(
     return list(groups.values()), decisions
 
 
+# A story is big when both newsletters of one pair covered it. A user only ever
+# has one pair, so the pairs never mix.
+NEWSLETTER_PAIRS: tuple[frozenset[str], ...] = (
+    frozenset({NewsletterSource.TLDR.value, NewsletterSource.ALPHA_SIGNAL.value}),
+    frozenset(
+        {NewsletterSource.DEMO_TENSOR.value, NewsletterSource.DEMO_DETECTIVE.value}
+    ),
+)
+
+
 def is_big(items: list[NewsItem]) -> bool:
     sources = {item.source for item in items}
-    return (
-        NewsletterSource.TLDR.value in sources
-        and NewsletterSource.ALPHA_SIGNAL.value in sources
-    )
+    return any(pair <= sources for pair in NEWSLETTER_PAIRS)
 
 
 @dataclass(frozen=True, slots=True)

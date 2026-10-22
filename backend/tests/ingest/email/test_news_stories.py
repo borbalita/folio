@@ -1,8 +1,10 @@
 import uuid
 from datetime import date, timedelta
 
+import pytest
+
 from app.database.models.email.news_item import NewsItem
-from ingest.email.stories import PlannedStory, plan_stories
+from ingest.email.stories import PlannedStory, is_big, plan_stories
 
 
 def test_jev_yes_is_one_big_story() -> None:
@@ -139,3 +141,22 @@ def _not_compared(_left: NewsItem, _right: NewsItem) -> bool:
 
 def _ids(story: PlannedStory) -> frozenset[uuid.UUID]:
     return frozenset(item.id for item in story.items)
+
+
+@pytest.mark.parametrize(
+    ("sources", "expected"),
+    [
+        (["tldr", "alpha_signal"], True),
+        (["demo_tensor", "demo_detective"], True),
+        (["tldr", "demo_detective"], False),
+        (["demo_tensor", "alpha_signal"], False),
+        (["tldr"], False),
+        (["demo_tensor", "demo_tensor"], False),
+    ],
+)
+def test_big_means_both_newsletters_of_one_pair(
+    sources: list[str], expected: bool
+) -> None:
+    items = [_item(s, date(2026, 9, 28), [1.0, 0.0], "A story") for s in sources]
+
+    assert is_big(items) is expected

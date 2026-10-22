@@ -13,7 +13,12 @@ def format_news_passages(passages: list[NewsPassage]) -> str:
     return "\n\n".join(_item_block(passage) for passage in passages)
 
 
-_NEWSLETTER_NAMES = {"tldr": "TLDR", "alpha_signal": "Alpha Signal"}
+_NEWSLETTER_NAMES = {
+    "tldr": "TLDR",
+    "alpha_signal": "Alpha Signal",
+    "demo_tensor": "The Daily Tensor",
+    "demo_detective": "AI Detective",
+}
 
 
 def coverage_line(story: Story) -> str:

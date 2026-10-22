@@ -12,7 +12,12 @@ Kind = Literal["invoice_new", "invoice_due", "news_big"]
 Status = Literal["pending", "skipped"]
 
 DUE_SOON_DAYS = 3
-SOURCE_NAMES = {"tldr": "TLDR", "alpha_signal": "Alpha Signal"}
+SOURCE_NAMES = {
+    "tldr": "TLDR",
+    "alpha_signal": "Alpha Signal",
+    "demo_tensor": "The Daily Tensor",
+    "demo_detective": "AI Detective",
+}
 
 
 @dataclass(frozen=True)
