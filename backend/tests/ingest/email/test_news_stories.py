@@ -2,9 +2,17 @@ import uuid
 from datetime import date, timedelta
 
 import pytest
+from sqlalchemy.dialects import postgresql
 
 from app.database.models.email.news_item import NewsItem
-from ingest.email.stories import PlannedStory, is_big, plan_stories
+from ingest.email.stories import (
+    PlannedStory,
+    demo_story_ids_query,
+    is_big,
+    owner_items_query,
+    plan_stories,
+    stories_to_delete,
+)
 
 
 def test_jev_yes_is_one_big_story() -> None:
@@ -160,3 +168,55 @@ def test_big_means_both_newsletters_of_one_pair(
     items = [_item(s, date(2026, 9, 28), [1.0, 0.0], "A story") for s in sources]
 
     assert is_big(items) is expected
+
+
+def _sql(statement) -> str:
+    return str(
+        statement.compile(
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+    )
+
+
+def test_owner_item_query_excludes_demo_mailboxes() -> None:
+    sql = _sql(owner_items_query())
+
+    assert "JOIN emails ON emails.id = news_items.email_id" in sql
+    assert "JOIN mailboxes ON mailboxes.id = emails.mailbox_id" in sql
+    assert "mailboxes.provider != 'demo'" in sql
+
+
+def test_demo_story_query_selects_only_demo_items() -> None:
+    sql = _sql(demo_story_ids_query())
+
+    assert "mailboxes.provider = 'demo'" in sql
+    assert "news_items.story_id IS NOT NULL" in sql
+
+
+def test_story_referenced_only_by_demo_items_survives() -> None:
+    owner, demo, orphan, replaced = (uuid.uuid4() for _ in range(4))
+
+    doomed = stories_to_delete(
+        [owner, demo, orphan, replaced],
+        replaced={replaced},
+        referenced={owner, replaced},
+        demo_referenced={demo},
+    )
+
+    assert doomed == {orphan, replaced}
+
+
+def test_owner_and_demo_items_on_one_day_never_share_a_story() -> None:
+    day = date(2026, 9, 28)
+    owner = _item("tldr", day, [1.0, 0.0], "Same news")
+    demo = _item("demo_tensor", day, [1.0, 0.0], "Same news")
+    # rebuild_stories loads only owner items, so the demo item is never passed in.
+    owner_only = [owner]
+
+    planned, decisions = plan_stories(
+        owner_only, day, same_story=lambda _l, _r: True, window_hours=48
+    )
+
+    assert [_ids(story) for story in planned] == [{owner.id}]
+    assert decisions == []
+    assert demo.id not in _ids(planned[0])

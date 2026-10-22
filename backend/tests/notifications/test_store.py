@@ -95,3 +95,20 @@ def test_load_invoices_skips_demo_mailboxes() -> None:
     assert "mailboxes.provider !=" in sql
     params = statement.compile(dialect=postgresql.dialect()).params
     assert "demo" in params.values()
+
+
+def test_big_stories_exclude_demo_mailboxes() -> None:
+    session = MagicMock()
+    session.execute.return_value.scalars.return_value = []
+
+    store.load_big_stories(session, date(2026, 10, 1))
+
+    statement = session.execute.call_args.args[0]
+    sql = str(
+        statement.compile(
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": True}
+        )
+    )
+    assert "JOIN emails ON emails.id = news_items.email_id" in sql
+    assert "JOIN mailboxes ON mailboxes.id = emails.mailbox_id" in sql
+    assert "mailboxes.provider != 'demo'" in sql
