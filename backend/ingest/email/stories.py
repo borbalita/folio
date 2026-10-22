@@ -123,7 +123,9 @@ def rebuild_stories(
     Stories have no owner, so demo items and the stories only they reference are
     never loaded, replanned or deleted.
     """
-    items = list(session.scalars(owner_items_query()))
+    items = [
+        row for row in session.scalars(owner_items_query()) if isinstance(row, NewsItem)
+    ]
     planned, decisions = plan_stories(
         items,
         edition,
