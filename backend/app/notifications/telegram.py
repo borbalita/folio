@@ -112,6 +112,28 @@ def send_pending(
     return counts
 
 
+class SendError(RuntimeError):
+    """A direct send failed. The message never carries the URL, which holds the bot token."""
+
+
+def send_text(text: str, *, client: httpx.Client | None = None) -> None:
+    """Post one message to the owner's chat now; no retries, no table row."""
+    url = f"{API_URL}/bot{settings.telegram_bot_token}/sendMessage"
+    owned = client is None
+    http = client or httpx.Client(timeout=TIMEOUT_SECONDS)
+    try:
+        response = http.post(
+            url, json={"chat_id": settings.telegram_chat_id, "text": text}
+        )
+    except httpx.HTTPError as exc:
+        raise SendError(f"Telegram request failed: {type(exc).__name__}") from None
+    finally:
+        if owned:
+            http.close()
+    if response.status_code != 200:
+        raise SendError(f"Telegram answered {response.status_code}")
+
+
 def _retry_later(row: Notification, error: str, counts: dict[str, int]) -> None:
     row.attempts += 1
     row.last_error = error
@@ -120,4 +142,6 @@ def _retry_later(row: Notification, error: str, counts: dict[str, int]) -> None:
         counts["failed"] += 1
         log.warning("telegram_send_gave_up", kind=row.kind, error=error)
     else:
-        log.warning("telegram_send_retry", kind=row.kind, error=error, attempts=row.attempts)
+        log.warning(
+            "telegram_send_retry", kind=row.kind, error=error, attempts=row.attempts
+        )

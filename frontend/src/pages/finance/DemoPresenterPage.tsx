@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { BookPaymentsBlock } from '@/components/finance/demo/BookPaymentsBlock'
 import { NewInvoiceBlock } from '@/components/finance/demo/NewInvoiceBlock'
+import { NewsSummaryBlock } from '@/components/finance/demo/NewsSummaryBlock'
 import { ResetBlock } from '@/components/finance/demo/ResetBlock'
 import { api, type DemoPayment } from '@/lib/api'
 import { ApiError, describeApiError } from '@/lib/http'
@@ -57,6 +58,7 @@ export function DemoPresenterPage() {
           <NewInvoiceBlock />
           {/* Remounted after a reset, so the list starts from the fresh payments. */}
           <BookPaymentsBlock key={generation} initial={state.payments} />
+          <NewsSummaryBlock />
           <ResetBlock onReset={() => setGeneration((value) => value + 1)} />
         </>
       ) : null}
