@@ -15,6 +15,8 @@ from app.database.engine import get_session
 from app.database.models.chat.thread import ChatThread
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
+from app.database.models.email.news_item import NewsItem
+from app.database.models.email.story import NewsStory
 from app.database.models.finance.transaction import Transaction
 from app.database.models.user import User
 from app.demo.accounts import ensure_demo_accounts
@@ -25,7 +27,7 @@ from app.logging import configure_logging
 def reset_demo(
     session: Session, user_id: uuid.UUID, *, email: str, today: date
 ) -> dict[str, int]:
-    """Delete the demo user's Finance rows and write the base state; the caller commits.
+    """Delete the demo user's Finance and AI News rows and write the base state; the caller commits.
 
     Invoices, matches, payment drafts, attachments and chunks go with their email, and
     chat messages with their thread, through the database's cascades.
@@ -35,6 +37,17 @@ def reset_demo(
     session.execute(
         select(Mailbox.id).where(Mailbox.id == accounts.mailbox_id).with_for_update()
     )
+    # Stories outlive their items (news_items.story_id is ON DELETE SET NULL), so they
+    # go first, while the items that name them still exist.
+    demo_story_ids = (
+        select(NewsItem.story_id)
+        .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
+        .where(
+            EmailMessage.mailbox_id == accounts.mailbox_id,
+            NewsItem.story_id.is_not(None),
+        )
+    )
+    session.execute(delete(NewsStory).where(NewsStory.id.in_(demo_story_ids)))
     session.execute(
         delete(EmailMessage).where(EmailMessage.mailbox_id == accounts.mailbox_id)
     )
@@ -52,7 +65,11 @@ def reset_demo(
     for group in rows.groups():
         session.add_all(group)
         session.flush()
-    return {"invoices": len(rows.invoices), "transactions": len(rows.transactions)}
+    return {
+        "invoices": len(rows.invoices),
+        "transactions": len(rows.transactions),
+        "stories": len(rows.stories),
+    }
 
 
 def run_reset(

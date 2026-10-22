@@ -19,6 +19,8 @@ from app.database.engine import get_engine
 from app.database.models.chat.thread import ChatThread
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
+from app.database.models.email.news_item import NewsItem
+from app.database.models.email.story import NewsStory
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
 from app.database.models.finance.invoice import Invoice, InvoiceStatus
@@ -26,6 +28,7 @@ from app.database.models.finance.payment_draft import DraftStatus, PaymentDraft
 from app.database.models.finance.transaction import Transaction
 from app.database.models.user import User
 from app.demo.accounts import ensure_demo_accounts
+from app.demo.news_fixture import load_fixture
 from app.demo.reset import reset_demo
 from evals.guard import require_local_database
 
@@ -163,3 +166,50 @@ def test_reset_rebuilds_only_the_demo_users_finance(session: Session) -> None:
     assert session.get(Invoice, owner["invoice"]) is not None
     assert session.get(Transaction, owner["transaction"]) is not None
     assert session.get(ChatThread, owner["thread"]) is not None
+
+
+def test_reset_rebuilds_the_demo_news_and_leaves_the_owners(session: Session) -> None:
+    session.add_all(
+        [User(id=OWNER, email="owner@x.example"), User(id=DEMO, email="demo@x.example")]
+    )
+    session.flush()
+    owner = _owner_rows(session)
+    story = NewsStory(id=uuid.uuid4(), first_seen=TODAY, last_seen=TODAY, is_big=False)
+    session.add(story)
+    session.flush()
+    item = NewsItem(
+        id=uuid.uuid4(), email_id=owner["email"], source="tldr", edition_date=TODAY,
+        position=0, title="t", blurb="b", url="https://x.example",
+        embedding=[0.0] * settings.openai_embedding_dimensions,
+        embedding_model=settings.openai_embedding_model,
+        embedding_dimensions=settings.openai_embedding_dimensions, story_id=story.id,
+    )  # fmt: skip
+    session.add(item)
+    session.flush()
+
+    reset_demo(session, DEMO, email="demo@x.example", today=TODAY)
+    session.commit()
+    reset_demo(session, DEMO, email="demo@x.example", today=TODAY)
+    session.commit()
+
+    accounts = ensure_demo_accounts(session, DEMO)
+    demo_items = (
+        select(NewsItem.story_id)
+        .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
+        .where(EmailMessage.mailbox_id == accounts.mailbox_id)
+    )
+    fixture = load_fixture()
+    assert _count(session, NewsItem, NewsItem.story_id.in_(demo_items)) == len(fixture)
+    assert _count(session, NewsStory, NewsStory.id.in_(demo_items)) == len(
+        {i.story for i in fixture}
+    )
+    # No story is left without an item: the first reset's stories went with it.
+    orphans = select(NewsItem.story_id).where(NewsItem.story_id.is_not(None))
+    assert (
+        _count(
+            session, NewsStory, NewsStory.id.not_in(orphans), NewsStory.id != story.id
+        )
+        == 0
+    )
+    assert session.get(NewsStory, story.id) is not None
+    assert session.get(NewsItem, item.id) is not None
