@@ -270,6 +270,15 @@ def build_base_state(
             invoice.status = InvoiceStatus.PAID
             invoice.paid_by = PAID_BY_INVOICE
             invoice.paid_at = email.sent_at
+            # The debit the invoice announces; unlinked, as the app links only
+            # invoices it marks paid by match.
+            ledger.add(
+                demo.debit_date,
+                -demo.amount,
+                demo.vendor.name,
+                demo.reference,
+                demo.iban,
+            )
         elif spec.role in ("matched", "suggested"):
             assert spec.debit_days_ago is not None
             debit_day = today - timedelta(days=spec.debit_days_ago)

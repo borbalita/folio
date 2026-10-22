@@ -75,7 +75,7 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
   | Paid before it arrived | 1 |
   | Needs info (online only) | 1 |
 
-  Plus about 40 transactions over 90 days (salary, rent, shops, all fictional) and the debits behind the matches.
+  Plus about 40 transactions over 90 days (salary, rent, shops, all fictional), the debits behind the matches, and the debit of the invoice paid before it arrived, on the day the invoice names and not linked to it (owner, 2026-10-22).
 - **Reset:** one database transaction deletes the demo user's invoices, matches, payment drafts, transactions, emails with attachments and chunks, and Finance chat threads, then writes the base state. A failure changes nothing.
 - **New invoice:** the presenter picks Normal, Already paid, Online only or Random. The builder draws a vendor, an amount, an invoice number, dates and an IBAN with a valid checksum, and writes a German subject, body and `Rechnung_<number>.pdf`; Already paid says the amount was debited; Online only is a notice without a PDF that the invoice waits in the customer account (changed on 2026-10-21 at the owner's OK, to match the ingest check's definition of `online_only`). The message gets a fresh Message-ID and goes to `ingest_messages` with the demo mailbox, then `match_for_user` for the demo user. The request waits for the model calls (about 10–20 s) and returns the stored invoice. Traces stay content-free and carry the tag `demo`.
 - **Book payment:** the presenter page lists the demo user's approved payments. Book writes a booked debit (amount, payee, IBAN, reference, today) into the demo account and runs `match_for_user`; the strong match marks the invoice paid and completes the payment.
