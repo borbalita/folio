@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No new dependencies. Settings only through `backend/app/config.py`.
-- Newsletter names are fictional: "The Daily Tensor" (`demo_tensor`), "AI Detective" (`demo_detective`); links on `example.com`; never TLDR or Alpha Signal names in demo data.
+- Newsletter names are fictional: "The Daily Tensor" (`demo_tensor`), "AI Detective" (`demo_detective`); items are the owner's real news, rephrased; links to original articles or newsrooms, never `tldrnewsletter.com` or `utm_` tracking; never TLDR or Alpha Signal names in demo data.
 - Seeding makes no model calls: embeddings come from the committed fixture. Only the fixture script (run once, owner's OK) and the Telegram button (one summary call) call models.
 - Migrations: `uv run alembic revision -m ...`, hand-written check-constraint ops only (autogenerate can't see them); the owner applies them.
 - Demo data stays the demo user's: nothing in the owner's stories, retrieval or automatic notifications changes because demo rows exist.
@@ -62,12 +62,12 @@
 
 **Interfaces:**
 - Fixture JSON: `{"embedding_model": str, "embedding_dimensions": int, "items": [{"key": str, "story": str, "source": "demo_tensor"|"demo_detective", "days_ago": int, "position": int, "title": str, "blurb": str, "url": "https://example.com/...", "embedding": "<base64 float32>"}]}`.
-- Content: 14 days, 36–44 items; at least 4 stories in both newsletters (big), at least 3 spanning 2–4 days, the rest single-newsletter; invented labs, models and products (no real company or model names); German readers but English newsletter text, as the real ones.
+- Content (changed 2026-10-22, owner): the 37 rephrased real items already drafted in `news_fixture.draft.json` (7 big stories, 3 spanning several days, security and new-model news for the demo questions); English text as the real newsletters.
 - `load_fixture() -> list[FixtureItem]` refuses (`ValueError`) when `embedding_model`/`embedding_dimensions` differ from settings.
 - `python -m app.demo.embed_news_fixture`: reads the text-only draft (`news_fixture.draft.json`, committed), embeds `embed_text(item)` exactly as `_write_news_items` does (`ingest/email/news.py`), writes `news_fixture.json`. Run once with the owner's OK (OpenAI cost ≈ cents).
 
-- [ ] Tests: counts and shape (big stories ≥ 4 with both sources, multi-day stories ≥ 3, every URL on `example.com`, no TLDR/Alpha Signal and no deny-listed real names); every vector decodes to `settings.openai_embedding_dimensions` floats; mismatched model → `ValueError`.
-- [ ] Write the draft by hand (in this task), run the script with the owner's OK, commit both files; commit `feat(news): demo news fixture with precomputed embeddings`.
+- [ ] Tests: counts and shape (37 items, big stories ≥ 7 with both sources, multi-day stories ≥ 3, at least 5 security and 5 new-model items by keyword, no URL on `tldrnewsletter.com` or with `utm_`, no "TLDR"/"Alpha Signal" in any text); every vector decodes to `settings.openai_embedding_dimensions` floats; mismatched model → `ValueError`.
+- [ ] The draft exists (written in the main session from the owner's export); run the script with the owner's OK, commit both files; commit `feat(news): demo news fixture with precomputed embeddings`.
 
 ### Task 5: The demo reset seeds AI News
 
