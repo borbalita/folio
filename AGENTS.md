@@ -53,7 +53,7 @@ Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
 ## Testing
 
 - **Backend:** add or update pytest tests in the same change. Run `uv run pytest -m "not integration"` from `backend/` before finishing. Details in `backend/AGENTS.md`.
-- **Frontend:** no test runner — manual QA, `pnpm tsc --noEmit`, `pnpm lint`. Details in `frontend/AGENTS.md`.
+- **Frontend:** no test runner — manual QA, `pnpm exec tsc -b --noEmit`, `pnpm lint`. Details in `frontend/AGENTS.md`.
 
 ## Implementing a planned task
 
