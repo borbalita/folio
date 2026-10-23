@@ -32,9 +32,9 @@
 
 **Files:** `backend/app/database/mailboxes.py`, tests in `backend/tests/database/test_mailboxes.py`, `backend/tests/api/test_news_access.py` (or the email access tests).
 
-- [ ] Tests: `active_mailbox_ids`' statement scopes by user id and `is_active` and has no provider condition; the demo user (only a demo mailbox) gets `/me` agents `["documents", "email", "news", "finance"]`; the owner's agents are unchanged.
-- [ ] Remove the provider filter; keep `invoice_mailbox_ids`/`news_mailbox_ids` (now equal to `active_mailbox_ids`; leave a comment, don't merge them in this task).
-- [ ] Commit `feat(email): the demo user's mailbox counts for the Email Assistant`.
+- [x] Tests: `active_mailbox_ids`' statement scopes by user id and `is_active` and has no provider condition; the demo user (only a demo mailbox) gets `/me` agents `["documents", "email", "news", "finance"]`; the owner's agents are unchanged.
+- [x] Remove the provider filter; keep `invoice_mailbox_ids`/`news_mailbox_ids` (now equal to `active_mailbox_ids`; leave a comment, don't merge them in this task).
+- [x] Commit `feat(email): the demo user's mailbox counts for the Email Assistant`.
 
 ### Task 2: Fixture, loader and embedding script
 
@@ -45,9 +45,9 @@
 - `mail_dates.appointment_dates(rules, today) -> dict[str, datetime]`: "this" → day `1 + round(slot × (days_in_month − 1))`, weekend → nearest weekday in the month; "next" → same rule in the next month; local time from `time` in `settings.email_timezone`. `render(text, dates) -> str` fills both placeholder forms (German weekday and month names).
 - `mail_fixture.load_fixture(path=...) -> list[FixtureMail]` (draft fields + `embedding`), refusing a model/dimension mismatch; `REFERENCE_DAY = date(2026, 10, 15)` used by the script to render text before embedding `"{subject}\n{body}"`.
 
-- [ ] Tests (dates): for every day of Oct 2026, Nov 2026 and Feb 2027: "this" dates fall in that month, "next" in the next, all on weekdays, distinct; `physio_old < physio_new`. `render` produces German weekday/month names.
-- [ ] Tests (fixture): 40 emails, keys unique, every sender on `.example`, labels in the allowed set, at least 2 `needs_reply`, 6 doctor emails, every placeholder used in a text has a rule; loader mismatch refusal; script's pure part uses `render` with `REFERENCE_DAY`.
-- [ ] Commit `feat(email): demo mail fixture, dates and embedding script`.
+- [x] Tests (dates): for every day of Oct 2026, Nov 2026 and Feb 2027: "this" dates fall in that month, "next" in the next, all on weekdays, distinct; `physio_old < physio_new`. `render` produces German weekday/month names.
+- [x] Tests (fixture): 40 emails, keys unique, every sender on `.example`, labels in the allowed set, at least 2 `needs_reply`, 6 doctor emails, every placeholder used in a text has a rule; loader mismatch refusal; script's pure part uses `render` with `REFERENCE_DAY`.
+- [x] Commit `feat(email): demo mail fixture, dates and embedding script`.
 
 ### Task 3: The reset seeds the demo mail
 
@@ -55,11 +55,11 @@
 
 **Interfaces:** `build_mail_rows(today, accounts, *, to_address) -> MailRows(emails, chunks)`: dates from `appointment_dates(..., today)`; `sent_at` = `today − days_ago` at 08:00–18:00 local (spread by key), but never later than one day before the earliest appointment the email mentions; label from the fixture; one `EmailChunk` per email (`chunk_index 0`, `chunk_text` = rendered `"{subject}\n{body}"`, `token_count` via tiktoken as `chunk_email_text`, fixture embedding). `BaseRows.groups()` puts mail emails before chunks.
 
-- [ ] Tests: 40 emails and 40 chunks in the demo mailbox; labels as the fixture; appointment emails sent before their appointments for every day of a month; flush order; integration test counts mail emails and chunks after two resets.
-- [ ] Commit `feat(demo): the demo reset seeds everyday mail`.
+- [x] Tests: 40 emails and 40 chunks in the demo mailbox; labels as the fixture; appointment emails sent before their appointments for every day of a month; flush order; integration test counts mail emails and chunks after two resets.
+- [x] Commit `feat(demo): the demo reset seeds everyday mail`.
 
 ### Task 4: Verify (main session)
 
-- [ ] Owner OK → run `python -m app.demo.embed_mail_fixture`, commit `mail_fixture.json`.
-- [ ] Local browser check as the demo user after a reset: the doctor's question and the reply question.
-- [ ] Final whole-branch review; Verified section; tick 001/01 and set the plan Complete.
+- [x] Owner OK → run `python -m app.demo.embed_mail_fixture`, commit `mail_fixture.json`.
+- [x] Local browser check as the demo user after a reset: the doctor's question and the reply question.
+- [x] Final whole-branch review; Verified section; tick 001/01 and set the plan Complete.

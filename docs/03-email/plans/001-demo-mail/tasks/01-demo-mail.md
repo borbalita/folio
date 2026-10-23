@@ -25,3 +25,14 @@ After a reset, the demo user's Email Assistant answers from 40 invented emails, 
 
 ## Dependencies
 Finance demo 003/03 (reset), 07-ai-news 001/05 (news fixture pattern).
+
+## Verified
+
+2026-10-23, PR [#85](https://github.com/borbalita/folio/pull/85).
+
+- `/me` agents for the demo user are `documents`, `email`, `news`, `finance`; the owner's Email scope is unchanged: `test_demo_user_gets_email_news_and_finance`, `test_active_mailbox_ids_includes_demo`. Pass.
+- Appointments on every day of Oct 2026, Nov 2026 and Feb 2027 fall in the month (next month for the dermatologist), on distinct weekdays, and the old physio date comes before the new one: `test_demo_mail_dates.py`. Pass.
+- 40 emails with one chunk each and the fixture's labels, sent before their appointments, no model calls: `test_demo_mail_state.py`, `test_demo_reset.py`, `test_demo_reset_integration.py` (local Postgres). Pass.
+- A fixture with the wrong model or dimensions is refused: `test_demo_mail_fixture.py`. Pass.
+- Doctor's question (browser, local, demo user after a reset): it listed the GP, dentist and eye doctor, plus the physio at its new date with the old one named as moved. It left out the dermatologist (next month), the lab results and the Bürgeramt. Each source has a citation. Pass.
+- Reply question (browser): on the first try it failed with "The assistant couldn't complete this answer", because a filter-only search sent an empty query to the embeddings API. After the fix (`EmailRetriever` lists the newest matching mail when the query is empty), it cited all 9 `needs_reply` emails, Jonah's Kestrel Labs questions first. Pass.

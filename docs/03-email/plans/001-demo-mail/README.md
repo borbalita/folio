@@ -1,8 +1,8 @@
 # 001 — Demo mail: the Email Assistant for the demo user
 
 - Created: 2026-10-23
-- Status: In progress
-- Current stage: Implementation of 001/01
+- Status: Complete
+- Current stage: Done
 
 ## Approval state
 
@@ -57,7 +57,7 @@ Non-goals: labelling or embedding the demo mail at reset time; replies or sendin
 
 ## Tasks
 
-- [ ] [001/01 — Demo mail fixture, Email access and seeding](tasks/01-demo-mail.md)
+- [x] [001/01 — Demo mail fixture, Email access and seeding](tasks/01-demo-mail.md)
 
 ## Open questions and risks
 
