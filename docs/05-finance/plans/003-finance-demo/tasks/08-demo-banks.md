@@ -25,3 +25,14 @@ The demo shows money in several places, as in real life: two bank accounts and a
 ## Notes
 - Implementation plan: [08-demo-banks.plan.md](08-demo-banks.plan.md).
 - Decided in chat 2026-10-22, added to the plan 2026-10-23, for the presentation video: fictional names in the style of the demo vendors; the voice-over can say "in my own setup these are N26, ING and PayPal".
+
+## Verified
+
+2026-10-23, branch `feat/demo-banks`.
+
+- Reset → exactly the three demo connections, each with transactions, no "Demo Bank": `test_three_demo_banks_with_one_account_each`, `test_every_demo_account_has_transactions`, `test_reset_deletes_only_the_demo_users_rows` (transactions of all three accounts, and connections that aren't demo banks). Pass.
+- Reset → one invoice paid and matched automatically by a TalerPay transaction: `test_one_invoice_is_paid_from_the_wallet_and_matched_by_reference` (no IBAN, invoice number in the text); `test_matching_adds_nothing_to_the_base_state` confirms the rules agree with every link. Pass.
+- Booking → debit in Spreeufer Bank's Girokonto: `DemoAccounts.account_id` is the Girokonto (`test_three_demo_banks_with_one_account_each`), and bookings write to `account_id` (`tests/demo/test_booking.py`). Pass.
+- Demo user's Accounts and Transactions pages: **pending** — checked on the live site after the deploy, with a reset there (owner's choice: merge first; a local reset would have changed the shared database under the deployed code).
+- Suite: 859 passed; `ruff check` clean; frontend `pnpm exec tsc -b --noEmit` and `pnpm lint` clean. Found on the way: `pnpm tsc --noEmit`, as in CI and the guides, checks no files (fixed in a separate task).
+
