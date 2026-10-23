@@ -127,7 +127,7 @@ Open http://localhost:5173 and sign in.
 - **Email:** run `uv run python -m ingest.email` from `backend/` ([details](docs/03-email/overview.md)).
 - **Bank connections:** these need the dev server on https ([frontend README](frontend/README.md)).
 
-**Tests:** run `uv run pytest -m "not integration"` in `backend/`, and `pnpm tsc --noEmit && pnpm lint` in `frontend/`. Install the git hooks with `uv run pre-commit install` from `backend/`.
+**Tests:** run `uv run pytest -m "not integration"` in `backend/`, and `pnpm exec tsc -b --noEmit && pnpm lint` in `frontend/`. Install the git hooks with `uv run pre-commit install` from `backend/`.
 
 ## Deployment
 

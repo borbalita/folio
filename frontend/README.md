@@ -1,4 +1,4 @@
-Typecheck and lint: `pnpm tsc --noEmit` and `pnpm lint`.
+Typecheck and lint: `pnpm exec tsc -b --noEmit` and `pnpm lint`.
 
 Local https: Enable Banking redirects only to https URLs, so connecting a bank locally needs the dev server on `https://localhost:5173`. `pnpm dev` serves https when `.cert/` holds a certificate; create one once from `frontend/`:
 

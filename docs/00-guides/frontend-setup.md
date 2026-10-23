@@ -24,6 +24,6 @@ pnpm dev
 ## Check
 
 ```bash
-pnpm tsc --noEmit
+pnpm exec tsc -b --noEmit
 pnpm lint
 ```
