@@ -23,4 +23,5 @@ The demo shows money in several places, as in real life: two bank accounts and a
 003/03, 003/05. Before 003/07 (the rehearsal and the video).
 
 ## Notes
+- Implementation plan: [08-demo-banks.plan.md](08-demo-banks.plan.md).
 - Decided in chat 2026-10-22, added to the plan 2026-10-23, for the presentation video: fictional names in the style of the demo vendors; the voice-over can say "in my own setup these are N26, ING and PayPal".
