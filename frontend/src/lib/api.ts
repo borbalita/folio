@@ -87,7 +87,7 @@ export interface InvoiceMatch {
   transaction: {
     id: string
     date: string
-    bank: BankName
+    bank: BankName | DemoBankName
     counterparty: string | null
     amount: string
     currency: string
@@ -118,7 +118,11 @@ export interface InvoiceDetail extends InvoiceSummary {
   invoices: Invoice[]
 }
 
-export type BankName = 'N26' | 'ING' | 'PayPal' | 'Demo Bank'
+/** Banks the app connects to through Enable Banking. */
+export type BankName = 'N26' | 'ING' | 'PayPal'
+
+/** The demo user's fictional banks: fixture data that can't be connected. */
+export type DemoBankName = 'Spreeufer Bank' | 'Kiez Direkt' | 'TalerPay'
 
 export type PaymentDraftStatus = 'draft' | 'approved' | 'completed' | 'cancelled'
 
@@ -158,14 +162,16 @@ export interface BankAccount {
 
 export type ConnectionStatus = 'active' | 'expiring' | 'expired'
 
-export interface BankConnection {
-  bank: BankName
+interface BankConnectionBase {
   connected: boolean
   validUntil: string | null
   /** Null when the bank was never connected. */
   status: ConnectionStatus | null
   accounts: BankAccount[]
 }
+
+export type BankConnection = BankConnectionBase &
+  ({ bank: BankName; connectable: true } | { bank: DemoBankName; connectable: false })
 
 export interface Transaction {
   id: string

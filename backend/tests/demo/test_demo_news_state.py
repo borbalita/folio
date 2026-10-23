@@ -12,7 +12,12 @@ from app.demo.news_fixture import load_fixture
 from app.demo.news_state import build_news_rows
 
 TODAY = date(2026, 10, 21)
-ACCOUNTS = DemoAccounts(mailbox_id=uuid.uuid4(), account_id=uuid.uuid4())
+ACCOUNTS = DemoAccounts(
+    mailbox_id=uuid.uuid4(),
+    account_id=uuid.uuid4(),
+    card_account_id=uuid.uuid4(),
+    wallet_account_id=uuid.uuid4(),
+)
 TO = "demo+1@folio.example"
 FIXTURE = load_fixture()
 

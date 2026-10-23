@@ -73,7 +73,9 @@ def test_complete_connection_stores_session_clears_state_and_commits(
     assert connection.valid_until == valid_until
     assert connection.pending_state is None
     session.execute.assert_called_once()
-    upsert_sql = str(session.execute.call_args.args[0].compile(dialect=postgresql.dialect()))
+    upsert_sql = str(
+        session.execute.call_args.args[0].compile(dialect=postgresql.dialect())
+    )
     assert "ON CONFLICT" in upsert_sql
     session.commit.assert_called_once()
 
@@ -105,14 +107,25 @@ def test_list_connections_lists_all_banks_in_order(
     result = bank_connections.list_connections(USER_ID)
 
     assert result == [
-        {"bank": bank, "connected": False, "validUntil": None, "status": None, "accounts": []}
+        {
+            "bank": bank,
+            "connected": False,
+            "connectable": True,
+            "validUntil": None,
+            "status": None,
+            "accounts": [],
+        }
         for bank in ("N26", "ING", "PayPal")
     ]
 
 
 def _row(hash_: str, iban: str | None) -> BankAccount:
     return BankAccount(
-        id=uuid.uuid4(), connection_id=uuid.uuid4(), uid="old", identification_hash=hash_, iban=iban
+        id=uuid.uuid4(),
+        connection_id=uuid.uuid4(),
+        uid="old",
+        identification_hash=hash_,
+        iban=iban,
     )
 
 
@@ -123,12 +136,17 @@ def test_reconnect_keeps_existing_account_rows() -> None:
     incoming = [
         _account("a", "DE89370400440532013000"),
         EbAccount(
-            uid="b", identification_hash="h-new", iban="DE02120300000000202051",
-            name="b", currency="EUR",
+            uid="b",
+            identification_hash="h-new",
+            iban="DE02120300000000202051",
+            name="b",
+            currency="EUR",
         ),
     ]
 
-    bank_connections.rehash_by_iban([same_hash, new_hash_same_iban, unrelated], incoming)
+    bank_connections.rehash_by_iban(
+        [same_hash, new_hash_same_iban, unrelated], incoming
+    )
 
     # The upsert then matches both rows by hash, so their ids, and the
     # transactions pointing at them, stay.
@@ -139,8 +157,12 @@ def test_reconnect_keeps_existing_account_rows() -> None:
 
 def test_reconnect_clears_invalid_and_notice(monkeypatch: pytest.MonkeyPatch) -> None:
     connection = BankConnection(
-        id=uuid.uuid4(), user_id=USER_ID, bank="ING", pending_state="state-1",
-        invalidated_at=datetime(2026, 10, 1, tzinfo=UTC), expiry_notice="expired",
+        id=uuid.uuid4(),
+        user_id=USER_ID,
+        bank="ING",
+        pending_state="state-1",
+        invalidated_at=datetime(2026, 10, 1, tzinfo=UTC),
+        expiry_notice="expired",
     )
     session = MagicMock()
     session.scalar.return_value = connection
@@ -158,19 +180,27 @@ def test_reconnect_clears_invalid_and_notice(monkeypatch: pytest.MonkeyPatch) ->
 def test_list_connections_reports_status(monkeypatch: pytest.MonkeyPatch) -> None:
     soon = datetime.now(UTC) + timedelta(days=5)
     connection = BankConnection(
-        id=uuid.uuid4(), user_id=USER_ID, bank="ING", session_id="s", valid_until=soon,
+        id=uuid.uuid4(),
+        user_id=USER_ID,
+        bank="ING",
+        session_id="s",
+        valid_until=soon,
         invalidated_at=None,
     )
     session = MagicMock()
     session.scalars.side_effect = [[connection], []]
     _patch_session(monkeypatch, session)
 
-    ing = next(c for c in bank_connections.list_connections(USER_ID) if c["bank"] == "ING")
+    ing = next(
+        c for c in bank_connections.list_connections(USER_ID) if c["bank"] == "ING"
+    )
 
     assert ing["status"] == "expiring"
 
 
-def test_complete_connection_rehashes_before_the_upsert(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_complete_connection_rehashes_before_the_upsert(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     connection = BankConnection(
         id=uuid.uuid4(), user_id=USER_ID, bank="ING", pending_state="state-1"
     )
@@ -183,12 +213,17 @@ def test_complete_connection_rehashes_before_the_upsert(monkeypatch: pytest.Monk
     session.execute.side_effect = lambda stmt: calls.append("upsert")
     _patch_session(monkeypatch, session)
     incoming = EbAccount(
-        uid="new-uid", identification_hash="h-new", iban="DE02120300000000202051",
-        name="ING", currency="EUR",
+        uid="new-uid",
+        identification_hash="h-new",
+        iban="DE02120300000000202051",
+        name="ING",
+        currency="EUR",
     )
 
     bank_connections.complete_connection(
-        USER_ID, "state-1", EbSession("s2", datetime(2027, 4, 1, tzinfo=UTC), [incoming])
+        USER_ID,
+        "state-1",
+        EbSession("s2", datetime(2027, 4, 1, tzinfo=UTC), [incoming]),
     )
 
     # The existing row now carries the new hash, so the upsert updates it in place.
@@ -253,13 +288,18 @@ class _FilteringSession:
 def test_owner_still_syncs_all_real_banks(monkeypatch: pytest.MonkeyPatch) -> None:
     connections = [
         BankConnection(
-            id=uuid.uuid4(), user_id=USER_ID, bank=bank, session_id="s",
+            id=uuid.uuid4(),
+            user_id=USER_ID,
+            bank=bank,
+            session_id="s",
             valid_until=datetime.now(UTC) + timedelta(days=60),
         )
         for bank in ("N26", "ING", "PayPal", "Demo Bank")
     ]
     accounts = [
-        BankAccount(id=uuid.uuid4(), connection_id=c.id, uid=c.bank, identification_hash="h")
+        BankAccount(
+            id=uuid.uuid4(), connection_id=c.id, uid=c.bank, identification_hash="h"
+        )
         for c in connections
     ]
     _patch_session(monkeypatch, _FilteringSession(connections, accounts))  # type: ignore[arg-type]
@@ -270,27 +310,37 @@ def test_owner_still_syncs_all_real_banks(monkeypatch: pytest.MonkeyPatch) -> No
     assert skipped == 0
 
 
-def test_demo_user_lists_only_the_demo_bank(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_demo_user_lists_the_three_demo_banks(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(bank_connections.settings, "demo_user_id", DEMO_ID)
-    connection = BankConnection(
-        id=uuid.uuid4(), user_id=DEMO_ID, bank="Demo Bank", session_id="demo",
-        valid_until=datetime.now(UTC) + timedelta(days=3650),
-    )
+    connections = [
+        BankConnection(
+            id=uuid.uuid4(),
+            user_id=DEMO_ID,
+            bank=bank,
+            session_id="demo",
+            valid_until=datetime.now(UTC) + timedelta(days=3650),
+        )
+        for bank in ("Spreeufer Bank", "Kiez Direkt", "TalerPay")
+    ]
     account = BankAccount(
-        id=uuid.uuid4(), connection_id=connection.id, uid="demo",
-        identification_hash="demo", iban="DE89370400440532013000", name="Girokonto",
+        id=uuid.uuid4(),
+        connection_id=connections[0].id,
+        uid="demo-girokonto",
+        identification_hash="demo-girokonto",
+        iban="DE89370400440532013000",
+        name="Girokonto",
         currency="EUR",
     )
     session = MagicMock()
-    session.scalars.side_effect = [[connection], [account]]
+    session.scalars.side_effect = [connections, [account]]
     _patch_session(monkeypatch, session)
 
     result = bank_connections.list_connections(DEMO_ID)
 
-    assert len(result) == 1
-    assert result[0]["bank"] == "Demo Bank"
-    assert result[0]["connected"] is True
-    assert result[0]["status"] == "active"
+    assert [c["bank"] for c in result] == ["Spreeufer Bank", "Kiez Direkt", "TalerPay"]
+    assert all(c["connected"] for c in result)
+    # The demo banks are fixture data: nobody can connect them.
+    assert [c["connectable"] for c in result] == [False, False, False]
     assert result[0]["accounts"] == [
         {
             "id": str(account.id),
@@ -310,3 +360,4 @@ def test_owner_list_is_unchanged(monkeypatch: pytest.MonkeyPatch) -> None:
     result = bank_connections.list_connections(USER_ID)
 
     assert [c["bank"] for c in result] == ["N26", "ING", "PayPal"]
+    assert [c["connectable"] for c in result] == [True, True, True]
