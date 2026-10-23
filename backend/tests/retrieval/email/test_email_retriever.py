@@ -108,3 +108,43 @@ def test_search_with_no_mailbox_does_not_embed(monkeypatch: pytest.MonkeyPatch) 
     )
 
     assert found == []
+
+
+@pytest.mark.parametrize("query", ["", "   "])
+def test_filter_only_search_lists_recent_mail_without_embedding(
+    monkeypatch: pytest.MonkeyPatch, query: str
+) -> None:
+    # "What do I still need to reply to?" becomes label=needs_reply with no search words;
+    # embedding an empty text fails at OpenAI.
+    def fail(_query: str) -> list[float]:
+        raise AssertionError("embed should not run")
+
+    passage = EmailPassage(
+        chunk_id=CHUNK,
+        email_id=EMAIL,
+        text="Could you reply by Thursday?",
+        from_address="client@example.com",
+        subject="Two open questions",
+        sent_at=datetime(2026, 10, 22, 9, 0, tzinfo=UTC),
+        mailbox_name="Demo",
+        fusion_score=0.0,
+    )
+    monkeypatch.setattr("app.retrieval.base.embed_query", fail)
+    seen: list[EmailSearchFilters] = []
+
+    def recent(_self, _session, *, limit, filters):
+        seen.append(filters)
+        return [RankedHit(chunk_id=CHUNK, rank=1, score=1.0)]
+
+    monkeypatch.setattr("app.retrieval.email.queries.EmailQueries.recent", recent)
+    monkeypatch.setattr(
+        "app.retrieval.email.retriever.load_passages",
+        lambda _session, _ids, _filters: {CHUNK: passage},
+    )
+
+    found = EmailRetriever().search(
+        query, filters=_filters(label="needs_reply"), session=object()
+    )
+
+    assert [p.chunk_id for p in found] == [CHUNK]
+    assert seen[0].label == "needs_reply"
