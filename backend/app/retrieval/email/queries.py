@@ -6,9 +6,16 @@ from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.retrieval.queries import ChunkQueries, FilterClause
+from app.retrieval.queries import (
+    ChunkQueries,
+    FilterClause,
+    RankedHit,
+    _and,
+    _ranked_hits,
+)
 
 
 class EmailSearchFilters(BaseModel):
@@ -64,3 +71,20 @@ class EmailQueries(ChunkQueries[EmailSearchFilters]):
             )
             params["mailbox"] = filters.mailbox
         return FilterClause(" AND ".join(clauses), params)
+
+    def recent_sql(self, filters: EmailSearchFilters) -> str:
+        """Newest mail first, one row per email: for searches with filters but no words."""
+        return f"""
+            SELECT ec.id, 1.0 AS score
+            FROM {self.from_sql}
+            WHERE ec.chunk_index = 0
+            {_and(self.filter_clause(filters))}
+            ORDER BY e.sent_at DESC
+            LIMIT :limit
+        """
+
+    def recent(
+        self, session: Session, *, limit: int, filters: EmailSearchFilters
+    ) -> list[RankedHit]:
+        params = {"limit": limit, **self.filter_clause(filters).params}
+        return _ranked_hits(session, self.recent_sql(filters), params)

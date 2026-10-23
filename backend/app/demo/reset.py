@@ -78,6 +78,7 @@ def reset_demo(
         "invoices": len(rows.invoices),
         "transactions": len(rows.transactions),
         "stories": len(rows.stories),
+        "mails": len(rows.mail_emails),
     }
 
 

@@ -26,11 +26,14 @@ def _sql_of(monkeypatch: pytest.MonkeyPatch, lookup) -> tuple[str, dict]:
     return str(compiled), compiled.params
 
 
-def test_active_mailbox_ids_excludes_demo(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_active_mailbox_ids_includes_demo(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The demo mailbox belongs only to the demo user, so the owner's scope is unchanged.
     sql, params = _sql_of(monkeypatch, mailboxes.active_mailbox_ids)
 
-    assert "mailboxes.provider != " in sql
-    assert "demo" in params.values()
+    assert "mailboxes.provider" not in sql.split("WHERE")[1]
+    assert "demo" not in params.values()
+    assert "mailboxes.user_id" in sql
+    assert "mailboxes.is_active" in sql
 
 
 def test_invoice_mailbox_ids_includes_demo(monkeypatch: pytest.MonkeyPatch) -> None:

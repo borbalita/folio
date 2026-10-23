@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database.engine import get_engine
 from app.database.models.chat.thread import ChatThread
+from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
@@ -152,9 +153,31 @@ def test_reset_rebuilds_only_the_demo_users_finance(session: Session) -> None:
         .where(EmailMessage.mailbox_id == accounts.mailbox_id)
     )
     assert _count(session, Invoice, Invoice.id.in_(demo_invoices)) == 9
+    # Transactions are spread over the Girokonto, the card and the wallet.
     assert (
-        _count(session, Transaction, Transaction.account_id == accounts.account_id)
+        _count(session, Transaction, Transaction.account_id.in_(accounts.account_ids))
         == (counts["transactions"])
+    )
+    demo_mail = select(EmailMessage.id).where(
+        EmailMessage.mailbox_id == accounts.mailbox_id,
+        EmailMessage.label.not_in(["invoice", "ai_newsletter"]),
+    )
+    assert (
+        _count(session, EmailMessage, EmailMessage.id.in_(demo_mail)) == counts["mails"]
+    )
+    # One search chunk per everyday mail, its generated full-text column filled.
+    assert (
+        _count(session, EmailChunk, EmailChunk.email_id.in_(demo_mail))
+        == counts["mails"]
+    )
+    assert (
+        _count(
+            session,
+            EmailChunk,
+            EmailChunk.email_id.in_(demo_mail),
+            EmailChunk.search_vector.is_not(None),
+        )
+        == counts["mails"]
     )
     assert (
         _count(session, PaymentDraft, PaymentDraft.invoice_id.in_(demo_invoices)) == 0

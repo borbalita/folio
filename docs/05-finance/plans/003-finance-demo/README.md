@@ -38,7 +38,7 @@ Goals:
 - The audience sees only the normal app; the controls are on a separate page.
 - The owner's data can't be reached or changed by anything in the demo.
 
-Non-goals: a public, self-serve demo (later, see risks); a separate demo environment; real email delivery; LLM-written invoices; a daily cost limit; demo data for the Email or Documents agents.
+Non-goals: a public, self-serve demo (later, see risks); a separate demo environment; real email delivery; LLM-written invoices; a daily cost limit; demo data for the Documents agent (demo mail for the Email Assistant: [03-email 001](../../../03-email/plans/001-demo-mail/README.md), 2026-10-23).
 
 ## Decisions
 

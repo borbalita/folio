@@ -259,3 +259,13 @@ def test_one_invoice_is_paid_from_the_wallet_and_matched_by_reference() -> None:
     assert {"amount", "reference"} <= set(link.signals)
     assert "iban" not in link.signals
     assert invoice.status == InvoiceStatus.PAID and invoice.paid_by == PAID_BY_MATCH
+
+
+def test_base_state_includes_the_everyday_mail() -> None:
+    rows = _build()
+
+    assert len(rows.mail_emails) == 40
+    assert len(rows.mail_chunks) == 40
+    assert {c.email_id for c in rows.mail_chunks} == {e.id for e in rows.mail_emails}
+    groups = rows.groups()
+    assert groups.index(rows.mail_emails) < groups.index(rows.mail_chunks)

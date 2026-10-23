@@ -1,0 +1,401 @@
+{
+ "appointments": {
+  "dentist": {
+   "month": "this",
+   "slot": 0.62,
+   "time": "09:30"
+  },
+  "gp": {
+   "month": "this",
+   "slot": 0.38,
+   "time": "08:15"
+  },
+  "eyes": {
+   "month": "this",
+   "slot": 0.86,
+   "time": "14:45"
+  },
+  "physio_old": {
+   "month": "this",
+   "slot": 0.5,
+   "time": "17:00"
+  },
+  "physio_new": {
+   "month": "this",
+   "slot": 0.74,
+   "time": "17:30"
+  },
+  "derma": {
+   "month": "next",
+   "slot": 0.25,
+   "time": "11:00"
+  },
+  "buergeramt": {
+   "month": "this",
+   "slot": 0.55,
+   "time": "10:20"
+  }
+ },
+ "emails": [
+  {
+   "key": "dentist-reminder",
+   "from_name": "Zahnarztpraxis Dr. Rothenbach",
+   "from_address": "praxis@zahnarzt-rothenbach.example",
+   "subject": "Terminerinnerung: Kontrolluntersuchung am {dentist:short}",
+   "body": "Guten Tag Kim Albrecht,\n\nwir erinnern Sie an Ihren Termin zur Kontrolluntersuchung und professionellen Zahnreinigung am {dentist}.\n\nBitte bringen Sie Ihre Versichertenkarte mit. Falls Sie den Termin nicht wahrnehmen können, sagen Sie bitte bis 24 Stunden vorher ab, telefonisch unter 0221 4478 120.\n\nMit freundlichen Grüßen\nIhr Praxisteam Dr. Rothenbach\nDürener Straße 112, 50931 Köln",
+   "label": "other",
+   "days_ago": 3
+  },
+  {
+   "key": "gp-checkup",
+   "from_name": "Hausarztpraxis am Görlitzer Park",
+   "from_address": "termine@hausarzt-goerlitzer.example",
+   "subject": "Ihr Termin zum Check-up 35",
+   "body": "Liebe Frau Albrecht,\n\nhiermit bestätigen wir Ihren Termin zur Gesundheitsuntersuchung (Check-up 35) bei Dr. med. Sabine Kühn am {gp}.\n\nBitte kommen Sie nüchtern, da wir Blut abnehmen. Wasser und ungesüßter Tee sind erlaubt.\n\nViele Grüße\nIhre Hausarztpraxis am Görlitzer Park\nWiener Straße 41, 10999 Berlin",
+   "label": "other",
+   "days_ago": 9
+  },
+  {
+   "key": "eyes-booking",
+   "from_name": "Doctolino",
+   "from_address": "noreply@doctolino.example",
+   "subject": "Terminbestätigung: Augenarztpraxis Dr. Okafor",
+   "body": "Hallo Kim,\n\ndein Termin ist gebucht.\n\nAugenarztpraxis Dr. Chinwe Okafor\nSehtest und Augeninnendruckmessung\n{eyes}\nOranienstraße 77, 10969 Berlin\n\nDu kannst den Termin bis 24 Stunden vorher in der Doctolino-App verschieben oder absagen.\n\nDein Doctolino-Team",
+   "label": "other",
+   "days_ago": 12
+  },
+  {
+   "key": "physio-booking",
+   "from_name": "Physiotherapie Spreebogen",
+   "from_address": "info@physio-spreebogen.example",
+   "subject": "Ihre Terminbuchung: Krankengymnastik",
+   "body": "Guten Tag Frau Albrecht,\n\nvielen Dank für Ihre Buchung. Ihr erster Termin zur Krankengymnastik (Rezept: 6 × KG, Lendenwirbelsäule) ist am {physio_old}.\n\nBitte bringen Sie die ärztliche Verordnung und ein Handtuch mit.\n\nHerzliche Grüße\nPhysiotherapie Spreebogen\nAlt-Moabit 96, 10559 Berlin",
+   "label": "other",
+   "days_ago": 14
+  },
+  {
+   "key": "physio-moved",
+   "from_name": "Physiotherapie Spreebogen",
+   "from_address": "info@physio-spreebogen.example",
+   "subject": "Termin verschoben: Krankengymnastik",
+   "body": "Guten Tag Frau Albrecht,\n\nleider müssen wir Ihren Termin am {physio_old} krankheitsbedingt verschieben. Ihr neuer Termin ist am {physio_new}.\n\nWenn der neue Termin nicht passt, rufen Sie uns bitte an: 030 3988 4410.\n\nWir bitten um Ihr Verständnis.\nPhysiotherapie Spreebogen",
+   "label": "needs_reply",
+   "days_ago": 4
+  },
+  {
+   "key": "derma-booking",
+   "from_name": "Hautarztpraxis Dr. Lehmann",
+   "from_address": "praxis@hautarzt-lehmann.example",
+   "subject": "Bestätigung Ihres Termins zur Hautkrebsvorsorge",
+   "body": "Sehr geehrte Frau Albrecht,\n\nwir bestätigen Ihren Termin zur Hautkrebsvorsorge am {derma}.\n\nBitte tragen Sie am Untersuchungstag keinen Nagellack und kein Make-up.\n\nMit freundlichen Grüßen\nHautarztpraxis Dr. Martin Lehmann\nBergmannstraße 12, 10961 Berlin",
+   "label": "other",
+   "days_ago": 6
+  },
+  {
+   "key": "lab-results",
+   "from_name": "Hausarztpraxis am Görlitzer Park",
+   "from_address": "termine@hausarzt-goerlitzer.example",
+   "subject": "Ihre Laborwerte liegen vor",
+   "body": "Liebe Frau Albrecht,\n\nIhre Laborwerte aus der letzten Blutabnahme liegen vor. Alle Werte sind im Normbereich. Sie können den Befund im Patientenportal abrufen oder bei Ihrem nächsten Besuch besprechen.\n\nEin weiterer Termin ist dafür nicht nötig.\n\nViele Grüße\nIhre Hausarztpraxis am Görlitzer Park",
+   "label": "other",
+   "days_ago": 2
+  },
+  {
+   "key": "heating-maintenance",
+   "from_name": "Hausverwaltung Kranich",
+   "from_address": "service@hv-kranich.example",
+   "subject": "Jährliche Heizungswartung in der Lindenstraße 12",
+   "body": "Sehr geehrte Mieterinnen und Mieter,\n\ndie jährliche Wartung der Gasetagenheizungen findet am kommenden Mittwoch zwischen 8 und 12 Uhr statt. Bitte sorgen Sie dafür, dass der Techniker Zugang zu Ihrer Wohnung hat, oder hinterlegen Sie einen Schlüssel bei der Hausmeisterin.\n\nBitte bestätigen Sie kurz per Antwort, ob Sie anwesend sind.\n\nMit freundlichen Grüßen\nHausverwaltung Kranich",
+   "label": "needs_reply",
+   "days_ago": 5
+  },
+  {
+   "key": "meter-reading",
+   "from_name": "Hausverwaltung Kranich",
+   "from_address": "service@hv-kranich.example",
+   "subject": "Ablesung der Heizkostenverteiler erledigt",
+   "body": "Sehr geehrte Frau Albrecht,\n\ndie Funk-Ablesung der Heizkostenverteiler für das Abrechnungsjahr wurde erfolgreich durchgeführt. Sie müssen nichts weiter tun. Die Betriebskostenabrechnung erhalten Sie wie gewohnt im Frühjahr.\n\nMit freundlichen Grüßen\nHausverwaltung Kranich",
+   "label": "other",
+   "days_ago": 18
+  },
+  {
+   "key": "parcel-today",
+   "from_name": "Paketblitz",
+   "from_address": "benachrichtigung@paketblitz.example",
+   "subject": "Ihr Paket kommt heute",
+   "body": "Hallo Kim Albrecht,\n\nIhr Paket von Nordlicht Home wird heute zwischen 13:00 und 15:00 Uhr zugestellt. Sendungsnummer: PB 4471 2203 8815.\n\nNicht zu Hause? Sie können einen Ablageort oder einen Nachbarn als Empfänger wählen.\n\nIhr Paketblitz-Team",
+   "label": "other",
+   "days_ago": 1
+  },
+  {
+   "key": "parcel-pickup",
+   "from_name": "Paketblitz",
+   "from_address": "benachrichtigung@paketblitz.example",
+   "subject": "Zustellung nicht möglich – Abholung im Paketshop",
+   "body": "Hallo Kim Albrecht,\n\nwir haben Sie leider nicht angetroffen. Ihr Paket liegt ab morgen 10 Uhr im Paketshop Späti am Moritzplatz, Oranienstraße 52, zur Abholung bereit. Bitte bringen Sie einen Ausweis mit. Das Paket wird 7 Tage aufbewahrt.\n\nIhr Paketblitz-Team",
+   "label": "other",
+   "days_ago": 7
+  },
+  {
+   "key": "restaurant",
+   "from_name": "Trattoria Lucia",
+   "from_address": "tisch@trattoria-lucia.example",
+   "subject": "Ihre Reservierung am Samstag",
+   "body": "Ciao Kim,\n\nvielen Dank für Ihre Reservierung: Samstag, 19:30 Uhr, 4 Personen, Tisch am Fenster.\n\nBitte geben Sie uns Bescheid, falls sich etwas ändert.\n\nA presto!\nTrattoria Lucia, Graefestraße 18",
+   "label": "other",
+   "days_ago": 6
+  },
+  {
+   "key": "friend-weekend",
+   "from_name": "Lena Hoffmann",
+   "from_address": "lena.hoffmann@post.example",
+   "subject": "Wochenende?",
+   "body": "Hey Kim,\n\nhast du am Sonntag Lust auf eine Wanderung im Grunewald? Ich würde gegen 10 am S-Bahnhof treffen vorschlagen, danach vielleicht Kaffee am Schlachtensee.\n\nSag mir bis Freitag Bescheid, dann frag ich noch Jonas.\n\nLiebe Grüße\nLena",
+   "label": "needs_reply",
+   "days_ago": 2
+  },
+  {
+   "key": "friend-birthday",
+   "from_name": "Jonas Berger",
+   "from_address": "jonas@bergers.example",
+   "subject": "Einladung: 35 und kein bisschen leise",
+   "body": "Hallo ihr Lieben,\n\nich feiere meinen 35. am Samstag in zwei Wochen ab 20 Uhr in der Bar Zuckerfee in Neukölln. Kommt vorbei, bringt gute Laune mit!\n\nKurze Zusage wäre super, damit ich weiß, wie viele wir sind.\n\nJonas",
+   "label": "needs_reply",
+   "days_ago": 10
+  },
+  {
+   "key": "gym-yoga",
+   "from_name": "Eisenhalle Fitness",
+   "from_address": "hallo@eisenhalle-fitness.example",
+   "subject": "Neuer Kursplan: Yoga jetzt auch am Morgen",
+   "body": "Hallo Kim,\n\nab nächster Woche gibt es Yoga zusätzlich dienstags und donnerstags um 7:00 Uhr. Die Plätze sind wie immer über die App buchbar.\n\nWir sehen uns auf der Matte!\nDein Team der Eisenhalle Fitness",
+   "label": "promotional",
+   "days_ago": 11
+  },
+  {
+   "key": "shop-shipped",
+   "from_name": "Nordlicht Home",
+   "from_address": "bestellung@nordlicht-home.example",
+   "subject": "Deine Bestellung ist unterwegs",
+   "body": "Hallo Kim,\n\ndeine Bestellung 50-88412 (Leinenvorhang Salbei, 2 Stück) ist auf dem Weg zu dir und wird mit Paketblitz geliefert.\n\nViel Freude damit!\nDein Nordlicht Home Team",
+   "label": "other",
+   "days_ago": 8
+  },
+  {
+   "key": "bank-statement",
+   "from_name": "Spreebank",
+   "from_address": "service@spreebank.example",
+   "subject": "Ihr Kontoauszug ist verfügbar",
+   "body": "Guten Tag Kim Albrecht,\n\nIhr monatlicher Kontoauszug steht im Online-Banking unter Postfach zum Abruf bereit.\n\nAus Sicherheitsgründen versenden wir keine Kontodaten per E-Mail.\n\nIhre Spreebank",
+   "label": "other",
+   "days_ago": 15
+  },
+  {
+   "key": "library",
+   "from_name": "Stadtbibliothek Friedrichshain-Kreuzberg",
+   "from_address": "ausleihe@stadtbibliothek-fk.example",
+   "subject": "Erinnerung: Leihfrist endet in 3 Tagen",
+   "body": "Liebe Leserin, lieber Leser,\n\ndie Leihfrist für folgendes Medium endet in 3 Tagen: \"Die Kunst des klaren Denkens\". Sie können die Leihfrist online verlängern, sofern keine Vormerkung vorliegt.\n\nIhre Stadtbibliothek",
+   "label": "other",
+   "days_ago": 3
+  },
+  {
+   "key": "flea-market",
+   "from_name": "Kiezinitiative Lindenstraße",
+   "from_address": "kontakt@kiez-lindenstrasse.example",
+   "subject": "Hofflohmarkt am Sonntag – Stände noch frei",
+   "body": "Liebe Nachbarinnen und Nachbarn,\n\nam übernächsten Sonntag findet wieder der Hofflohmarkt in den Höfen der Lindenstraße statt, von 11 bis 17 Uhr. Wer einen Stand möchte, trägt sich bitte in die Liste im Hausflur ein.\n\nBis bald im Hof!",
+   "label": "newsletter",
+   "days_ago": 16
+  },
+  {
+   "key": "mum-visit",
+   "from_name": "Petra Albrecht",
+   "from_address": "petra.albrecht@post.example",
+   "subject": "Besuch im November",
+   "body": "Hallo Kim,\n\nPapa und ich würden dich gern im November für ein Wochenende besuchen. Passt dir das zweite Wochenende? Wir würden Freitagabend mit dem Zug kommen und im Hotel um die Ecke schlafen.\n\nGib uns Bescheid, dann buchen wir.\n\nAlles Liebe\nMama",
+   "label": "needs_reply",
+   "days_ago": 4
+  },
+  {
+   "key": "buergeramt",
+   "from_name": "Bürgeramt Friedrichshain-Kreuzberg",
+   "from_address": "noreply@buergeramt-termine.example",
+   "subject": "Terminbestätigung: Beantragung Reisepass",
+   "body": "Sehr geehrte Frau Albrecht,\n\nIhr Termin im Bürgeramt Yorckstraße für die Beantragung eines Reisepasses ist am {buergeramt}.\n\nBitte bringen Sie Ihren bisherigen Pass, ein aktuelles biometrisches Passfoto und die Gebühr mit (Kartenzahlung möglich).\n\nIhr Bürgeramt",
+   "label": "other",
+   "days_ago": 8
+  },
+  {
+   "key": "carsharing",
+   "from_name": "Zweirad & Wagen Carsharing",
+   "from_address": "beleg@zw-carsharing.example",
+   "subject": "Dein Fahrtbeleg",
+   "body": "Hallo Kim,\n\ndanke, dass du mit uns gefahren bist. Fahrt vom Moritzplatz nach Tempelhof, 34 Minuten. Den Beleg findest du in der App unter Fahrten.\n\nGute Fahrt!",
+   "label": "other",
+   "days_ago": 20
+  },
+  {
+   "key": "theatre",
+   "from_name": "Bühne am Ufer",
+   "from_address": "tickets@buehne-am-ufer.example",
+   "subject": "Ihre Tickets für „Der zerbrochne Krug“",
+   "body": "Guten Tag Kim Albrecht,\n\nanbei Ihre zwei Tickets für die Vorstellung am kommenden Freitag um 19:30 Uhr, Parkett Reihe 7. Einlass ist ab 18:45 Uhr.\n\nWir wünschen Ihnen einen schönen Theaterabend!\nBühne am Ufer",
+   "label": "other",
+   "days_ago": 13
+  },
+  {
+   "key": "client-dashboard",
+   "from_name": "Jonah Reyes",
+   "from_address": "jonah.reyes@kestrel-labs.example",
+   "subject": "Dashboard redesign: two open questions before Friday",
+   "body": "Hi Kim,\n\nthanks for the latest dashboard concepts, the team loves the cleaner navigation. Two questions before we lock the scope:\n\n1. Can the export button live in the header, or does it need its own row?\n2. Could you send a rough estimate for the mobile breakpoints?\n\nWe'd like to decide in our Friday meeting, so a reply by Thursday would be great.\n\nBest,\nJonah\nKestrel Labs",
+   "label": "needs_reply",
+   "days_ago": 1
+  },
+  {
+   "key": "client-notes",
+   "from_name": "Jonah Reyes",
+   "from_address": "jonah.reyes@kestrel-labs.example",
+   "subject": "Notes from Tuesday's call",
+   "body": "Hi Kim,\n\nquick recap of Tuesday's call: we agreed on two sprints for the dashboard, user testing with five customers in the second sprint, and weekly check-ins on Fridays at 10.\n\nI'll share the test participant list next week.\n\nCheers,\nJonah",
+   "label": "other",
+   "days_ago": 5
+  },
+  {
+   "key": "team-sync",
+   "from_name": "Priya Natarajan",
+   "from_address": "priya@studio-fennel.example",
+   "subject": "Studio sync moves to Thursday",
+   "body": "Hi all,\n\nthis week's studio sync moves from Wednesday to Thursday, 9:30, same room. Please add your project updates to the board beforehand.\n\nThanks!\nPriya",
+   "label": "other",
+   "days_ago": 3
+  },
+  {
+   "key": "conference-invite",
+   "from_name": "UX Berlin Summit",
+   "from_address": "speakers@uxberlin-summit.example",
+   "subject": "Speaker invitation: UX Berlin Summit",
+   "body": "Dear Kim,\n\nwe enjoyed your talk on accessible dashboards at last year's meetup and would love to have you as a speaker at this year's UX Berlin Summit. Talks are 25 minutes; travel within Berlin and a full-conference pass are covered.\n\nCould you let us know by the end of next week whether you're interested?\n\nWarm regards,\nThe UX Berlin Summit team",
+   "label": "needs_reply",
+   "days_ago": 8
+  },
+  {
+   "key": "freelance-enquiry",
+   "from_name": "Tomasz Wrona",
+   "from_address": "tomasz@ledgerly.example",
+   "subject": "Project enquiry: onboarding flow for a fintech app",
+   "body": "Hello Kim,\n\nI'm the product lead at Ledgerly, a small fintech in Warsaw. We're looking for a freelance designer to rework our onboarding flow over six to eight weeks, starting next month.\n\nWould you be available for a short call this week to talk about scope and your rates?\n\nKind regards,\nTomasz Wrona",
+   "label": "needs_reply",
+   "days_ago": 2
+  },
+  {
+   "key": "invoice-question",
+   "from_name": "Kestrel Labs Accounts",
+   "from_address": "accounts@kestrel-labs.example",
+   "subject": "Question about invoice 2026-031",
+   "body": "Hi Kim,\n\nwe're processing invoice 2026-031 and noticed the purchase order number is missing. Could you send a corrected version with PO 7781 on it? Then we can pay it this month.\n\nThank you,\nKestrel Labs Accounts",
+   "label": "needs_reply",
+   "days_ago": 6
+  },
+  {
+   "key": "design-review",
+   "from_name": "Marta Silva",
+   "from_address": "marta@studio-fennel.example",
+   "subject": "Feedback on the checkout prototype",
+   "body": "Hi Kim,\n\nI went through the checkout prototype. The progress indicator works well; I'd make the error messages more specific and move the coupon field below the total. Otherwise it's ready for testing from my side.\n\nMarta",
+   "label": "other",
+   "days_ago": 9
+  },
+  {
+   "key": "tool-trial",
+   "from_name": "Framewise",
+   "from_address": "hello@framewise.example",
+   "subject": "Your Framewise trial ends in 3 days",
+   "body": "Hi Kim,\n\nyour Framewise Pro trial ends in 3 days. Upgrade now to keep version history, shared libraries and unlimited projects, 20% off for the first year.\n\nThe Framewise team",
+   "label": "promotional",
+   "days_ago": 12
+  },
+  {
+   "key": "recruiter",
+   "from_name": "Hannah Ortiz",
+   "from_address": "hannah.ortiz@brightroles.example",
+   "subject": "Senior Product Designer role at a Berlin climate startup",
+   "body": "Hi Kim,\n\nI'm recruiting a Senior Product Designer for a Series A climate startup in Berlin (hybrid, 4-day week possible). Your portfolio looks like a great fit. Happy to share details if you're open to a chat.\n\nBest,\nHannah",
+   "label": "other",
+   "days_ago": 17
+  },
+  {
+   "key": "workshop-recap",
+   "from_name": "Priya Natarajan",
+   "from_address": "priya@studio-fennel.example",
+   "subject": "Workshop recap and slides",
+   "body": "Hi team,\n\nthanks for joining the research synthesis workshop. Slides and the affinity map are in the shared drive under Workshops. Next step: everyone picks two insights to prototype.\n\nPriya",
+   "label": "other",
+   "days_ago": 19
+  },
+  {
+   "key": "cowork-desk",
+   "from_name": "Hafen Coworking",
+   "from_address": "desk@hafen-coworking.example",
+   "subject": "Desk booking confirmed",
+   "body": "Hi Kim,\n\nyour flex desk at Hafen Coworking is booked for next Monday and Tuesday, 9:00 to 18:00. Coffee is on us.\n\nSee you there!",
+   "label": "other",
+   "days_ago": 22
+  },
+  {
+   "key": "planning-invite",
+   "from_name": "Priya Natarajan",
+   "from_address": "priya@studio-fennel.example",
+   "subject": "Invitation: Quarterly planning",
+   "body": "Hi Kim,\n\nyou're invited to the quarterly planning session next Wednesday, 13:00 to 16:00, in the big meeting room. We'll review client pipeline and capacity for the next quarter.\n\nPriya",
+   "label": "other",
+   "days_ago": 7
+  },
+  {
+   "key": "shop-sale",
+   "from_name": "Nordlicht Home",
+   "from_address": "news@nordlicht-home.example",
+   "subject": "20 % auf Herbstdeko – nur bis Sonntag",
+   "body": "Hallo Kim,\n\nkuschelige Decken, Kerzen und Vasen: Nur bis Sonntag sparst du 20 % auf unsere Herbstkollektion mit dem Code HERBST20.\n\nDein Nordlicht Home Team",
+   "label": "promotional",
+   "days_ago": 4
+  },
+  {
+   "key": "mobile-offer",
+   "from_name": "Wellenfunk Mobil",
+   "from_address": "angebote@wellenfunk.example",
+   "subject": "Mehr Datenvolumen zum gleichen Preis",
+   "body": "Hallo Kim,\n\nfür kurze Zeit bekommst du in deinem Tarif Smart M 5 GB zusätzlich – ohne Aufpreis. Einfach in der Wellenfunk-App aktivieren.\n\nDein Wellenfunk-Team",
+   "label": "promotional",
+   "days_ago": 10
+  },
+  {
+   "key": "energy-tips",
+   "from_name": "Havelwatt Energie",
+   "from_address": "newsletter@havelwatt.example",
+   "subject": "Ihr Energiespartipp im Oktober",
+   "body": "Liebe Kundinnen und Kunden,\n\nmit sinkenden Temperaturen lohnt sich das Entlüften der Heizkörper: Gluckernde Heizkörper heizen schlechter und verbrauchen mehr Energie. Außerdem in diesem Newsletter: unser neuer Ökostromtarif.\n\nIhre Havelwatt Energie",
+   "label": "newsletter",
+   "days_ago": 14
+  },
+  {
+   "key": "kiez-newsletter",
+   "from_name": "Kiez & Kultur",
+   "from_address": "redaktion@kiez-kultur.example",
+   "subject": "Kiez & Kultur: Lesungen, Märkte und Konzerte diese Woche",
+   "body": "Hallo,\n\ndiese Woche im Kiez: eine Lesung in der Buchhandlung Seitenwind am Donnerstag, der Wochenmarkt am Marheinekeplatz mit neuen Ständen und ein Jazzabend im Café Nordlicht am Samstag.\n\nViel Spaß!\nDie Kiez & Kultur Redaktion",
+   "label": "newsletter",
+   "days_ago": 6
+  },
+  {
+   "key": "airline-offer",
+   "from_name": "Spreeair",
+   "from_address": "angebote@spreeair.example",
+   "subject": "Herbstsonne in Lissabon ab 59 €",
+   "body": "Hallo Kim,\n\nfliege jetzt in die Herbstsonne: Berlin–Lissabon ab 59 € pro Strecke, buchbar bis Sonntag für Reisen bis Ende November.\n\nDein Spreeair-Team",
+   "label": "promotional",
+   "days_ago": 21
+  }
+ ]
+}

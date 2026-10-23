@@ -101,6 +101,7 @@ def test_reset_writes_the_base_state_and_does_not_commit() -> None:
     counts = reset.reset_demo(session, USER, email="demo@example.com", today=TODAY)
 
     assert counts["invoices"] == 9
+    assert counts["mails"] == 40
     assert 34 <= counts["transactions"] <= 40
     assert len(session.added) > counts["invoices"] + counts["transactions"]
     assert session.commits == 0
@@ -189,6 +190,8 @@ def test_reset_flushes_parents_before_children() -> None:
     assert session.flushes == [
         ["EmailMessage"],
         ["EmailMessage"],
+        ["EmailMessage"],
+        ["EmailChunk"],
         ["NewsStory"],
         ["NewsItem"],
         ["EmailAttachment"],

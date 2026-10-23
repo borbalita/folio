@@ -43,3 +43,13 @@ def test_filters_narrow_sender_label_dates_and_mailbox() -> None:
 def test_sender_param_matches_anywhere_in_the_name_or_address() -> None:
     clause = QUERIES.filter_clause(_filters(sender="rent"))
     assert clause.params["sender"] == "%rent%"
+
+
+def test_recent_sql_lists_the_newest_mail_within_scope_and_filters() -> None:
+    sql = QUERIES.recent_sql(_filters(label="needs_reply"))
+
+    assert "m.user_id = :user_id" in sql
+    assert "m.id = ANY(:mailbox_ids)" in sql
+    assert "e.label = :label" in sql
+    assert "ORDER BY e.sent_at DESC" in sql
+    assert "LIMIT :limit" in sql

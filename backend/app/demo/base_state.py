@@ -16,6 +16,7 @@ from zoneinfo import ZoneInfo
 
 from app.config import settings
 from app.database.models.email.attachment import EmailAttachment
+from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.message import EmailLabel, EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
@@ -35,6 +36,7 @@ from app.demo.emails import (
     draw_invoice,
     invoice_message,
 )
+from app.demo.mail_state import build_mail_rows
 from app.demo.news_state import build_news_rows
 from app.finance.invoice_edits import PAID_BY_INVOICE, PAID_BY_MATCH
 from ingest.email.parse import ParsedMessage, content_hash
@@ -94,12 +96,16 @@ class BaseRows:
     news_emails: list[EmailMessage]
     stories: list[NewsStory]
     news_items: list[NewsItem]
+    mail_emails: list[EmailMessage]
+    mail_chunks: list[EmailChunk]
 
     def groups(self) -> tuple[list, ...]:
         """Rows by table, parents before children; insert each group before the next."""
         return (
             self.emails,
             self.news_emails,
+            self.mail_emails,
+            self.mail_chunks,
             self.stories,
             self.news_items,
             self.attachments,
@@ -353,6 +359,7 @@ def build_base_state(
             )
     _everyday(ledger, today)
     news = build_news_rows(today, accounts, to_address=to_address)
+    mail = build_mail_rows(today, accounts, to_address=to_address)
     return BaseRows(
         emails,
         attachments,
@@ -362,4 +369,6 @@ def build_base_state(
         news.emails,
         news.stories,
         news.items,
+        mail.emails,
+        mail.chunks,
     )

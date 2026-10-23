@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database.engine import get_session
 from app.retrieval.base import HybridRetriever
 from app.retrieval.email import rerank
 from app.retrieval.email.queries import EmailQueries, EmailSearchFilters, scope_clause
@@ -95,6 +96,10 @@ class EmailRetriever(HybridRetriever[EmailSearchFilters, EmailPassage]):
         """`question` is the user's message; tool queries are often just keywords."""
         if not filters.mailbox_ids:
             return []
+        if not query.strip():
+            # Filters but no search words ("what do I need to reply to?" → label only):
+            # an empty text can't be embedded, and the newest matching mail is the answer.
+            return self._recent(filters, session)
         passages = super().search(query, filters=filters, session=session)
         if not self.rerank:
             return passages
@@ -105,6 +110,22 @@ class EmailRetriever(HybridRetriever[EmailSearchFilters, EmailPassage]):
             top_k=settings.retrieval_top_k,
             judge=self.judge,
         )
+
+    def _recent(
+        self, filters: EmailSearchFilters, session: Session | None
+    ) -> list[EmailPassage]:
+        def run(owned: Session) -> list[EmailPassage]:
+            hits = self.queries.recent(
+                owned, limit=settings.retrieval_top_k, filters=filters
+            )
+            return self._hydrate(
+                owned, [(hit.chunk_id, hit.score or 0.0) for hit in hits], filters
+            )
+
+        if session is not None:
+            return run(session)
+        with get_session() as owned:
+            return run(owned)
 
     def _fused_count(self) -> int:
         if self.rerank:
