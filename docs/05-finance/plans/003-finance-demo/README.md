@@ -2,10 +2,11 @@
 
 - Created: 2026-10-20
 - Status: In progress
-- Current stage: Implementation; 003/01–06 done, 003/07 (rehearsal) next
+- Current stage: Implementation; 003/01–06 done; 003/08 (demo accounts) in progress, then 003/07 (rehearsal)
 
 ## Approval state
 
+- 2026-10-23: 003/08 added at the owner's request, for the presentation video: three fictional demo accounts (Spreeufer Bank, Kiez Direkt, TalerPay wallet) instead of one Demo Bank.
 - 2026-10-20: settled in chat, one question at a time: the demo is shown live by the owner first and may become self-serve later; it shows a ready-made state plus one invoice that arrives live; the live invoice skips the mailbox and enters the real pipeline; the demo is a second user in the production app; invoices come from a fixed catalogue of fictional vendors; a simulated bank booking closes the payment loop; the controls sit on a separate presenter page; reset is a button there plus a command. Design sections 1–4 approved.
 - 2026-10-20: written spec and task breakdown approved; the plan is Ready.
 - 2026-10-21: 003/02's review found that an Online only email with a full invoice PDF would read as `to_pay`; at the owner's OK it becomes a notice without a PDF. Vendors sound real but are invented (owner's request).
@@ -100,7 +101,8 @@ Presenter page (/finance/demo, phone or 2nd tab)          The app the audience s
 - [x] [003/04 — Live invoice through the pipeline](tasks/04-live-invoice.md) — after 01, 02
 - [x] [003/05 — Simulated bank booking](tasks/05-bank-booking.md) — after 01
 - [x] [003/06 — Presenter page and list refresh](tasks/06-presenter-page.md) — after 03, 04, 05
-- [ ] [003/07 — Production setup and rehearsal](tasks/07-rehearsal.md) — after 06
+- [ ] [003/07 — Production setup and rehearsal](tasks/07-rehearsal.md) — after 06, 08
+- [ ] [003/08 — Three demo accounts, including a wallet](tasks/08-demo-banks.md) — after 03, 05
 
 ```text
 01 ─┬─────────► 05 ─┐
