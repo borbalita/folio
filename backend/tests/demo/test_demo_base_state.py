@@ -12,7 +12,12 @@ from app.finance.invoice_edits import PAID_BY_INVOICE, PAID_BY_MATCH
 from app.finance.matching import Debit, InvoiceFacts, propose
 
 TODAY = date(2026, 10, 21)
-ACCOUNTS = DemoAccounts(mailbox_id=uuid.uuid4(), account_id=uuid.uuid4())
+ACCOUNTS = DemoAccounts(
+    mailbox_id=uuid.uuid4(),
+    account_id=uuid.uuid4(),
+    card_account_id=uuid.uuid4(),
+    wallet_account_id=uuid.uuid4(),
+)
 TO = "demo+1@folio.example"
 REAL_BRANDS = ("REWE", "EDEKA", "Telekom", "Vodafone", "Stadtwerke", "Spreewerk")
 
@@ -93,7 +98,11 @@ def test_base_state_is_realistic() -> None:
         if match.status == MatchStatus.LINKED:
             tx, invoice = by_id[match.transaction_id], invoices[match.invoice_id]
             assert tx.amount == -invoice.amount
-            assert tx.remittance == invoice.reference
+            if tx.counterparty_iban is None:
+                # Paid from the wallet: the text names the invoice number.
+                assert invoice.invoice_number in tx.remittance
+            else:
+                assert tx.remittance == invoice.reference
             assert invoice.paid_at.date() == tx.booking_date
 
 
@@ -135,7 +144,7 @@ def test_rows_reference_each_other() -> None:
         for m in rows.matches
     )
     assert all(e.mailbox_id == ACCOUNTS.mailbox_id for e in rows.emails)
-    assert all(t.account_id == ACCOUNTS.account_id for t in rows.transactions)
+    assert all(t.account_id in ACCOUNTS.account_ids for t in rows.transactions)
     assert rows.all()[: len(rows.emails)] == rows.emails
 
 
@@ -217,3 +226,36 @@ def test_no_vendor_bills_twice_within_two_weeks() -> None:
     for days in by_payee.values():
         days.sort()
         assert all((b - a).days >= 14 for a, b in pairwise(days)), days
+
+
+def test_every_demo_account_has_transactions() -> None:
+    rows = _build()
+
+    used = {t.account_id for t in rows.transactions}
+    assert used == set(ACCOUNTS.account_ids)
+    girokonto = [t for t in rows.transactions if t.account_id == ACCOUNTS.account_id]
+    assert any(t.amount > 0 and "Gehalt" in t.remittance for t in girokonto)
+    cards = [t for t in rows.transactions if t.account_id == ACCOUNTS.card_account_id]
+    assert cards and all(t.remittance == "Kartenzahlung" for t in cards)
+
+
+def test_one_invoice_is_paid_from_the_wallet_and_matched_by_reference() -> None:
+    rows = _build()
+    transactions = {t.id: t for t in rows.transactions}
+    invoices = {i.id: i for i in rows.invoices}
+
+    wallet_links = [
+        m
+        for m in rows.matches
+        if m.status == MatchStatus.LINKED
+        and transactions[m.transaction_id].account_id == ACCOUNTS.wallet_account_id
+    ]
+
+    [link] = wallet_links
+    tx, invoice = transactions[link.transaction_id], invoices[link.invoice_id]
+    # A wallet payment names the merchant but carries no IBAN: the reference decides.
+    assert tx.counterparty_iban is None
+    assert invoice.invoice_number in tx.remittance
+    assert {"amount", "reference"} <= set(link.signals)
+    assert "iban" not in link.signals
+    assert invoice.status == InvoiceStatus.PAID and invoice.paid_by == PAID_BY_MATCH

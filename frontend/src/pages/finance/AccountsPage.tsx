@@ -71,7 +71,9 @@ export function AccountsPage() {
 
   const toReconnect =
     state && 'connections' in state
-      ? state.connections.filter(needsReconnect).map((connection) => connection.bank)
+      ? state.connections.flatMap((connection) =>
+          connection.connectable && needsReconnect(connection) ? [connection.bank] : [],
+        )
       : []
 
   async function startReconnectAll() {
@@ -161,8 +163,8 @@ export function AccountsPage() {
                 ) : (
                   <p className="text-sm text-muted-foreground">Not connected.</p>
                 )}
-                {/* The demo bank is fixture data; the server refuses to connect it. */}
-                {connection.bank === 'Demo Bank' ? null : (
+                {/* Demo banks are fixture data; the server refuses to connect them. */}
+                {!connection.connectable ? null : (
                   <div>
                     <Button
                       variant={connection.connected ? 'outline' : 'default'}

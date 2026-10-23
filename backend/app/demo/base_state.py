@@ -76,6 +76,9 @@ SHOPS = (
     "Drogerie Weiss",
     "Buchhandlung Seitenwind",
 )
+ONLINE_SHOPS = ("Kiezkiste Versand", "Seitenwind Online", "Ufer Outdoor Shop")
+# This matched invoice is paid from the wallet: merchant name and invoice number, no IBAN.
+WALLET_VENDOR = "zahnarzt"
 # The suggestion's debit shares only a name token with the payee; no IBAN, no reference.
 SUGGESTED_COUNTERPARTY = "KAYA BRANDT MALERFACHBETR."
 SUGGESTED_REMITTANCE = "Rechnung Flur"
@@ -199,8 +202,8 @@ def _invoice_row(
 class _Ledger:
     """Transactions of one build, each with a dedup key unique to the build."""
 
-    def __init__(self, account_id: uuid.UUID) -> None:
-        self.account_id = account_id
+    def __init__(self, accounts: DemoAccounts) -> None:
+        self.accounts = accounts
         self.build = uuid.uuid4().hex
         self.rows: list[Transaction] = []
 
@@ -211,10 +214,13 @@ class _Ledger:
         name: str,
         remittance: str,
         iban: str | None = None,
+        *,
+        account_id: uuid.UUID | None = None,
     ) -> Transaction:
+        """Booked on the Girokonto unless another demo account is given."""
         tx = Transaction(
             id=uuid.uuid4(),
-            account_id=self.account_id,
+            account_id=account_id or self.accounts.account_id,
             booking_date=day,
             amount=amount,
             currency="EUR",
@@ -251,7 +257,23 @@ def _everyday(ledger: _Ledger, today: date) -> None:
         for _ in range(rng.randint(8, 9)):
             day = today - timedelta(days=start + rng.randint(0, 29))
             price = Decimal(rng.randint(350, 8900)) / 100
-            ledger.add(day, -price, rng.choice(SHOPS), "Kartenzahlung")
+            ledger.add(
+                day,
+                -price,
+                rng.choice(SHOPS),
+                "Kartenzahlung",
+                account_id=ledger.accounts.card_account_id,
+            )
+        # One online purchase a month keeps the base state near 40 transactions.
+        day = today - timedelta(days=start + rng.randint(0, 29))
+        price = Decimal(rng.randint(990, 6400)) / 100
+        ledger.add(
+            day,
+            -price,
+            rng.choice(ONLINE_SHOPS),
+            "Online-Bestellung",
+            account_id=ledger.accounts.wallet_account_id,
+        )
 
 
 def build_base_state(
@@ -261,7 +283,7 @@ def build_base_state(
     attachments: list[EmailAttachment] = []
     invoices: list[Invoice] = []
     matches: list[InvoiceMatch] = []
-    ledger = _Ledger(accounts.account_id)
+    ledger = _Ledger(accounts)
     for seed, spec in enumerate(BASE_INVOICES, start=1):
         demo = _demo_invoice(spec, seed, today)
         message = invoice_message(
@@ -291,7 +313,19 @@ def build_base_state(
         elif spec.role in ("matched", "suggested"):
             assert spec.debit_days_ago is not None
             debit_day = today - timedelta(days=spec.debit_days_ago)
-            if spec.role == "matched":
+            if spec.role == "matched" and spec.vendor == WALLET_VENDOR:
+                tx = ledger.add(
+                    debit_day,
+                    -demo.amount,
+                    demo.vendor.name,
+                    f"Zahlung an {demo.vendor.name}, Rechnung {demo.number}",
+                    account_id=accounts.wallet_account_id,
+                )
+                invoice.status = InvoiceStatus.PAID
+                invoice.paid_by = PAID_BY_MATCH
+                invoice.paid_at = _at(debit_day, 12)
+                status, found = MatchStatus.LINKED, ["amount", "reference", "name"]
+            elif spec.role == "matched":
                 tx = ledger.add(
                     debit_day, -demo.amount, demo.vendor.name, demo.reference, demo.iban
                 )

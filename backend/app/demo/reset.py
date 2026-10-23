@@ -11,12 +11,14 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database.bank_connections import DEMO_BANKS
 from app.database.engine import get_session
 from app.database.models.chat.thread import ChatThread
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
+from app.database.models.finance.bank_connection import BankConnection
 from app.database.models.finance.transaction import Transaction
 from app.database.models.user import User
 from app.demo.accounts import ensure_demo_accounts
@@ -52,7 +54,14 @@ def reset_demo(
         delete(EmailMessage).where(EmailMessage.mailbox_id == accounts.mailbox_id)
     )
     session.execute(
-        delete(Transaction).where(Transaction.account_id == accounts.account_id)
+        delete(Transaction).where(Transaction.account_id.in_(accounts.account_ids))
+    )
+    # Connections that are no longer demo banks (the old single "Demo Bank") go, with
+    # their accounts and transactions by cascade.
+    session.execute(
+        delete(BankConnection).where(
+            BankConnection.user_id == user_id, BankConnection.bank.not_in(DEMO_BANKS)
+        )
     )
     session.execute(
         delete(ChatThread).where(

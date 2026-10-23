@@ -10,7 +10,12 @@ from app.demo import reset
 from app.demo.accounts import DemoAccounts
 
 USER = uuid.UUID("00000000-0000-0000-0000-0000000000d1")
-ACCOUNTS = DemoAccounts(mailbox_id=uuid.uuid4(), account_id=uuid.uuid4())
+ACCOUNTS = DemoAccounts(
+    mailbox_id=uuid.uuid4(),
+    account_id=uuid.uuid4(),
+    card_account_id=uuid.uuid4(),
+    wallet_account_id=uuid.uuid4(),
+)
 TODAY = date(2026, 10, 21)
 
 
@@ -55,8 +60,8 @@ def test_reset_deletes_only_the_demo_users_rows() -> None:
 
     reset.reset_demo(session, USER, email="demo@example.com", today=TODAY)
 
-    assert len(session.statements) == 5
-    lock, stories, emails, transactions, threads = session.statements
+    assert len(session.statements) == 6
+    lock, stories, emails, transactions, connections, threads = session.statements
     # A second reset waits for the first, so two base states can't pile up.
     assert lock.startswith("SELECT mailboxes.id")
     assert f"mailboxes.id = '{ACCOUNTS.mailbox_id}'" in lock
@@ -70,7 +75,16 @@ def test_reset_deletes_only_the_demo_users_rows() -> None:
     assert emails.startswith("DELETE FROM emails")
     assert f"emails.mailbox_id = '{ACCOUNTS.mailbox_id}'" in emails
     assert transactions.startswith("DELETE FROM transactions")
-    assert f"transactions.account_id = '{ACCOUNTS.account_id}'" in transactions
+    assert "transactions.account_id IN" in transactions
+    for account_id in ACCOUNTS.account_ids:
+        assert f"'{account_id}'" in transactions
+    # The old single "Demo Bank" goes, with its account and transactions by cascade.
+    assert connections.startswith("DELETE FROM bank_connections")
+    assert f"bank_connections.user_id = '{USER}'" in connections
+    assert (
+        "bank_connections.bank NOT IN ('Spreeufer Bank', 'Kiez Direkt', 'TalerPay')"
+        in connections
+    )
     assert threads.startswith("DELETE FROM chat_threads")
     assert f"chat_threads.user_id = '{USER}'" in threads
     assert "chat_threads.agent = 'finance'" in threads

@@ -19,7 +19,8 @@ from app.finance.expiry import connection_status
 
 BANKS: tuple[str, ...] = ("N26", "ING", "PayPal")
 # Fixture data for the demo user: never synced, never expiring, never connected.
-DEMO_BANK = "Demo Bank"
+# Fictional banks of the demo user: fixture data, never synced or connected.
+DEMO_BANKS: tuple[str, ...] = ("Spreeufer Bank", "Kiez Direkt", "TalerPay")
 
 
 @dataclass(frozen=True)
@@ -164,7 +165,7 @@ def clear_pending(user_id: uuid.UUID, state: str) -> None:
 def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
     """One entry per supported bank, in BANKS order, connected or not.
 
-    The demo user sees only the Demo Bank.
+    The demo user sees only the demo banks; only the real banks can be connected.
     """
     with get_session() as session:
         connections = {
@@ -186,7 +187,7 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
 
     now = datetime.now(UTC)
     result: list[dict[str, Any]] = []
-    banks = (DEMO_BANK,) if user_id == settings.demo_user_id else BANKS
+    banks = DEMO_BANKS if user_id == settings.demo_user_id else BANKS
     for bank in banks:
         connection = connections.get(bank)
         connected = connection is not None and connection.session_id is not None
@@ -194,6 +195,7 @@ def list_connections(user_id: uuid.UUID) -> list[dict[str, Any]]:
             {
                 "bank": bank,
                 "connected": connected,
+                "connectable": bank in BANKS,
                 "validUntil": (
                     connection.valid_until.isoformat()
                     if connected and connection.valid_until
