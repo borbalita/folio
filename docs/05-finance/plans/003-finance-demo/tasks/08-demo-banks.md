@@ -28,7 +28,7 @@ The demo shows money in several places, as in real life: two bank accounts and a
 
 ## Verified
 
-2026-10-23, branch `feat/demo-banks`.
+2026-10-23, branch `feat/demo-banks`, PR [borbalita/folio#84](https://github.com/borbalita/folio/pull/84).
 
 - Reset → exactly the three demo connections, each with transactions, no "Demo Bank": `test_three_demo_banks_with_one_account_each`, `test_every_demo_account_has_transactions`, `test_reset_deletes_only_the_demo_users_rows` (transactions of all three accounts, and connections that aren't demo banks). Pass.
 - Reset → one invoice paid and matched automatically by a TalerPay transaction: `test_one_invoice_is_paid_from_the_wallet_and_matched_by_reference` (no IBAN, invoice number in the text); `test_matching_adds_nothing_to_the_base_state` confirms the rules agree with every link. Pass.
