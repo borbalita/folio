@@ -1,8 +1,8 @@
 # 001 — Demo mail: the Email Assistant for the demo user
 
 - Created: 2026-10-23
-- Status: Ready
-- Current stage: Spec written; waiting for the owner's review
+- Status: In progress
+- Current stage: Implementation of 001/01
 
 ## Approval state
 

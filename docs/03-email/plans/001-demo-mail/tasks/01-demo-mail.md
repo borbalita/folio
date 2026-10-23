@@ -20,5 +20,8 @@ After a reset, the demo user's Email Assistant answers from 40 invented emails, 
 - Given the demo user after a reset, when they ask "Do I have any doctor's appointments this month?", then the answer lists the three appointments and the moved one at its new date, not next month's, with citations that open. (browser)
 - Given the demo user, when they ask what they still need to reply to, then the answer cites the `needs_reply` work mail. (browser)
 
+## Notes
+- Implementation plan: [01-demo-mail.plan.md](01-demo-mail.plan.md).
+
 ## Dependencies
 Finance demo 003/03 (reset), 07-ai-news 001/05 (news fixture pattern).
