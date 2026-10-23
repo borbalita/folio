@@ -7,13 +7,13 @@ import uuid
 from sqlalchemy import select
 
 from app.database.engine import get_session
-from app.database.models.email.mailbox import Mailbox, MailboxProvider
+from app.database.models.email.mailbox import Mailbox
 
 
 def active_mailbox_ids(user_id: uuid.UUID) -> list[uuid.UUID]:
     """Ids of this user's active mailboxes. Later email queries stay inside this set.
 
-    The demo mailbox holds fixture invoices only, so it never opens Email.
+    The demo mailbox counts too: it holds the demo user's invented mail and belongs to no one else.
     """
     with get_session() as session:
         return list(
@@ -21,14 +21,17 @@ def active_mailbox_ids(user_id: uuid.UUID) -> list[uuid.UUID]:
                 select(Mailbox.id).where(
                     Mailbox.user_id == user_id,
                     Mailbox.is_active.is_(True),
-                    Mailbox.provider != MailboxProvider.DEMO,
                 )
             )
         )
 
 
 def invoice_mailbox_ids(user_id: uuid.UUID) -> list[uuid.UUID]:
-    """Ids of every active mailbox of this user, demo included. Finance stays inside this set."""
+    """Ids of every active mailbox of this user, demo included. Finance stays inside this set.
+
+    Equal to active_mailbox_ids since 03-email 001; kept apart so one agent's scope can narrow
+    without touching the others.
+    """
     with get_session() as session:
         return list(
             session.scalars(

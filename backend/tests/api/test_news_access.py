@@ -23,16 +23,17 @@ def _scopes(
     monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: news)
 
 
-def test_demo_user_gets_news_and_finance_but_not_email(
+def test_demo_user_gets_email_news_and_finance(
     authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _scopes(monkeypatch, email=[], news=[MAILBOX])
+    # Since 03-email 001 the demo mailbox counts for Email too.
+    _scopes(monkeypatch, email=[MAILBOX], news=[MAILBOX])
     monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
     monkeypatch.setattr(settings, "demo_user_id", TEST_USER_ID)
 
     response = authed_client.get("/me")
 
-    assert response.json()["agents"] == ["documents", "news", "finance"]
+    assert response.json()["agents"] == ["documents", "email", "news", "finance"]
 
 
 def test_owner_with_a_real_mailbox_gets_email_news_and_finance(
