@@ -177,13 +177,30 @@ async def get_payment_drafts(
     return await asyncio.to_thread(payments.get_drafts, ids, mailbox_ids)
 
 
+class PaymentCorrection(BaseModel):
+    """What the QR code carries, as the owner corrected it; only the ones sent change."""
+
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid")
+
+    payee: str | None = None
+    iban: str | None = None
+    bic: str | None = None
+    amount: Decimal | None = None
+    reference: str | None = None
+
+
 @router.post("/payment-drafts/{draft_id}/approve")
 async def approve_payment_draft(
     draft_id: uuid.UUID,
     user: Annotated[CurrentUser, Depends(get_current_user)],
+    body: PaymentCorrection | None = None,
 ) -> dict[str, Any]:
     mailbox_ids = await require_invoice_mailboxes(user)
-    return await asyncio.to_thread(payments.approve, draft_id, mailbox_ids)
+    changes = body.model_dump(exclude_unset=True) if body else {}
+    result = await asyncio.to_thread(payments.approve, draft_id, mailbox_ids, changes)
+    if changes:
+        await asyncio.to_thread(matches.match_for_user, user.id)
+    return result
 
 
 @router.post("/payment-drafts/{draft_id}/cancel")
