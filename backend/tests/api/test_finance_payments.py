@@ -1,10 +1,11 @@
 import uuid
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.config import settings
-from app.database import mailboxes, payments
+from app.database import mailboxes, matches, payments
 from tests.conftest import TEST_USER_ID
 
 OWN_MAILBOX = uuid.UUID("00000000-0000-0000-0000-000000000010")
@@ -36,19 +37,62 @@ def test_owner_creates_drafts_without_choosing_an_account(
     assert seen == [([invoice_id], [OWN_MAILBOX])]
 
 
-@pytest.mark.parametrize("action", ["approve", "cancel"])
-def test_owner_approves_or_cancels_a_draft(
-    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch, action: str
-) -> None:
+def test_owner_cancels_a_draft(authed_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     draft_id = uuid.uuid4()
     monkeypatch.setattr(
-        payments, action, lambda did, mailbox_ids: {"id": str(did), "mailboxes": len(mailbox_ids)}
+        payments, "cancel", lambda did, mailbox_ids: {"id": str(did), "mailboxes": len(mailbox_ids)}
     )
 
-    response = authed_client.post(f"/finance/payment-drafts/{draft_id}/{action}")
+    response = authed_client.post(f"/finance/payment-drafts/{draft_id}/cancel")
 
     assert response.status_code == 200
     assert response.json() == {"id": str(draft_id), "mailboxes": 1}
+
+
+def test_owner_approves_a_draft_as_shown(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    draft_id = uuid.uuid4()
+    seen = []
+    monkeypatch.setattr(
+        payments, "approve", lambda did, mailbox_ids, changes: seen.append(changes) or {}
+    )
+    monkeypatch.setattr(matches, "match_for_user", lambda user_id: pytest.fail("no edit"))
+
+    response = authed_client.post(f"/finance/payment-drafts/{draft_id}/approve")
+
+    assert response.status_code == 200
+    assert seen == [{}]
+
+
+def test_owner_approves_a_draft_with_corrections(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    draft_id = uuid.uuid4()
+    seen = []
+    matched = []
+    monkeypatch.setattr(
+        payments, "approve", lambda did, mailbox_ids, changes: seen.append(changes) or {}
+    )
+    monkeypatch.setattr(matches, "match_for_user", matched.append)
+
+    response = authed_client.post(
+        f"/finance/payment-drafts/{draft_id}/approve",
+        json={"iban": "DE02120300000000202051", "amount": "52.10"},
+    )
+
+    assert response.status_code == 200
+    assert seen == [{"iban": "DE02120300000000202051", "amount": Decimal("52.10")}]
+    # A corrected IBAN or amount can make or break a match.
+    assert matched == [TEST_USER_ID]
+
+
+def test_approve_rejects_fields_the_qr_does_not_carry(authed_client: TestClient) -> None:
+    response = authed_client.post(
+        f"/finance/payment-drafts/{uuid.uuid4()}/approve", json={"dueDate": "2026-11-01"}
+    )
+
+    assert response.status_code == 422
 
 
 def test_drafts_are_read_by_id(authed_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:

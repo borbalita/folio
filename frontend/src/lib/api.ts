@@ -126,7 +126,7 @@ export type DemoBankName = 'Spreeufer Bank' | 'Kiez Direkt' | 'TalerPay'
 
 export type PaymentDraftStatus = 'draft' | 'approved' | 'completed' | 'cancelled'
 
-/** A payment prepared for an invoice; payee, IBAN, amount and reference are frozen. */
+/** A payment prepared for an invoice; payee, IBAN, amount and reference are frozen on approval. */
 export interface PaymentDraft {
   id: string
   invoiceId: string
@@ -140,6 +140,11 @@ export interface PaymentDraft {
   reference: string | null
   status: PaymentDraftStatus
 }
+
+/** The fields the owner corrected before approving; the invoice takes them too. */
+export type PaymentCorrection = Partial<
+  Pick<PaymentDraft, 'payee' | 'iban' | 'bic' | 'amount' | 'reference'>
+>
 
 export interface ApprovedPayment extends PaymentDraft {
   /** The EPC069-12 text the QR code carries. */
@@ -256,8 +261,8 @@ export const api = {
       `/finance/payment-drafts?${ids.map((id) => `ids=${encodeURIComponent(id)}`).join('&')}`,
     ),
 
-  approvePaymentDraft: (id: string) =>
-    http.post<ApprovedPayment>(`/finance/payment-drafts/${id}/approve`),
+  approvePaymentDraft: (id: string, correction: PaymentCorrection) =>
+    http.post<ApprovedPayment>(`/finance/payment-drafts/${id}/approve`, correction),
 
   cancelPaymentDraft: (id: string) =>
     http.post<PaymentDraft>(`/finance/payment-drafts/${id}/cancel`),

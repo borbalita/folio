@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { api, type Invoice, type InvoiceEdit, type InvoiceField } from '@/lib/api'
 import { formatTimestamp } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
-import { describeIssue, displayStatus } from '@/lib/invoices'
+import { describeIssue, displayStatus, parseAmount } from '@/lib/invoices'
 
 const FIELDS: { name: InvoiceField; label: string; type?: string }[] = [
   { name: 'payee', label: 'Payee' },
@@ -28,8 +28,7 @@ function changes(form: FormData, invoice: Invoice): InvoiceEdit {
   for (const { name } of FIELDS) {
     let value = String(form.get(name) ?? '').trim()
     if (name === 'amount') {
-      // German invoices write 1.234,56; the API takes 1234.56.
-      value = value.includes(',') ? value.replace(/\./g, '').replace(',', '.') : value
+      value = parseAmount(value)
     }
     const next = value === '' ? null : value
     const current = invoice[name]

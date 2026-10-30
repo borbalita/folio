@@ -11,13 +11,14 @@ from sqlalchemy import select, update
 
 from app.database.engine import get_session
 from app.database.models.email.message import EmailMessage
-from app.database.models.finance.invoice import Invoice
+from app.database.models.finance.invoice import Invoice, InvoiceStatus
 from app.database.models.finance.payment_draft import (
     OPEN_STATUSES,
     DraftStatus,
     PaymentDraft,
 )
 from app.finance.epc import epc_payload, qr_svg_data_uri
+from app.finance.invoice_edits import apply_edit
 from app.finance.payments import DraftValues, approve_refusal, draft_values, skip_reason
 
 # An approved payment shows its invoice as pending until the debit arrives, for at
@@ -29,6 +30,14 @@ REFUSALS = {
     "invalid_iban": "The invoice's IBAN is not valid.",
     "iban_changed": "The invoice's IBAN changed since this payment was prepared.",
     "amount_changed": "The invoice's amount changed since this payment was prepared.",
+}
+
+INCOMPLETE = {
+    "missing_payee": "a payee",
+    "missing_iban": "an IBAN",
+    "invalid_iban": "a valid IBAN",
+    "missing_amount": "an amount",
+    "amount_not_positive": "an amount above zero",
 }
 
 
@@ -139,13 +148,34 @@ def get_drafts(draft_ids: list[uuid.UUID], mailbox_ids: list[uuid.UUID]) -> list
         ]
 
 
-def approve(draft_id: uuid.UUID, mailbox_ids: list[uuid.UUID]) -> dict[str, Any]:
-    """Re-check the invoice, then hand out the QR code for the frozen values."""
+def approve(
+    draft_id: uuid.UUID, mailbox_ids: list[uuid.UUID], changes: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Save the owner's corrections, re-check the invoice, then hand out the QR code.
+
+    Corrections go to the invoice as owner edits, not only to the draft: matching the
+    bank debit later reads the invoice's IBAN and amount.
+    """
     with get_session() as session:
         row = _owned_draft(session, draft_id, mailbox_ids)
         draft, invoice = row.PaymentDraft, row.Invoice
         if draft.status not in OPEN_STATUSES:
             raise HTTPException(status.HTTP_409_CONFLICT, f"This payment is {draft.status}.")
+        if changes:
+            if invoice.status != InvoiceStatus.OPEN:
+                raise HTTPException(status.HTTP_409_CONFLICT, REFUSALS["not_open"])
+            apply_edit(invoice, changes)
+            if invoice.status != InvoiceStatus.OPEN:
+                needs = [INCOMPLETE[i] for i in invoice.issues if i in INCOMPLETE]
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    f"The payment needs {' and '.join(needs or ['complete details'])}.",
+                )
+            # Only the corrected fields: a value changed elsewhere since the draft was
+            # made must still be refused below, not paid unseen.
+            values = draft_values(invoice)
+            for name in changes:
+                setattr(draft, name, getattr(values, name))
         frozen = DraftValues(
             payee=draft.payee,
             iban=draft.iban,
