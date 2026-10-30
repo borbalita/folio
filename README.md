@@ -4,7 +4,13 @@
 
 Built end to end by [Borbála Tasnádi](https://tasnadi-ai.de), freelance AI engineer, as a working example of how she build AI products: specified first, tested, observable and deployed.
 
-<!-- Demo videos: add links or embeds here. -->
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=SKmOqgw6Plk">
+    <img src="https://img.youtube.com/vi/SKmOqgw6Plk/maxresdefault.jpg" alt="Folio finance demo: invoices from email, bank matching, Telegram and chat" width="720">
+  </a>
+  <br>
+  <em>▶ Finance demo: invoices read from email, matched to bank payments, Telegram alerts and chat (YouTube)</em>
+</p>
 
 ## The agents
 
@@ -24,7 +30,7 @@ Details: [overview](docs/03-email/overview.md).
 - **Bank accounts:** N26, ING and PayPal, read through PSD2 open banking via Enable Banking. The app never sees bank logins.
 - **Payments:** prepared as a GiroCode QR, so every transfer is confirmed in the bank's own app.
 
-Plan and progress: [finance plan](docs/05-finance/plans/001-finance-agent/README.md).
+Demo: [watch on YouTube](https://www.youtube.com/watch?v=SKmOqgw6Plk). Plan and progress: [finance plan](docs/05-finance/plans/001-finance-agent/README.md).
 
 ### Document Copilot: research over SEC filings
 
