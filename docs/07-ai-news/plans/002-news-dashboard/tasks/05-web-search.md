@@ -37,3 +37,15 @@ A read of the installed source, which doesn't replace the live check: `pydantic_
 To unblock: run the live check, then implement on top of 002/03 (and 002/04's branch, to keep one alembic head).
 
 All acceptance criteria are open: 4 (test), 4 (browser).
+
+## Live check
+2026-11-05, one live call, approved by the owner, with a public question on PydanticAI 2.55, the Responses API and `openai_include_web_search_sources`. Structured output came back as the expected type. Still blocked, now on the owner's decision below.
+
+- **Sources are reachable.** Each search gives a `NativeToolCallPart` and a `NativeToolReturnPart` named `web_search`. The return's `content` is `{status, sources}`, and each source is `{type, url}`. The structured output and the sources arrive in the same run's messages.
+- **A correct citation failed grounding.** The answer cited the release page `python.org/downloads/release/python-3152/`, which wasn't in the 16 sources, even with query strings ignored. The run made a second `web_search` call whose return had no `sources`. The likely explanation is that the model opened that page, with the URL in the call's args, but the check didn't print args, so that's unconfirmed. The spec's rule, "its URL must come from this turn's search results", would reject this answer.
+- **Sources have no titles.** The source panel's title has to come from the model's citation.
+- **Citation markers leak into the answer.** The `answer` text ended with raw markers (`citeturn323873search4turn270125view0`), which would show in the chat unless they're stripped.
+- **URLs are noisy.** Sources carry query strings such as `?sid=` and `?trk=`, so comparing URLs needs a stated rule.
+- Not checked: streaming, and how often a citation falls outside the sources (one run only). Token usage wasn't captured.
+
+**Decision for the owner:** whether a URL the model opened in the same turn counts as a search result for grounding. Doing so needs one more live call to confirm the URL is in the call's args.
