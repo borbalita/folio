@@ -156,3 +156,48 @@ def test_approve_returns_the_qr_for_the_frozen_values(monkeypatch) -> None:
     assert result["payload"].split("\n")[5:8] == ["Stadtwerke", IBAN, "EUR49.90"]
     assert result["qr"].startswith("data:image/svg+xml")
     session.commit.assert_called_once()
+
+
+def test_approve_saves_corrections_to_the_invoice_and_pays_them(monkeypatch) -> None:
+    row = _draft_row(_invoice())
+    session = MagicMock()
+    session.execute.return_value.one_or_none.return_value = row
+    _patch(monkeypatch, session)
+    corrected = "DE02120300000000202051"
+
+    result = payments.approve(
+        row.PaymentDraft.id,
+        [OWN],
+        {"payee": "Stadtwerke Berlin", "iban": "de02 1203 0000 0000 2020 51", "amount": "52.10"},
+    )
+
+    invoice, draft = row.Invoice, row.PaymentDraft
+    assert (invoice.payee, invoice.iban, invoice.amount) == (
+        "Stadtwerke Berlin",
+        corrected,
+        Decimal("52.10"),
+    )
+    assert set(invoice.edited_fields) == {"payee", "iban", "amount"}
+    assert (draft.payee, draft.iban, draft.amount, draft.status) == (
+        "Stadtwerke Berlin",
+        corrected,
+        Decimal("52.10"),
+        "approved",
+    )
+    assert result["payload"].split("\n")[5:8] == ["Stadtwerke Berlin", corrected, "EUR52.10"]
+    session.commit.assert_called_once()
+
+
+def test_approve_refuses_corrections_that_leave_the_payment_incomplete(monkeypatch) -> None:
+    row = _draft_row(_invoice())
+    session = MagicMock()
+    session.execute.return_value.one_or_none.return_value = row
+    _patch(monkeypatch, session)
+
+    with pytest.raises(HTTPException) as exc:
+        payments.approve(row.PaymentDraft.id, [OWN], {"iban": "DE00123"})
+
+    assert exc.value.status_code == 422
+    assert "IBAN" in exc.value.detail
+    assert row.PaymentDraft.status == "draft"
+    session.commit.assert_not_called()
