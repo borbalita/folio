@@ -137,7 +137,7 @@ def test_big_story_announced_once_by_its_items() -> None:
     [message] = pending
     assert message.kind == "news_big"
     assert message.text == (
-        "📰 Model X ships\nTLDR: https://tldr.test/x · Alpha Signal: https://alpha_signal.test/x"
+        "📰 Model X ships\nb\nTLDR: https://tldr.test/x · Alpha Signal: https://alpha_signal.test/x"
     )
 
 
@@ -180,4 +180,4 @@ def test_items_without_links_are_still_told_apart_and_not_linked() -> None:
 
     pending = [row for row in rows if row.status == "pending"]
     assert len(pending) == 2
-    assert pending[0].text == "📰 Model X ships\nTLDR: https://tldr.test/x"
+    assert pending[0].text == "📰 Model X ships\nb\nTLDR: https://tldr.test/x"

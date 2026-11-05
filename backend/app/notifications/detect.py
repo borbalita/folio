@@ -127,7 +127,7 @@ def news_message(headline: str, body: str | None, items: list[NewsItemFacts]) ->
 
 
 def news_fallback_text(items: list[NewsItemFacts]) -> str:
-    return news_message(items[0].title, None, items)
+    return news_message(items[0].title, items[0].blurb, items)
 
 
 def plan_notifications(

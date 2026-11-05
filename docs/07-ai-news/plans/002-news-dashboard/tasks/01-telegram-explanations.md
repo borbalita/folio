@@ -24,3 +24,13 @@ A big story's Telegram message explains the story in plain words, so the owner u
 
 ## Dependencies
 None.
+
+## Notes
+- Implementation plan: [01-telegram-explanations.plan.md](01-telegram-explanations.plan.md).
+
+## Decisions made
+- The editions travel as a separate `dict[email_id, body]` argument to `news_text`, not a new field on `NewsItemFacts`, so the facts used by detection stay small and the body is loaded only for stories that will be summarised.
+- `news_fallback_text` also feeds the placeholder text of pending rows before the summary replaces it, so those placeholders now carry the blurb too. Two `test_detect.py` expectations changed to match.
+- Each edition is labelled with its newsletter name in the prompt; a story's items in one newsletter include that edition once.
+- Privacy page: the Telegram line now reads "big AI news headlines with short explanations"; date set to 5 November 2026.
+- Overview: the sentence "Messages never contain ... email text" was narrowed to invoice messages, since news messages now paraphrase newsletter text.

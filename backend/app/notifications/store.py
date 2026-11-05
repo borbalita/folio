@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import replace
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -87,6 +88,16 @@ def load_big_stories(session: Session, since: date) -> list[StoryFacts]:
     return [StoryFacts(items=items) for items in stories.values()]
 
 
+def load_editions(session: Session, email_ids: list[uuid.UUID]) -> dict[uuid.UUID, str]:
+    """The whole text of each newsletter the story's items came from."""
+    if not email_ids:
+        return {}
+    rows = session.execute(
+        select(EmailMessage.id, EmailMessage.body).where(EmailMessage.id.in_(email_ids))
+    ).all()
+    return {email_id: body for email_id, body in rows}
+
+
 def known_keys(session: Session) -> set[str]:
     return set(session.scalars(select(Notification.key)))
 
@@ -106,6 +117,12 @@ def insert_rows(session: Session, rows: list[NewNotification]) -> None:
     )
 
 
+def explained(session: Session, row: NewNotification) -> NewNotification:
+    email_ids = list({item.email_id for item in row.story})
+    editions = load_editions(session, email_ids)
+    return replace(row, text=summary.news_text(list(row.story), editions))
+
+
 def record_notifications(session: Session, now: datetime) -> int:
     """Record notifications for events not seen before; returns how many were planned."""
     today = now.astimezone(ZoneInfo(settings.email_timezone)).date()
@@ -117,12 +134,7 @@ def record_notifications(session: Session, now: datetime) -> int:
         app_url=settings.app_url or "",
         enabled=telegram_enabled(),
     )
-    rows = [
-        replace(row, text=summary.news_text(list(row.story)))
-        if row.story and row.status == "pending"
-        else row
-        for row in rows
-    ]
+    rows = [explained(session, row) if row.story and row.status == "pending" else row for row in rows]
     insert_rows(session, rows)
     session.commit()
     return len(rows)
