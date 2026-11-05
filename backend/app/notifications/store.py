@@ -15,6 +15,7 @@ from app.config import settings
 from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
+from app.database.models.email.news_item_note import NewsItemNote
 from app.database.models.email.story import NewsStory
 from app.database.models.finance.invoice import Invoice
 from app.database.models.notification import Notification
@@ -117,10 +118,38 @@ def insert_rows(session: Session, rows: list[NewNotification]) -> None:
     )
 
 
-def explained(session: Session, row: NewNotification) -> NewNotification:
+def explained(session: Session, row: NewNotification) -> tuple[NewNotification, dict | None]:
+    """The row with its explained text, and the note to store for the item that carries the key."""
     email_ids = list({item.email_id for item in row.story})
     editions = load_editions(session, email_ids)
-    return replace(row, text=summary.news_text(list(row.story), editions))
+    parsed = summary.explain(list(row.story), editions)
+    text = summary.message(list(row.story), parsed)
+    if parsed is None:
+        return replace(row, text=text), None
+    first = row.story[0]
+    note = {
+        "email_id": first.email_id,
+        "position": first.position,
+        "headline": parsed.headline.strip(),
+        "explanation": parsed.summary.strip(),
+    }
+    return replace(row, text=text), note
+
+
+def save_notes(session: Session, notes: list[dict]) -> None:
+    if not notes:
+        return
+    statement = insert(NewsItemNote).values(notes)
+    # Only the message's columns: the security columns belong to classification.
+    session.execute(
+        statement.on_conflict_do_update(
+            index_elements=["email_id", "position"],
+            set_={
+                "headline": statement.excluded.headline,
+                "explanation": statement.excluded.explanation,
+            },
+        )
+    )
 
 
 def record_notifications(session: Session, now: datetime) -> int:
@@ -134,7 +163,13 @@ def record_notifications(session: Session, now: datetime) -> int:
         app_url=settings.app_url or "",
         enabled=telegram_enabled(),
     )
-    rows = [explained(session, row) if row.story and row.status == "pending" else row for row in rows]
+    notes = []
+    for index, row in enumerate(rows):
+        if row.story and row.status == "pending":
+            rows[index], note = explained(session, row)
+            if note:
+                notes.append(note)
     insert_rows(session, rows)
+    save_notes(session, notes)
     session.commit()
     return len(rows)

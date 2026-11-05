@@ -137,7 +137,9 @@ def test_failed_call_with_an_empty_blurb_has_no_empty_line(
 def _record(monkeypatch, *, known: set[str], enabled: bool) -> list[str]:
     asked: list[str] = []
     monkeypatch.setattr(
-        summary, "news_text", lambda items, editions: asked.append(editions) or "summary text"
+        summary,
+        "explain",
+        lambda items, editions: asked.append(editions) or NewsSummary(headline="H", summary="S."),
     )
     monkeypatch.setattr(
         store, "load_editions", lambda session, email_ids: {i: f"body {i}" for i in email_ids}
@@ -147,33 +149,46 @@ def _record(monkeypatch, *, known: set[str], enabled: bool) -> list[str]:
     monkeypatch.setattr(store, "known_keys", lambda session: set(known))
     monkeypatch.setattr(store, "telegram_enabled", lambda: enabled)
     inserted: list = []
+    saved: list = []
     monkeypatch.setattr(store, "insert_rows", lambda session, rows: inserted.extend(rows))
+    monkeypatch.setattr(store, "save_notes", lambda session, notes: saved.extend(notes))
     store.record_notifications(MagicMock(), datetime(2026, 10, 19, 12, tzinfo=UTC))
-    return asked, inserted
+    return asked, inserted, saved
 
 
 def test_new_big_story_is_summarised_once(monkeypatch: pytest.MonkeyPatch) -> None:
-    asked, inserted = _record(monkeypatch, known=set(), enabled=True)
+    asked, inserted, saved = _record(monkeypatch, known=set(), enabled=True)
 
     assert asked == [{i.email_id: f"body {i.email_id}" for i in ITEMS}]
     [pending] = [row for row in inserted if row.status == "pending"]
-    assert pending.text == "summary text"
+    assert pending.text.startswith("📰 H\nS.")
+    # The explanation is stored on the item that carries the notification key.
+    assert saved == [
+        {
+            "email_id": ITEMS[0].email_id,
+            "position": ITEMS[0].position,
+            "headline": "H",
+            "explanation": "S.",
+        }
+    ]
 
 
 def test_already_announced_story_never_calls_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
-    asked, _ = _record(
+    asked, _, saved = _record(
         monkeypatch,
         known={f"news:{i.email_id}:{i.position}" for i in ITEMS},
         enabled=True,
     )
 
     assert asked == []
+    assert saved == []
 
 
 def test_disabled_telegram_never_calls_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
-    asked, inserted = _record(monkeypatch, known=set(), enabled=False)
+    asked, inserted, saved = _record(monkeypatch, known=set(), enabled=False)
 
     assert asked == []
+    assert saved == []
     assert all(row.status == "skipped" for row in inserted)
 
 

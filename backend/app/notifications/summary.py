@@ -70,16 +70,26 @@ def request_summary(
     )
 
 
-def news_text(items: list[NewsItemFacts], editions: dict[uuid.UUID, str]) -> str:
-    """The big-news message; a failed call still sends the first headline, its blurb and the links."""
+def explain(items: list[NewsItemFacts], editions: dict[uuid.UUID, str]) -> NewsSummary | None:
+    """The headline and explanation, or None when the call failed."""
     try:
         parsed = request_summary(items, editions).choices[0].message.parsed
     except (OpenAIError, ValueError) as exc:
         # Any failure (API, content filter, length, unparseable output) falls back: a summary
         # that can't be written must not block this or any other notification.
         log.warning("news_summary_failed", error=type(exc).__name__)
-        return news_fallback_text(items)
+        return None
     if parsed is None:
         log.warning("news_summary_failed", error="no_parsed_output")
+    return parsed
+
+
+def message(items: list[NewsItemFacts], explained: NewsSummary | None) -> str:
+    """The big-news message; without an explanation: the first headline, its blurb and the links."""
+    if explained is None:
         return news_fallback_text(items)
-    return news_message(parsed.headline.strip(), parsed.summary.strip(), items)
+    return news_message(explained.headline.strip(), explained.summary.strip(), items)
+
+
+def news_text(items: list[NewsItemFacts], editions: dict[uuid.UUID, str]) -> str:
+    return message(items, explain(items, editions))

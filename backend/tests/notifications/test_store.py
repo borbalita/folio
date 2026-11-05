@@ -131,3 +131,61 @@ def test_load_editions_with_no_emails_does_not_touch_the_database() -> None:
 
     assert store.load_editions(session, []) == {}
     session.execute.assert_not_called()
+
+
+def test_the_message_and_its_note_come_from_one_explanation(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.notifications.detect import NewsItemFacts
+    from app.notifications.summary import NewsSummary
+
+    item = NewsItemFacts(
+        id=uuid.uuid4(), email_id=uuid.uuid4(), position=4, source="tldr",
+        title="T", blurb="B", url="https://x.test",
+    )
+    row = NewNotification("news:k", "news_big", "pending", "fallback", (item,))
+    monkeypatch.setattr(store, "load_editions", lambda session, ids: {item.email_id: "body"})
+    monkeypatch.setattr(store.summary, "explain", lambda items, editions: NewsSummary(headline="H", summary="S."))
+
+    new_row, note = store.explained(MagicMock(), row)
+
+    assert new_row.text == "📰 H\nS.\nTLDR: https://x.test"
+    assert note == {"email_id": item.email_id, "position": 4, "headline": "H", "explanation": "S."}
+
+
+def test_a_failed_explanation_sends_the_fallback_and_stores_no_note(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.notifications.detect import NewsItemFacts
+
+    item = NewsItemFacts(
+        id=uuid.uuid4(), email_id=uuid.uuid4(), position=4, source="tldr",
+        title="T", blurb="B", url="",
+    )
+    row = NewNotification("news:k", "news_big", "pending", "fallback", (item,))
+    monkeypatch.setattr(store, "load_editions", lambda session, ids: {})
+    monkeypatch.setattr(store.summary, "explain", lambda items, editions: None)
+
+    new_row, note = store.explained(MagicMock(), row)
+
+    assert new_row.text == "📰 T\nB"
+    assert note is None
+
+
+def test_notes_are_upserted_without_touching_the_security_columns() -> None:
+    session = MagicMock()
+
+    store.save_notes(
+        session,
+        [{"email_id": uuid.uuid4(), "position": 1, "headline": "H", "explanation": "S."}],
+    )
+
+    sql = _sql(session.execute.call_args.args[0])
+    assert sql.startswith("INSERT INTO news_item_notes")
+    assert "ON CONFLICT (email_id, position) DO UPDATE" in sql
+    assert "headline = excluded.headline" in sql and "explanation = excluded.explanation" in sql
+    assert "security" not in sql.split("DO UPDATE")[1]
+
+
+def test_saving_no_notes_does_not_touch_the_database() -> None:
+    session = MagicMock()
+
+    store.save_notes(session, [])
+
+    session.execute.assert_not_called()
