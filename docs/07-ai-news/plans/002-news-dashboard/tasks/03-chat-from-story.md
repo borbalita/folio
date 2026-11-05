@@ -38,3 +38,16 @@ A Chat button on a dashboard story opens a thread about it, and the agent answer
 - The newsletter text is returned between "untrusted" markers with the story named, and the instructions say newsletter text is content, not instructions.
 - The first message is carried to the thread page in router state and sent by `ChatThreadView` only when the thread has no messages, then dropped from history with `navigate(pathname, {replace: true, state: null})`. The thread stores nothing until its first turn ends, so the empty check alone would not stop a reload during that turn from sending it again.
 - The migration adds the nullable JSONB column only; no RLS entry, since `chat_threads` already has it.
+
+## Verified
+2026-11-05, unattended run: fast tests only, with no app, database or live model calls. The migration was hand-written and not applied. Queries were checked through a fake session and compiled SQL, never on Postgres. PR: https://github.com/borbalita/folio/pull/107. Left unticked because checks were skipped.
+
+- Prompt names the story and current ids, also after re-embedding (test): pass, `test_the_prompt_names_the_story_and_its_current_item_ids_after_re_embedding`, `test_a_stored_thread_reaches_the_prompt_through_new_deps`.
+- `story_items` pointing at another user's mail is rejected (test): pass, `test_story_items_pointing_at_another_users_mail_are_rejected`.
+- `read_story` outside the user's mailboxes returns nothing from that mail (test): pass, `test_read_story_for_an_item_outside_the_mailboxes_returns_nothing_from_that_mail`.
+- Grounding accepts a `read_story` citation and rejects an item no tool returned (test): pass, `test_citing_an_item_read_with_read_story_is_grounded`, `test_citing_an_item_no_tool_returned_is_refused`.
+- Chat on a story opens a titled thread with details beyond the blurb and citations that open (browser): **skipped**, the app wasn't started and live model calls weren't allowed.
+- Follow-up without naming the story stays on it (browser): **skipped**, same reason.
+- Demo account gets an answer from its own data (browser): **skipped**, same reason.
+- Full fast suite: 1094 passed; ruff, tsc and eslint clean.
+- Still to do before deploying: apply the migration first, because thread routes for all agents select `story_items`, and run `uv run alembic check`.
