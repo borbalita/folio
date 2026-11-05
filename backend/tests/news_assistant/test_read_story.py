@@ -7,6 +7,7 @@ import pytest
 from pydantic_ai.messages import ModelResponse, ToolCallPart, UserPromptPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
+from app.auth.dependencies import CurrentUser
 from app.database import mailboxes, news_story
 from app.grounding import UNKNOWN_CHUNK, GroundingError, NewsGrounder
 from app.news_assistant.agent import get_agent, run_news_agent
@@ -167,3 +168,28 @@ def test_story_items_of_another_users_mail_name_nothing(db: FakeNewsDb) -> None:
 
     assert str(theirs.id) not in prompts[0]
     assert "Their story" not in prompts[0]
+
+
+def test_a_stored_thread_reaches_the_prompt_through_new_deps(db: FakeNewsDb) -> None:
+    from app.chat.orchestrator import _AGENTS
+
+    row = news_row(mailbox_id=MINE, email_id=EMAIL, position=4)
+    db.rows.append(row)
+    thread = {
+        "id": str(TEST_THREAD_ID),
+        "title": "Lab ships a new model",
+        "agent": "news",
+        "storyItems": [{"email_id": str(EMAIL), "position": 4}],
+    }
+    deps = _AGENTS["news"].new_deps(
+        CurrentUser(id=TEST_USER_ID, email="t@example.com"),
+        TEST_THREAD_ID,
+        asyncio.Queue(),
+        thread,
+    )
+    prompts: list[str] = []
+
+    _turn(deps, _scripted([str(row.id)], row.id, prompts))
+
+    assert deps.story_items == [(EMAIL, 4)]
+    assert str(row.id) in prompts[0]

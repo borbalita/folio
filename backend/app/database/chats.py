@@ -49,6 +49,7 @@ def _latest_empty_thread(user_id: uuid.UUID, agent: str) -> dict[str, Any] | Non
         .select("id, title, agent, story_items, created_at, updated_at, chat_messages(count)")
         .eq("user_id", str(user_id))
         .eq("agent", agent)
+        .is_("story_items", "null")
         .order("created_at", desc=True)
         .execute()
     )
@@ -70,7 +71,8 @@ def create_thread_for_user(
     Reuse keeps "New chat" from piling up threads nobody typed into.
     """
     ensure_user(user_id, email)
-    if title is None:
+    # A story thread is its own: never reuse an empty one for it or hand it out as "New chat".
+    if title is None and story_items is None:
         empty = _latest_empty_thread(user_id, agent)
         if empty is not None:
             return _thread_row_to_api(empty)

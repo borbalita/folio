@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 
 import { ChatThreadView } from '@/components/chat/ChatThreadView'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,10 @@ import type { ChatOutletContext } from './ChatPage'
 export function ChatThreadPage() {
   const { threadId } = useParams<{ threadId: string }>()
   const { agent, refreshThreads } = useOutletContext<ChatOutletContext>()
-  const location = useLocation() as { state: { firstMessage?: string } | null }
+  const navigate = useNavigate()
+  const location = useLocation() as ReturnType<typeof useLocation> & {
+    state: { firstMessage?: string } | null
+  }
   const [loaded, setLoaded] = useState<{
     threadId: string
     messages: CopilotUIMessage[]
@@ -73,6 +76,10 @@ export function ChatThreadPage() {
       initialMessages={loaded.messages}
       placeholder={agent.placeholder}
       firstMessage={location.state?.firstMessage}
+      onFirstMessageSent={() => {
+        // The first turn stores nothing until it ends: without this a reload would send it again.
+        void navigate(location.pathname, { replace: true, state: null })
+      }}
       onTurnFinished={() => {
         void refreshThreads()
       }}

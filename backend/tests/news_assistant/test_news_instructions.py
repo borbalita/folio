@@ -37,3 +37,10 @@ def test_an_empty_period_is_answered_as_insufficient_evidence() -> None:
 
     sentence = text[text.index("If a period has no stories") :].split(". ", 1)[0]
     assert "insufficient_evidence" in sentence
+
+
+def test_every_listed_item_is_read_before_it_is_cited() -> None:
+    text = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+
+    assert "cite only items whose edition you read with read_story" in text
+    assert "for each listed id" in text

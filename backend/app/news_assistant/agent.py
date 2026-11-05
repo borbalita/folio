@@ -47,8 +47,8 @@ def _story_note(title: str | None, items: list[NewsPassage]) -> str:
     return (
         f"This thread is about one story: \"{title or items[0].title}\". Its newsletter items "
         f"now:\n{lines}\n"
-        "A question that does not name a story is about this one. Call read_story with one of "
-        "these ids for the newsletter text.\n\n"
+        "A question that does not name a story is about this one. Call read_story for each of "
+        "these ids to read every newsletter's text, and cite only items you have read.\n\n"
     )
 
 

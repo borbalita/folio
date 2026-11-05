@@ -24,6 +24,8 @@ interface ChatThreadViewProps {
   placeholder: string
   /** Sent once when the thread is still empty, e.g. when a thread is opened from a story. */
   firstMessage?: string
+  /** Called right after `firstMessage` is sent, so the caller can drop it from history. */
+  onFirstMessageSent?: () => void
   onTurnFinished: () => void
 }
 
@@ -69,6 +71,7 @@ export function ChatThreadView({
   initialMessages,
   placeholder,
   firstMessage,
+  onFirstMessageSent,
   onTurnFinished,
 }: ChatThreadViewProps) {
   const isDesktop = useIsDesktop()
@@ -121,7 +124,8 @@ export function ChatThreadView({
     }
     firstSent.current = true
     void sendMessage({ text: firstMessage })
-  }, [firstMessage, initialMessages.length, sendMessage])
+    onFirstMessageSent?.()
+  }, [firstMessage, initialMessages.length, sendMessage, onFirstMessageSent])
 
   const busy = status === 'submitted' || status === 'streaming'
   const lastMessage = messages.at(-1)
