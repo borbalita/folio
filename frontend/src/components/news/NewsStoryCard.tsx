@@ -24,6 +24,11 @@ export function NewsStoryCard({ story, chatDisabled, onChat }: NewsStoryCardProp
                 Big
               </span>
             ) : null}
+            {story.badges.includes('security') ? (
+              <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                Security
+              </span>
+            ) : null}
           </div>
           {story.blurb ? (
             <p className="mt-1 text-sm text-muted-foreground">{story.blurb}</p>

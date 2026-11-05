@@ -1,5 +1,7 @@
 # 002/04 — Security alerts
 
+Plan: [04-security-alerts.plan.md](04-security-alerts.plan.md)
+
 ## Goal
 Security stories in scope reach the owner's Telegram once per incident, with real updates, and are marked on the dashboard.
 
@@ -33,3 +35,15 @@ Security stories in scope reach the owner's Telegram once per incident, with rea
 
 ## Dependencies
 002/02.
+
+## Decisions made
+- Classification keys on `(email_id, position)` and picks items whose note has no `security` value (a missing note counts), so re-embedding never reclassifies. It is the first half of the notify step and runs whether or not Telegram is on, so the dashboard gets its badges.
+- Classification is a separate function, `classify_recent`, called by `_notify` before `record_notifications`. Its count is the job's `news_classified`. Because it handles model failures itself and returns 0, the big-story path is unaffected.
+- A `security` verdict with no alert status stores a null status and sends nothing. An alert status on a non-security item is dropped. Items the model leaves out stay unclassified and are asked about again next run.
+- One story with a `new` item and an `update` item is sent as `new` (no "Update:"), since the first alert about an incident is not an update.
+- A big story whose security items are all `repeat` is still announced as a Big story. Only `new` and `update` turn a message into `news_security`.
+- A security-only story (not big) is sent with the same fallback form as big stories when the explanation call fails: `🔒 <first title>`, its blurb, the links.
+- The backfill covers days up to two days before today and leaves the last two to the notify step. Otherwise an item it marked would count as classified and never be alerted. It classifies one day per call with no alert history, and a failed day is counted and skipped.
+- The filter value is `only=security`; `build_days` and `list_stories` take `only` (`big`, `security` or None) instead of `only_big`. A story gets the Security badge when any of its items is marked, whatever the alert status (a `repeat` is still a security story). Big stories sort first (those that are also security keep newsletter order among the big ones), then security, then the rest.
+- The migration's downgrade deletes `news_security` rows, since the narrower constraint can't hold them.
+- The classifier uses the newsletter-extraction model and reasoning effort settings, like the explanation call.

@@ -107,7 +107,8 @@ export function PrivacyPage() {
             </li>
             <li>
               <span className="font-medium">Telegram</span>: sends me notifications about new
-              invoices (payee, amount, due date) and big AI news headlines with short explanations.
+              invoices (payee, amount, due date), big AI news headlines with short explanations, and
+              alerts about AI security news with a short explanation.
             </li>
             <li>
               <span className="font-medium">Langfuse</span> (EU): technical traces of the
