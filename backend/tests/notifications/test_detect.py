@@ -130,7 +130,7 @@ def test_new_and_due_soon_is_one_message() -> None:
 
 def test_big_story_announced_once_by_its_items() -> None:
     tldr, alpha = item("tldr"), item("alpha_signal")
-    story = StoryFacts(items=[tldr, alpha])
+    story = StoryFacts(items=[tldr, alpha], big=True)
 
     rows = plan(stories=[story])
     pending = [row for row in rows if row.status == "pending"]
@@ -148,7 +148,7 @@ def test_rebuilt_or_grown_story_is_not_announced_again() -> None:
     later = item("tldr", "More on X", "https://tldr.test/more", position=1)
     known = {news_key(tldr), news_key(alpha)}
 
-    rows = plan(stories=[StoryFacts(items=[tldr, alpha, later])], known=known)
+    rows = plan(stories=[StoryFacts(items=[tldr, alpha, later], big=True)], known=known)
 
     assert [(row.key, row.status) for row in rows] == [(news_key(later), "skipped")]
 
@@ -162,11 +162,11 @@ def test_reembedded_items_with_new_ids_are_not_announced_again() -> None:
         item("alpha_signal", email_id=alpha.email_id, position=alpha.position),
     ]
 
-    assert plan(stories=[StoryFacts(items=again)], known=known) == []
+    assert plan(stories=[StoryFacts(items=again, big=True)], known=known) == []
 
 
 def test_disabled_settings_skip_every_new_row() -> None:
-    rows = plan(invoices=[invoice()], stories=[StoryFacts(items=[item("tldr"), item("alpha_signal")])], enabled=False)
+    rows = plan(invoices=[invoice()], stories=[StoryFacts(items=[item("tldr"), item("alpha_signal")], big=True)], enabled=False)
 
     assert rows and all(row.status == "skipped" for row in rows)
 
@@ -174,8 +174,8 @@ def test_disabled_settings_skip_every_new_row() -> None:
 
 def test_items_without_links_are_still_told_apart_and_not_linked() -> None:
     # Alpha Signal items mostly carry no link.
-    first = StoryFacts(items=[item("tldr"), item("alpha_signal", url="")])
-    second = StoryFacts(items=[item("tldr", "Other news"), item("alpha_signal", "Other news", url="")])
+    first = StoryFacts(items=[item("tldr"), item("alpha_signal", url="")], big=True)
+    second = StoryFacts(items=[item("tldr", "Other news"), item("alpha_signal", "Other news", url="")], big=True)
 
     rows = plan(stories=[first])
     rows += plan(stories=[second], known={row.key for row in rows})
@@ -240,7 +240,7 @@ def test_a_story_that_gains_a_security_item_after_its_message_went_out_sends_not
 
 
 def test_a_new_item_wins_over_an_update_item_in_one_story() -> None:
-    story = StoryFacts(items=[item("tldr", alert="update"), item("alpha_signal", alert="new")])
+    story = StoryFacts(items=[item("tldr", alert="update"), item("alpha_signal", alert="new")], big=True)
 
     [message] = [row for row in plan(stories=[story]) if row.status == "pending"]
 

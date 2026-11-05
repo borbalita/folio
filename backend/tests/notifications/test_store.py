@@ -387,3 +387,60 @@ def test_a_failed_security_explanation_falls_back_with_the_lock(monkeypatch: pyt
 
     assert new_row.text == "🔒 T\nB"
     assert note is None
+
+
+def _db_row(item, *, big: bool, alert: str | None, story: uuid.UUID):
+    stored = SimpleNamespace(
+        story_id=story, email_id=item.email_id, position=item.position, id=item.id,
+        source=item.source, title=item.title, blurb=item.blurb, url=item.url,
+    )
+    return SimpleNamespace(NewsItem=stored, is_big=big, alert_status=alert)
+
+
+def test_database_rows_become_alerts_through_the_planner() -> None:
+    from app.notifications.detect import NewsItemFacts, plan_notifications
+
+    def facts(title: str) -> NewsItemFacts:
+        return NewsItemFacts(
+            id=uuid.uuid4(), email_id=uuid.uuid4(), position=0, source="tldr",
+            title=title, blurb="b", url="https://tldr.test/x",
+        )
+
+    repeat, update, big_new = facts("Repeat"), facts("Update"), facts("Big new")
+    rows = [
+        _db_row(repeat, big=False, alert="repeat", story=uuid.uuid4()),
+        _db_row(update, big=False, alert="update", story=uuid.uuid4()),
+        _db_row(big_new, big=True, alert="new", story=uuid.uuid4()),
+    ]
+    session = MagicMock()
+    session.execute.return_value.all.return_value = rows
+
+    stories = store.load_stories(session, date(2026, 11, 3))
+    planned = plan_notifications(
+        [], stories, set(), today=date(2026, 11, 5), app_url="https://folio.test", enabled=True
+    )
+
+    sent = {r.text.split("\n")[0]: r.kind for r in planned if r.status == "pending"}
+    assert sent == {"🔒 Update: Update": "news_security", "🔒 Big new": "news_security"}
+    assert "Repeat" not in " ".join(r.key for r in planned if r.status == "pending")
+    assert [r.key for r in planned if "Repeat" in r.text] == []
+
+
+def test_a_big_story_without_an_alert_is_still_sent_as_big_from_rows() -> None:
+    from app.notifications.detect import NewsItemFacts, plan_notifications
+
+    item = NewsItemFacts(
+        id=uuid.uuid4(), email_id=uuid.uuid4(), position=0, source="tldr",
+        title="Plain big", blurb="b", url="",
+    )
+    session = MagicMock()
+    session.execute.return_value.all.return_value = [
+        _db_row(item, big=True, alert=None, story=uuid.uuid4())
+    ]
+
+    planned = plan_notifications(
+        [], store.load_stories(session, date(2026, 11, 3)), set(),
+        today=date(2026, 11, 5), app_url="", enabled=True,
+    )
+
+    assert [(r.kind, r.text.split("\n")[0]) for r in planned] == [("news_big", "📰 Plain big")]

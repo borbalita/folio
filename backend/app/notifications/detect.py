@@ -50,7 +50,7 @@ class StoryFacts:
     """The items of a big story or of one with a security alert, oldest first."""
 
     items: list[NewsItemFacts]
-    big: bool = True
+    big: bool
 
     @property
     def alert(self) -> str | None:

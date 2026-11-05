@@ -357,7 +357,7 @@ def test_a_failed_classification_still_lets_big_story_messages_go_out(
     monkeypatch.setattr(store, "load_unclassified", lambda session, since, until=None: [candidate])
     monkeypatch.setattr(store, "load_recent_alerts", lambda session, today: [])
     monkeypatch.setattr(store, "load_invoices", lambda session: [])
-    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=[item])])
+    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=[item], big=True)])
     monkeypatch.setattr(store, "known_keys", lambda session: set())
     monkeypatch.setattr(store, "telegram_enabled", lambda: True)
     monkeypatch.setattr(store, "load_editions", lambda session, ids: {})

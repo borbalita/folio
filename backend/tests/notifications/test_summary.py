@@ -145,7 +145,7 @@ def _record(monkeypatch, *, known: set[str], enabled: bool) -> list[str]:
         store, "load_editions", lambda session, email_ids: {i: f"body {i}" for i in email_ids}
     )
     monkeypatch.setattr(store, "load_invoices", lambda session: [])
-    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=ITEMS)])
+    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=ITEMS, big=True)])
     monkeypatch.setattr(store, "known_keys", lambda session: set(known))
     monkeypatch.setattr(store, "telegram_enabled", lambda: enabled)
     inserted: list = []
