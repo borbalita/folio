@@ -33,7 +33,7 @@ def _completion(parsed: NewsSummary | None) -> SimpleNamespace:
 def test_summary_text_has_headline_summary_and_both_links(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
 
-    def ask(items, editions):
+    def ask(items, editions, **_):
         calls.append((items, editions))
         return _completion(NewsSummary(headline="Model X launches", summary="Fast, and beats Y on Z."))
 
@@ -49,7 +49,7 @@ def test_summary_text_has_headline_summary_and_both_links(monkeypatch: pytest.Mo
 
 
 def test_model_error_falls_back_to_the_first_headline_and_blurb(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail(items, editions):
+    def fail(items, editions, **_):
         raise APIConnectionError(request=MagicMock())
 
     monkeypatch.setattr(summary, "request_summary", fail)
@@ -69,7 +69,7 @@ def test_model_error_falls_back_to_the_first_headline_and_blurb(monkeypatch: pyt
     ],
 )
 def test_any_model_error_falls_back(monkeypatch: pytest.MonkeyPatch, error: Exception) -> None:
-    def fail(items, editions):
+    def fail(items, editions, **_):
         raise error
 
     monkeypatch.setattr(summary, "request_summary", fail)
@@ -108,7 +108,7 @@ def test_the_prompt_limits_facts_to_the_newsletters() -> None:
 
 
 def test_failed_call_keeps_the_blurb_when_there_is_one(monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail(items, editions):
+    def fail(items, editions, **_):
         raise APIConnectionError(request=MagicMock())
 
     monkeypatch.setattr(summary, "request_summary", fail)
@@ -122,7 +122,7 @@ def test_failed_call_keeps_the_blurb_when_there_is_one(monkeypatch: pytest.Monke
 def test_failed_call_with_an_empty_blurb_has_no_empty_line(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def fail(items, editions):
+    def fail(items, editions, **_):
         raise ValueError("unparseable")
 
     monkeypatch.setattr(summary, "request_summary", fail)
@@ -139,13 +139,13 @@ def _record(monkeypatch, *, known: set[str], enabled: bool) -> list[str]:
     monkeypatch.setattr(
         summary,
         "explain",
-        lambda items, editions: asked.append(editions) or NewsSummary(headline="H", summary="S."),
+        lambda items, editions, **_: asked.append(editions) or NewsSummary(headline="H", summary="S."),
     )
     monkeypatch.setattr(
         store, "load_editions", lambda session, email_ids: {i: f"body {i}" for i in email_ids}
     )
     monkeypatch.setattr(store, "load_invoices", lambda session: [])
-    monkeypatch.setattr(store, "load_big_stories", lambda session, since: [StoryFacts(items=ITEMS)])
+    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=ITEMS)])
     monkeypatch.setattr(store, "known_keys", lambda session: set(known))
     monkeypatch.setattr(store, "telegram_enabled", lambda: enabled)
     inserted: list = []
@@ -197,7 +197,41 @@ def test_summary_without_any_links_has_no_link_line(monkeypatch: pytest.MonkeyPa
     items = [ITEMS[0].__class__(**{**ITEMS[1].__dict__, "url": ""})]
     monkeypatch.setattr(
         summary, "request_summary",
-        lambda items, editions: _completion(NewsSummary(headline="H", summary="S.")),
+        lambda items, editions, **_: _completion(NewsSummary(headline="H", summary="S.")),
     )
 
     assert summary.news_text(items, EDITIONS) == "📰 H\nS."
+
+
+def test_only_the_security_prompt_asks_who_is_affected_and_what_to_do() -> None:
+    plain = summary.summary_messages(ITEMS, EDITIONS)[0]["content"]
+    secure = summary.summary_messages(ITEMS, EDITIONS, security=True)[0]["content"]
+
+    assert "who is affected" not in plain
+    assert secure.startswith(plain)
+    assert "who is affected" in secure and "what to do" in secure
+
+
+def test_a_security_message_has_the_lock_and_an_update_says_so() -> None:
+    explained = NewsSummary(headline="Flaw found", summary="Patch it.")
+
+    new = summary.message(ITEMS, explained, security=True)
+    update = summary.message(ITEMS, explained, security=True, update=True)
+
+    assert new.startswith("🔒 Flaw found\nPatch it.\n")
+    assert update.startswith("🔒 Update: Flaw found\nPatch it.\n")
+
+
+def test_the_security_flag_reaches_the_model_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen = []
+
+    def ask(items, editions, security=False):
+        seen.append(security)
+        return _completion(NewsSummary(headline="H", summary="S."))
+
+    monkeypatch.setattr(summary, "request_summary", ask)
+
+    summary.explain(ITEMS, EDITIONS, security=True)
+    summary.explain(ITEMS, EDITIONS)
+
+    assert seen == [True, False]

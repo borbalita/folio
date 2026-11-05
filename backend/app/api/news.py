@@ -22,12 +22,12 @@ async def list_stories(
     user: Annotated[CurrentUser, Depends(get_current_user)],
     before: date | None = None,
     days: Annotated[int, Query(ge=1, le=60)] = 14,
-    only: Literal["big"] | None = None,
+    only: Literal["big", "security"] | None = None,
 ) -> dict[str, Any]:
     """Stories on the `days` days before `before` (default: through today), newest day first."""
     mailbox_ids = await require_news_access(user)
     if before is None:
         before = datetime.now(ZoneInfo(settings.email_timezone)).date() + timedelta(days=1)
     return await asyncio.to_thread(
-        news_feed.list_stories, mailbox_ids, before=before, days=days, only_big=only == "big"
+        news_feed.list_stories, mailbox_ids, before=before, days=days, only=only
     )

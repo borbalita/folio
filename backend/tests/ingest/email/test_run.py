@@ -147,6 +147,7 @@ def scheduled_env(monkeypatch):
 
     monkeypatch.setattr("ingest.email.run.match_for_user", fake_match)
     env.notify_calls = []
+    monkeypatch.setattr("ingest.email.run.classify_recent", lambda session, now: 0)
     monkeypatch.setattr(
         "ingest.email.run.record_notifications",
         lambda session, now: env.notify_calls.append("record") or 2,
@@ -306,3 +307,78 @@ def test_notification_error_log_has_no_content(scheduled_env, monkeypatch) -> No
     [entry] = [e for e in logs if e["event"] == "notifications_failed"]
     assert entry["error"] == "RuntimeError"
     assert "secret" not in str(logs)
+
+
+def test_the_notify_step_classifies_before_planning_and_counts_it(scheduled_env, monkeypatch) -> None:
+    order = []
+    scheduled_env.use_real_run_job()
+    monkeypatch.setattr(
+        "ingest.email.run.classify_recent",
+        lambda session, now: order.append("classify") or 5,
+    )
+    monkeypatch.setattr(
+        "ingest.email.run.record_notifications",
+        lambda session, now: order.append("record") or 2,
+    )
+
+    assert main(["--scheduled"]) == 0
+
+    (row,) = scheduled_env.job_session.added
+    assert order == ["classify", "record"]
+    assert row.counts["news_classified"] == 5
+    assert row.counts["notifications_new"] == 2
+
+
+def test_a_failed_classification_still_lets_big_story_messages_go_out(
+    scheduled_env, monkeypatch
+) -> None:
+    from unittest.mock import MagicMock, call
+
+    from openai import APIConnectionError
+
+    from app.notifications import security, store
+    from app.notifications.detect import NewsItemFacts, StoryFacts
+    from app.notifications.summary import NewsSummary
+
+    item = NewsItemFacts(
+        id=uuid.uuid4(), email_id=uuid.uuid4(), position=0, source="tldr",
+        title="Big", blurb="b", url="https://tldr.test/x",
+    )
+    candidate = security.Candidate(item.email_id, 0, date(2026, 11, 5), "tldr", "Big", "b")
+    asked, inserted = [], []
+
+    def refuse(candidates, alerts):
+        asked.append(len(candidates))
+        raise APIConnectionError(request=MagicMock())
+
+    log = MagicMock()
+    monkeypatch.setattr(security, "log", log)
+    monkeypatch.setattr(security, "request_classification", refuse)
+    monkeypatch.setattr(store, "load_unclassified", lambda session, since, until=None: [candidate])
+    monkeypatch.setattr(store, "load_recent_alerts", lambda session, today: [])
+    monkeypatch.setattr(store, "load_invoices", lambda session: [])
+    monkeypatch.setattr(store, "load_stories", lambda session, since: [StoryFacts(items=[item])])
+    monkeypatch.setattr(store, "known_keys", lambda session: set())
+    monkeypatch.setattr(store, "telegram_enabled", lambda: True)
+    monkeypatch.setattr(store, "load_editions", lambda session, ids: {})
+    monkeypatch.setattr(
+        store.summary, "explain", lambda items, editions, **_: NewsSummary(headline="H", summary="S.")
+    )
+    monkeypatch.setattr(store, "insert_rows", lambda session, rows: inserted.extend(rows))
+    monkeypatch.setattr(store, "save_notes", lambda session, notes: None)
+    monkeypatch.setattr("ingest.email.run.classify_recent", store.classify_recent)
+    monkeypatch.setattr("ingest.email.run.record_notifications", store.record_notifications)
+
+    assert main(["--scheduled"]) == 0
+    assert main(["--scheduled"]) == 0
+
+    # The big story is announced, and the failed items are asked about again on the next run.
+    assert [(r.kind, r.status) for r in inserted if r.status == "pending"] == [
+        ("news_big", "pending"),
+        ("news_big", "pending"),
+    ]
+    assert asked == [1, 1]
+    assert log.warning.call_args_list == [
+        call("news_classification_failed", error="APIConnectionError")
+    ] * 2
+    assert scheduled_env.notify_calls == ["send", "send"]

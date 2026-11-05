@@ -31,6 +31,7 @@ class FeedItem:
     is_big: bool
     headline: str | None
     explanation: str | None
+    security: bool
 
 
 def _first_with(items: list[FeedItem], field: str) -> str | None:
@@ -52,12 +53,19 @@ def _links(items: list[FeedItem]) -> list[dict[str, str]]:
 def _story(items: list[FeedItem]) -> dict[str, Any]:
     """`items` are the story's, oldest first."""
     first = items[0]
-    big = any(item.is_big for item in items)
+    badges = [
+        badge
+        for badge, marked in (
+            ("big", any(item.is_big for item in items)),
+            ("security", any(item.security for item in items)),
+        )
+        if marked
+    ]
     return {
         "key": f"{first.email_id}:{first.position}",
         "title": _first_with(items, "headline") or first.title,
         "blurb": max((item.blurb for item in items), key=len),
-        "badges": ["big"] if big else [],
+        "badges": badges,
         "links": _links(items),
         "items": [{"emailId": str(item.email_id), "position": item.position} for item in items],
         "explanation": _first_with(items, "explanation"),
@@ -65,7 +73,7 @@ def _story(items: list[FeedItem]) -> dict[str, Any]:
 
 
 def build_days(
-    items: list[FeedItem], *, before: date, days: int, only_big: bool = False
+    items: list[FeedItem], *, before: date, days: int, only: str | None = None
 ) -> list[dict[str, Any]]:
     """Stories whose newest day is in [before - days, before), newest day first.
 
@@ -82,14 +90,17 @@ def build_days(
         newest = story[-1].edition_date
         if not start <= newest < before:
             continue
-        if only_big and not any(item.is_big for item in story):
+        if only == "big" and not any(item.is_big for item in story):
+            continue
+        if only == "security" and not any(item.security for item in story):
             continue
         placed.setdefault(newest, []).append(story)
 
-    def order(story: list[FeedItem]) -> tuple[bool, str, int]:
-        # Big first, then where the story sits in its newest day's newsletter.
+    def order(story: list[FeedItem]) -> tuple[int, str, int]:
+        # Big first, then security, then where the story sits in its newest day's newsletter.
         on_day = next(item for item in story if item.edition_date == story[-1].edition_date)
-        return (not any(item.is_big for item in story), on_day.source, on_day.position)
+        rank = 0 if any(i.is_big for i in story) else 1 if any(i.security for i in story) else 2
+        return (rank, on_day.source, on_day.position)
 
     return [
         {"date": day.isoformat(), "stories": [_story(story) for story in sorted(stories, key=order)]}
@@ -112,7 +123,13 @@ def items_statement(
         )
     )
     return (
-        select(NewsItem, NewsStory.is_big, NewsItemNote.headline, NewsItemNote.explanation)
+        select(
+            NewsItem,
+            NewsStory.is_big,
+            NewsItemNote.headline,
+            NewsItemNote.explanation,
+            NewsItemNote.security,
+        )
         .join(EmailMessage, EmailMessage.id == NewsItem.email_id)
         .outerjoin(NewsStory, NewsStory.id == NewsItem.story_id)
         .outerjoin(
@@ -135,7 +152,7 @@ def items_statement(
 
 
 def list_stories(
-    mailbox_ids: list[uuid.UUID], *, before: date, days: int, only_big: bool
+    mailbox_ids: list[uuid.UUID], *, before: date, days: int, only: str | None
 ) -> dict[str, Any]:
     start = before - timedelta(days=days)
     with get_session() as session:
@@ -163,10 +180,11 @@ def list_stories(
             is_big=bool(row.is_big),
             headline=row.headline,
             explanation=row.explanation,
+            security=bool(row.security),
         )
         for row in rows
     ]
     return {
-        "days": build_days(items, before=before, days=days, only_big=only_big),
+        "days": build_days(items, before=before, days=days, only=only),
         "nextBefore": start.isoformat() if older else None,
     }
