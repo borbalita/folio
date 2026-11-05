@@ -55,6 +55,11 @@ export function isOverdue(invoice: Invoice, today: string): boolean {
   return invoice.status !== 'paid' && invoice.dueDate !== null && invoice.dueDate < today
 }
 
+/** German invoices write 1.234,56; the API takes 1234.56. */
+export function parseAmount(value: string): string {
+  return value.includes(',') ? value.replace(/\./g, '').replace(',', '.') : value
+}
+
 export function formatAmount(amount: string | null, currency: string | null): string | null {
   if (amount === null) {
     return null

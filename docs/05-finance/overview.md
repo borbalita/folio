@@ -45,7 +45,7 @@ Automatic links are labelled and undone in one click; suggestions have Confirm a
 
 ## Paying
 
-From the invoice page (Pay) or the list (Pay selected), Folio prepares a payment draft: a frozen copy of payee, IBAN, BIC, amount and reference (the invoice's reference, or its number when it asks for none). The payment card sits beside the invoice PDF, amount first. Pressing **Approve** is the owner's confirmation that the card matches the invoice; it re-checks the invoice (still open, valid IBAN, same amount) and shows an EPC (GiroCode) QR code with copy buttons. The banking app that scans it pays from its own account: Folio names no paying account.
+From the invoice page (Pay) or the list (Pay selected), Folio prepares a payment draft: a frozen copy of payee, IBAN, BIC, amount and reference (the invoice's reference, or its number when it asks for none). The payment card sits beside the invoice PDF, amount first. The card's fields are editable, so the owner can correct a misread value against the PDF. Pressing **Approve** is the owner's confirmation that the card matches the invoice; it saves any corrections to the invoice as owner edits (and re-runs matching), re-checks the invoice (still open, valid IBAN, same amount) and shows an EPC (GiroCode) QR code. The banking app that scans it pays from its own account: Folio names no paying account.
 
 An invoice with an approved payment is never given a second one, so preparing again can't lead to paying twice. A draft completes when matching links its invoice. Folio cannot send payments itself: Enable Banking only grants reading (`AIS`).
 
