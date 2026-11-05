@@ -26,3 +26,14 @@ When the newsletters don't answer a question about a story, the News agent searc
 
 ## Dependencies
 002/03.
+
+## Blocked
+2026-11-05, unattended run. Not implemented, and left unticked.
+
+The task's first step is a live call to check how PydanticAI 2.55's `WebSearchTool` exposes URL sources alongside `NewsAnswer` on the Responses API, and the spec says to raise it with the owner before building if sources can't be grounded. This run was told to make no live model calls, so the check couldn't happen. The citation storage, grounding and source panel all depend on its answer, so building first would be a guess.
+
+A read of the installed source, which doesn't replace the live check: `pydantic_ai/models/openai.py` has an `openai_include_web_search_sources` model setting, which asks the Responses API to include `web_search_call.action.sources`, and `_map_web_search_tool_call` turns a search call into tool call and return parts. So sources look reachable. How they arrive alongside structured output is still unconfirmed.
+
+To unblock: run the live check, then implement on top of 002/03 (and 002/04's branch, to keep one alembic head).
+
+All acceptance criteria are open: 4 (test), 4 (browser).
