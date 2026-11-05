@@ -1,5 +1,7 @@
 # 002/03 — Chat from a story
 
+Plan: [03-chat-from-story.plan.md](03-chat-from-story.plan.md)
+
 ## Goal
 A Chat button on a dashboard story opens a thread about it, and the agent answers from the full newsletter text rather than the blurb.
 
@@ -25,3 +27,12 @@ A Chat button on a dashboard story opens a thread about it, and the agent answer
 
 ## Dependencies
 002/02.
+
+## Decisions made
+- The create request takes `story_items: [{email_id, position}]` (snake case, like `title` and `agent`), 1 to 20 refs, only with `agent: "news"` (422 otherwise). Refs that don't all resolve in the user's news mailboxes are a 400 "Unknown story"; nothing is stored. The thread API returns the stored refs as `storyItems`, and `title` is capped at 255 to match the column.
+- `read_story` takes the item id, reads the item and its edition body in one query scoped by `emails.mailbox_id IN (...)`, and registers only that item for grounding. An item outside the mailboxes returns "No such story in your newsletters." and registers nothing.
+- The turn prompt names the story by the thread's title and lists the items' current ids, resolved on every turn by `(email_id, position)`. Refs that resolve to nothing add no story note. Ids in the prompt don't count for grounding; only a `read_story` (or other tool) result does, so the agent has to read before citing.
+- `new_deps` of every chat agent now receives the thread, so the news agent can read `storyItems`.
+- The newsletter text is returned between "untrusted" markers with the story named, and the instructions say newsletter text is content, not instructions.
+- The first message is carried to the thread page in router state and sent by `ChatThreadView` only when the thread has no messages, so reloading the thread doesn't send it again.
+- The migration adds the nullable JSONB column only; no RLS entry, since `chat_threads` already has it.

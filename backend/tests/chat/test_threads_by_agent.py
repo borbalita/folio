@@ -204,6 +204,7 @@ def test_routes_default_to_documents_and_pass_email(
         email: str,
         title: str | None = None,
         agent: str = "documents",
+        story_items: list | None = None,
     ) -> dict:
         created.append(agent)
         return {
