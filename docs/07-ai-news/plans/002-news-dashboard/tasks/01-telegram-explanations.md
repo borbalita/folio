@@ -34,3 +34,15 @@ None.
 - Each edition is labelled with its newsletter name in the prompt; a story's items in one newsletter include that edition once.
 - Privacy page: the Telegram line now reads "big AI news headlines with short explanations"; date set to 5 November 2026.
 - Overview: the sentence "Messages never contain ... email text" was narrowed to invoice messages, since news messages now paraphrase newsletter text.
+
+## Verified
+2026-11-05, unattended run: fast tests only, with no app, database, Telegram or live model calls. PR: https://github.com/borbalita/folio/pull/105. Left unticked because checks were skipped.
+
+- Whole newsletter text and story titles in the messages (test): pass, `test_the_prompt_has_each_whole_newsletter_and_names_the_titles`.
+- Each edition appears once (test): pass, `test_two_items_in_one_newsletter_include_that_edition_once`.
+- Failed or unparsable call has headline, blurb and links (test): pass, `test_failed_call_keeps_the_blurb_when_there_is_one`, `test_any_model_error_falls_back`.
+- Empty blurb leaves no empty line (test): pass, `test_failed_call_with_an_empty_blurb_has_no_empty_line`.
+- Owner reads at least three explanations of real stories (manual): **skipped**, needs the database, live model calls and the owner.
+- Presenter's button sends the new form (manual): **skipped**, needs the running app and Telegram.
+- `/privacy` shows the updated line and date (browser): **skipped**, the app wasn't started. The source of `PrivacyPage.tsx` has the new line and date.
+- Full fast suite: 1046 passed; ruff, tsc and eslint clean.
