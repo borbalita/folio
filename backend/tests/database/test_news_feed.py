@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 from datetime import date
+from types import SimpleNamespace
 
-from app.database.news_feed import FeedItem, build_days
+import pytest
+from sqlalchemy.dialects import postgresql
+
+from app.database import news_feed
+from app.database.news_feed import FeedItem, build_days, items_statement
 
 BEFORE = date(2026, 11, 6)
 
@@ -174,3 +180,91 @@ def test_item_refs_name_the_email_and_position() -> None:
     (day,) = build_days([item], before=BEFORE, days=14)
 
     assert day["stories"][0]["items"] == [{"emailId": str(item.email_id), "position": 3}]
+
+
+def _loader_sql() -> str:
+    statement = items_statement(
+        [uuid.UUID(int=1)], start=date(2026, 10, 1), before=date(2026, 11, 1)
+    )
+    return str(statement.compile(dialect=postgresql.dialect()))
+
+
+def test_the_outer_query_is_scoped_to_the_mailboxes_as_well_as_the_window() -> None:
+    # A story can be shared with other users' mailboxes: the items read for it must still be
+    # the user's own, so the outer WHERE needs the filter, not only the window subquery.
+    outer_where = _loader_sql().split("\nWHERE ", 1)[1]
+
+    assert outer_where.startswith("emails.mailbox_id IN (__[POSTCOMPILE_mailbox_id_1]) AND ")
+
+
+def test_the_window_reads_all_items_of_every_story_that_touches_it() -> None:
+    sql = _loader_sql()
+
+    assert "news_items.story_id IN (SELECT news_items.story_id" in sql
+    window = sql.split("news_items.story_id IN (SELECT", 1)[1].split(") OR ", 1)[0]
+    assert "emails.mailbox_id IN" in window
+    assert "news_items.edition_date >= " in window and "news_items.edition_date < " in window
+
+
+def test_notes_are_joined_on_the_email_and_position_not_on_ids() -> None:
+    sql = _loader_sql()
+
+    assert (
+        "LEFT OUTER JOIN news_item_notes ON news_item_notes.email_id = news_items.email_id "
+        "AND news_item_notes.position = news_items.position"
+    ) in sql
+
+
+class _FakeSession:
+    def __init__(self, rows: list[SimpleNamespace], older: bool) -> None:
+        self.rows, self.older = rows, older
+
+    def execute(self, statement: object) -> SimpleNamespace:
+        return SimpleNamespace(all=lambda: self.rows)
+
+    def scalar(self, statement: object) -> bool:
+        return self.older
+
+
+def _row(item: FeedItem, *, is_big: bool | None = False) -> SimpleNamespace:
+    stored = SimpleNamespace(
+        id=item.id, email_id=item.email_id, position=item.position, source=item.source,
+        edition_date=item.edition_date, title=item.title, blurb=item.blurb, url=item.url,
+        story_id=item.story_id,
+    )
+    return SimpleNamespace(
+        NewsItem=stored, is_big=is_big, headline=item.headline, explanation=item.explanation
+    )
+
+
+def _list(monkeypatch: pytest.MonkeyPatch, rows: list[SimpleNamespace], older: bool) -> dict:
+    @contextmanager
+    def session():
+        yield _FakeSession(rows, older)
+
+    monkeypatch.setattr(news_feed, "get_session", session)
+    return news_feed.list_stories(
+        [uuid.UUID(int=1)], before=BEFORE, days=7, only_big=False
+    )
+
+
+def test_list_stories_maps_rows_and_points_to_the_next_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    item = _item("a", date(2026, 11, 5), title="Raw", headline="Stored", explanation="Why.")
+
+    result = _list(monkeypatch, [_row(item, is_big=True)], older=True)
+
+    assert result["nextBefore"] == "2026-10-30"
+    (day,) = result["days"]
+    assert day["date"] == "2026-11-05"
+    assert day["stories"][0]["title"] == "Stored"
+    assert day["stories"][0]["explanation"] == "Why."
+    assert day["stories"][0]["badges"] == ["big"]
+
+
+def test_list_stories_has_no_next_page_when_nothing_is_older(monkeypatch: pytest.MonkeyPatch) -> None:
+    item = _item("a", date(2026, 11, 5))
+
+    result = _list(monkeypatch, [_row(item, is_big=None)], older=False)
+
+    assert result["nextBefore"] is None
+    assert result["days"][0]["stories"][0]["badges"] == []

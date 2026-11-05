@@ -61,13 +61,3 @@ def test_an_unknown_filter_is_rejected(authed_client: TestClient, monkeypatch: p
     monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [MAILBOX])
 
     assert authed_client.get("/news/stories?only=security").status_code == 422
-
-
-def test_the_loader_is_scoped_to_the_given_mailboxes() -> None:
-    from sqlalchemy.dialects import postgresql
-
-    statement = news_feed.items_statement([MAILBOX], start=date(2026, 10, 1), before=date(2026, 11, 1))
-    sql = str(statement.compile(dialect=postgresql.dialect()))
-
-    assert "emails.mailbox_id IN" in sql
-    assert "news_item_notes" in sql
