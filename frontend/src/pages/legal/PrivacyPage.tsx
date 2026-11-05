@@ -98,8 +98,9 @@ export function PrivacyPage() {
             </li>
             <li>
               <span className="font-medium">OpenAI</span>: answers questions in the chats,
-              extracts payment data from invoices and news items from newsletters, and
-              creates search embeddings.
+              extracts payment data from invoices and news items from newsletters, writes
+              plain explanations of news stories from the newsletters, and creates search
+              embeddings.
             </li>
             <li>
               <span className="font-medium">TypeSafe</span>: sorts incoming emails into
