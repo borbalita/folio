@@ -1,6 +1,6 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { ChatInput } from '@/components/chat/ChatInput'
 import { MessageList, type SelectedCitation } from '@/components/chat/MessageList'
@@ -22,6 +22,8 @@ interface ChatThreadViewProps {
   threadId: string
   initialMessages: CopilotUIMessage[]
   placeholder: string
+  /** Sent once when the thread is still empty, e.g. when a thread is opened from a story. */
+  firstMessage?: string
   onTurnFinished: () => void
 }
 
@@ -66,6 +68,7 @@ export function ChatThreadView({
   threadId,
   initialMessages,
   placeholder,
+  firstMessage,
   onTurnFinished,
 }: ChatThreadViewProps) {
   const isDesktop = useIsDesktop()
@@ -109,6 +112,16 @@ export function ChatThreadView({
       setStage(null)
     },
   })
+
+  const firstSent = useRef(false)
+  useEffect(() => {
+    // The guard keeps a re-render or a dev double-mount from sending it twice.
+    if (!firstMessage || initialMessages.length > 0 || firstSent.current) {
+      return
+    }
+    firstSent.current = true
+    void sendMessage({ text: firstMessage })
+  }, [firstMessage, initialMessages.length, sendMessage])
 
   const busy = status === 'submitted' || status === 'streaming'
   const lastMessage = messages.at(-1)

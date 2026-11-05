@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useOutletContext, useParams } from 'react-router-dom'
+import { Link, useLocation, useOutletContext, useParams } from 'react-router-dom'
 
 import { ChatThreadView } from '@/components/chat/ChatThreadView'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,7 @@ import type { ChatOutletContext } from './ChatPage'
 export function ChatThreadPage() {
   const { threadId } = useParams<{ threadId: string }>()
   const { agent, refreshThreads } = useOutletContext<ChatOutletContext>()
+  const location = useLocation() as { state: { firstMessage?: string } | null }
   const [loaded, setLoaded] = useState<{
     threadId: string
     messages: CopilotUIMessage[]
@@ -71,6 +72,7 @@ export function ChatThreadPage() {
       threadId={threadId}
       initialMessages={loaded.messages}
       placeholder={agent.placeholder}
+      firstMessage={location.state?.firstMessage}
       onTurnFinished={() => {
         void refreshThreads()
       }}
