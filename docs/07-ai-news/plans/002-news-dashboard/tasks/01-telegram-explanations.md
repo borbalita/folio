@@ -33,6 +33,7 @@ None.
 - `news_fallback_text` also feeds the placeholder text of pending rows before the summary replaces it, so those placeholders now carry the blurb too. Two `test_detect.py` expectations changed to match.
 - Each edition is labelled with its newsletter name in the prompt; a story's items in one newsletter include that edition once.
 - Privacy page: the Telegram line now reads "big AI news headlines with short explanations"; date set to 5 November 2026.
+- Privacy page: the OpenAI line also names explanations. The spec names only the Telegram line, but AGENTS.md's privacy rule requires it.
 - Overview: the sentence "Messages never contain ... email text" was narrowed to invoice messages, since news messages now paraphrase newsletter text.
 
 ## Verified
