@@ -21,8 +21,8 @@ ITEMS = [
 
 
 EDITIONS = {
-    ITEMS[0].email_id: "TLDR whole newsletter: Lab ships model X. Much more text. Unrelated story Q.",
-    ITEMS[1].email_id: "Alpha whole newsletter: Model X is out, explained at length.",
+    ITEMS[0].email_id: "TLDR whole newsletter body, with much more text and an unrelated story Q.",
+    ITEMS[1].email_id: "Alpha whole newsletter body, explained at length.",
 }
 
 
@@ -85,7 +85,7 @@ def test_the_prompt_has_each_whole_newsletter_and_names_the_titles() -> None:
     messages = summary.summary_messages(ITEMS, EDITIONS)
 
     user = messages[-1]["content"]
-    assert "Lab ships model X" in user and "Model X is out" in user
+    assert "- Lab ships model X\n- Model X is out" in user
     for body in EDITIONS.values():
         assert body in user
     assert "https://" not in user
@@ -97,7 +97,7 @@ def test_two_items_in_one_newsletter_include_that_edition_once() -> None:
     user = summary.summary_messages(same, EDITIONS)[-1]["content"]
 
     assert user.count(EDITIONS[ITEMS[0].email_id]) == 1
-    assert "Model X is out" in user
+    assert "- Model X is out" in user
 
 
 def test_the_prompt_limits_facts_to_the_newsletters() -> None:
