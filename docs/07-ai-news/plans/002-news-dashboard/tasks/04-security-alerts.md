@@ -37,6 +37,7 @@ Security stories in scope reach the owner's Telegram once per incident, with rea
 002/02.
 
 ## Decisions made
+- Privacy page: the OpenAI line also names security marking (titles and blurbs go to OpenAI for it). The spec names only the Telegram line, but AGENTS.md's privacy rule requires it.
 - Classification keys on `(email_id, position)` and picks items whose note has no `security` value (a missing note counts), so re-embedding never reclassifies. It is the first half of the notify step and runs whether or not Telegram is on, so the dashboard gets its badges.
 - Classification is a separate function, `classify_recent`, called by `_notify` before `record_notifications`. Its count is the job's `news_classified`. Because it handles model failures itself and returns 0, the big-story path is unaffected.
 - A `security` verdict with no alert status stores a null status and sends nothing. An alert status on a non-security item is dropped. Items the model leaves out stay unclassified and are asked about again next run.
