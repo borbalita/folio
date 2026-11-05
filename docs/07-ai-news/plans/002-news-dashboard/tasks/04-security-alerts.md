@@ -47,3 +47,22 @@ Security stories in scope reach the owner's Telegram once per incident, with rea
 - The filter value is `only=security`; `build_days` and `list_stories` take `only` (`big`, `security` or None) instead of `only_big`. A story gets the Security badge when any of its items is marked, whatever the alert status (a `repeat` is still a security story). Big stories sort first (those that are also security keep newsletter order among the big ones), then security, then the rest.
 - The migration's downgrade deletes `news_security` rows, since the narrower constraint can't hold them.
 - The classifier uses the newsletter-extraction model and reasoning effort settings, like the explanation call.
+
+## Verified
+2026-11-05, unattended run: fast tests only, with no app, database, Telegram or live model calls. The migration was hand-written and not applied, and the backfill was not run. PR: https://github.com/borbalita/folio/pull/108. Left unticked because checks were skipped. **Don't merge before the owner's backfill review.**
+
+- One call, results stored per email and position (test): pass, `test_one_call_classifies_the_whole_batch`, `test_the_notify_step_classifies_before_planning_and_counts_it`, `test_classifications_upsert_only_the_security_columns`.
+- Already classified items make no call, also after re-embedding (test): pass, `test_unclassified_items_are_the_recent_non_demo_ones_without_a_verdict`, `test_nothing_to_classify_makes_no_call`. The key is checked in compiled SQL, not a real re-embed.
+- Failed classification: big messages still go out and the next run retries (test): pass, `test_a_failed_classification_still_lets_big_story_messages_go_out`, `test_a_failed_classification_stores_nothing_and_the_next_run_asks_again`.
+- Demo item isn't classified and sends nothing (test): pass, `test_unclassified_items_are_the_recent_non_demo_ones_without_a_verdict`, `test_big_stories_exclude_demo_mailboxes`.
+- Unknown item index dropped, the rest kept (test): pass, `test_an_unknown_index_is_dropped_and_the_rest_kept`.
+- `new` and `update` send, `repeat` doesn't (test): pass, `test_new_update_and_repeat_on_separate_stories`, `test_database_rows_become_alerts_through_the_planner`.
+- Big and security sends one `news_security` message (test): pass, `test_a_big_security_story_sends_one_security_message`.
+- Story gaining a security item after its message sends nothing more (test): pass, `test_a_story_that_gains_a_security_item_after_its_message_went_out_sends_nothing`.
+- Backfill: no notification rows, `alert_status` stays null (test): pass, `test_the_backfill_stores_security_only_and_sends_nothing`, `test_the_backfill_writes_security_without_touching_alert_status`.
+- Owner reviews the 30-day backfill before merge (manual): **skipped**, needs the database, live model calls and the owner.
+- PHP2Shell's real items give one `new` and few real `update`s (manual): **skipped**, same reason.
+- A real security story sent to Telegram reads well (manual): **skipped**, no Telegram or live calls in this run.
+- Security filter shows only marked stories with their badge (browser): **skipped**, the app wasn't started.
+- `/privacy` mentions security alerts with the new date (browser): **skipped**, the app wasn't started. The source of `PrivacyPage.tsx` has the new line and date.
+- Full fast suite: 1142 passed; ruff, tsc and eslint clean.
