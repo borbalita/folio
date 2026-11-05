@@ -26,3 +26,18 @@ The owner opens `/news` and scans every story by day, newest first, with big sto
 
 ## Dependencies
 002/01.
+
+## Notes
+- Implementation plan: [02-dashboard.plan.md](02-dashboard.plan.md).
+
+## Decisions made
+- The response is `{days: [{date, stories}], nextBefore}`, camelCase like the other routes. `before` is exclusive and defaults to tomorrow in Berlin; the page holds the `days` days before it. `nextBefore` is the window start when the user has older items, else null; "Load older" passes it as `before`.
+- A story belongs to the page where its newest day (among the user's items) falls. The loader reads every item of each story that touches the window, and `build_days` drops stories whose newest day is later, so a story crossing a boundary shows on the newer page only.
+- `only=big` uses the story's `is_big` flag, as everywhere else. `only` accepts `big` only; `security` is a 422 until 002/04.
+- Within a day: big first, then the source name and position of the story's first item on that day (the "newsletter order"; it is alphabetical by source key, so Alpha Signal before TLDR).
+- The title and explanation come from the first item, oldest first, that has a stored headline or explanation; the stored note sits on the item that carries the Telegram key (`story[0]`). The fallback title is the oldest item's title.
+- Items without a story count as stories of one.
+- `badges` is a list; only `"big"` exists until 002/04. `items` are `{emailId, position}`, the form 002/03 needs; `key` is the first item's `emailId:position`.
+- The note is upserted with `headline` and `explanation` only, so classification columns are never overwritten. A failed model call stores no note.
+- `summary.explain` returns the parsed headline and explanation (or None) and `summary.message` builds the text from it; `news_text` composes them so the demo button is unchanged. `store.explained` returns the row and its note.
+- Alembic revision id `4d8e2a7f9b13` was chosen by hand (no autogenerate in this run).
