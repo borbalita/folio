@@ -6,14 +6,14 @@ import asyncio
 import uuid
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import CurrentUser, get_current_user
-from app.auth.email_access import require_agent_access
+from app.auth.email_access import require_agent_access, require_news_access
 from app.chat.messages import AgentName, CreateThreadRequest, StreamChatRequest
 from app.chat.orchestrator import run_turn
-from app.database import chats
+from app.database import chats, news_story
 
 router = APIRouter(tags=["chat"])
 
@@ -26,9 +26,28 @@ async def create_thread(
     title = body.title if body else None
     agent = body.agent if body else "documents"
     await require_agent_access(user, agent)
+    story_items = await _checked_story_items(user, body, agent)
     return await asyncio.to_thread(
-        chats.create_thread_for_user, user.id, user.email, title, agent
+        chats.create_thread_for_user, user.id, user.email, title, agent, story_items
     )
+
+
+async def _checked_story_items(
+    user: CurrentUser, body: CreateThreadRequest | None, agent: str
+) -> list[dict[str, Any]] | None:
+    """The refs to store, once they are known to be items of the user's own newsletters."""
+    if body is None or body.story_items is None:
+        return None
+    if agent != "news":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="story_items are only for news threads",
+        )
+    mailbox_ids = await require_news_access(user)
+    refs = [(ref.email_id, ref.position) for ref in body.story_items]
+    if not await asyncio.to_thread(news_story.owns_all, mailbox_ids, refs):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown story")
+    return [ref.model_dump(mode="json") for ref in body.story_items]
 
 
 @router.get("/threads")

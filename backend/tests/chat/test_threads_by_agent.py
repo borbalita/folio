@@ -40,6 +40,10 @@ class _Query:
         self.filters[key] = value
         return self
 
+    def is_(self, key: str, _value: str) -> _Query:
+        self.filters[key] = None
+        return self
+
     def order(self, *_args: object, **_kwargs: object) -> _Query:
         return self
 
@@ -204,6 +208,7 @@ def test_routes_default_to_documents_and_pass_email(
         email: str,
         title: str | None = None,
         agent: str = "documents",
+        story_items: list | None = None,
     ) -> dict:
         created.append(agent)
         return {
@@ -231,3 +236,50 @@ def test_routes_default_to_documents_and_pass_email(
 
     assert created == ["documents", "email"]
     assert listed == ["documents", "email"]
+
+
+def test_new_chat_does_not_reuse_an_empty_story_thread(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+    refs = [{"email_id": str(uuid.uuid4()), "position": 1}]
+
+    story = chats.create_thread_for_user(
+        USER_ID, "owner@example.com", "A story", "news", refs
+    )
+    plain = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="news")
+
+    assert plain["id"] != story["id"]
+    assert plain["storyItems"] is None
+
+
+def test_a_story_thread_without_a_title_is_new_and_keeps_its_refs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+    empty = chats.create_thread_for_user(USER_ID, "owner@example.com", agent="news")
+    refs = [{"email_id": str(uuid.uuid4()), "position": 1}]
+
+    story = chats.create_thread_for_user(
+        USER_ID, "owner@example.com", None, "news", refs
+    )
+
+    assert story["id"] != empty["id"]
+    assert story["storyItems"] == refs
+    stored = [row for row in client.store["chat_threads"] if row["id"] == story["id"]]
+    assert stored[0]["story_items"] == refs
+
+
+def test_story_refs_come_back_from_get_thread(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _Client()
+    monkeypatch.setattr(chats, "get_admin_client", lambda: client)
+    refs = [{"email_id": str(uuid.uuid4()), "position": 1}]
+    story = chats.create_thread_for_user(
+        USER_ID, "owner@example.com", "A story", "news", refs
+    )
+
+    thread = chats.get_thread_for_user(uuid.UUID(story["id"]), USER_ID)
+
+    assert thread["storyItems"] == refs
