@@ -51,3 +51,10 @@ A Chat button on a dashboard story opens a thread about it, and the agent answer
 - Demo account gets an answer from its own data (browser): **skipped**, same reason.
 - Full fast suite: 1094 passed; ruff, tsc and eslint clean.
 - Still to do before deploying: apply the migration first, because thread routes for all agents select `story_items`, and run `uv run alembic check`.
+
+2026-11-06, browser checks on the local app against the test Supabase project, signed in as the demo user, with live model calls. The migration applied cleanly.
+
+- Chat opens a titled thread, answers with details beyond the blurb, citations open (browser): **partly passed**. On a production build the thread opened with the story's title, the answer came with a citation, and the source panel showed "Open article". The answer explained terms and said what the report doesn't confirm, but added no new facts: demo newsletters are about as short as their blurbs. Needs repeating on real newsletters.
+- Follow-up without naming the story stays on it (browser): pass.
+- Demo account gets an answer from its own data (browser): pass.
+- **Bug, dev server only:** under `vite` the Chat button creates the thread but "Explain this story" is never sent (no `POST /chat/stream`, reproduced twice). `sendMessage` runs, because the history state is cleared, so React StrictMode's double mount in `ChatThreadView` is the likely cause; not confirmed. A production build works.
