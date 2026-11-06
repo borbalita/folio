@@ -43,8 +43,7 @@ def extract_latest_user_text(messages: list[dict[str, Any]]) -> str:
             if texts:
                 return "\n".join(texts)
 
-        # Fallback: stringify remaining payload
-        return str(content or message)
+        return ""
 
     return ""
 
