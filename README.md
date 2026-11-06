@@ -141,7 +141,7 @@ Railway deploys `main` from this repo as separate services, all defined in [`.ra
 
 | Service | Root directory | Config |
 | --- | --- | --- |
-| backend | `/backend` | uvicorn and the `/health` check |
+| backend | `/backend` | `alembic upgrade head` before each deploy, uvicorn and the `/health` check |
 | frontend | `/frontend` | Vite build served by Caddy; no custom start command |
 | email-ingest (cron) | `/backend` | `python -m ingest.email --scheduled` every 30 minutes (UTC); its variables reference the backend's |
 | bank-sync (cron) | `/backend` | `python -m ingest.bank` at 04:00, 11:00 and 18:00 UTC; its variables reference the backend's |
