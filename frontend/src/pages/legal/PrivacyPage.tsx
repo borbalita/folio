@@ -34,7 +34,7 @@ export function PrivacyPage() {
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 pb-16 text-sm leading-relaxed sm:px-6">
         <div className="flex flex-col gap-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">Privacy</h1>
-          <p className="text-muted-foreground">Last updated: October 2026</p>
+          <p className="text-muted-foreground">Last updated: 5 November 2026</p>
         </div>
 
         <Section title="1. Controller">
@@ -98,8 +98,9 @@ export function PrivacyPage() {
             </li>
             <li>
               <span className="font-medium">OpenAI</span>: answers questions in the chats,
-              extracts payment data from invoices and news items from newsletters, and
-              creates search embeddings.
+              extracts payment data from invoices and news items from newsletters, writes
+              plain explanations of news stories from the newsletters, and creates search
+              embeddings.
             </li>
             <li>
               <span className="font-medium">TypeSafe</span>: sorts incoming emails into
@@ -107,7 +108,7 @@ export function PrivacyPage() {
             </li>
             <li>
               <span className="font-medium">Telegram</span>: sends me notifications about new
-              invoices (payee, amount, due date) and big AI news headlines.
+              invoices (payee, amount, due date) and big AI news headlines with short explanations.
             </li>
             <li>
               <span className="font-medium">Langfuse</span> (EU): technical traces of the

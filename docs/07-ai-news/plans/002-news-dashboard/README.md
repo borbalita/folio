@@ -1,8 +1,8 @@
 # 002 — AI News dashboard, explanations and security alerts
 
 - Created: 2026-11-05
-- Status: Ready
-- Current stage: approved; 002/01 is next
+- Status: In progress
+- Current stage: 002/01 (Telegram explanations) is being implemented
 
 ## Approval state
 

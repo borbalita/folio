@@ -112,3 +112,22 @@ def test_big_stories_exclude_demo_mailboxes() -> None:
     assert "JOIN emails ON emails.id = news_items.email_id" in sql
     assert "JOIN mailboxes ON mailboxes.id = emails.mailbox_id" in sql
     assert "mailboxes.provider != 'demo'" in sql
+
+
+def test_load_editions_maps_email_ids_to_whole_bodies() -> None:
+    first, second = uuid.uuid4(), uuid.uuid4()
+    session = MagicMock()
+    session.execute.return_value.all.return_value = [(first, "body one"), (second, "body two")]
+
+    editions = store.load_editions(session, [first, second])
+
+    assert editions == {first: "body one", second: "body two"}
+    sql = _sql(session.execute.call_args.args[0])
+    assert "emails.body" in sql and "emails.id IN" in sql
+
+
+def test_load_editions_with_no_emails_does_not_touch_the_database() -> None:
+    session = MagicMock()
+
+    assert store.load_editions(session, []) == {}
+    session.execute.assert_not_called()
