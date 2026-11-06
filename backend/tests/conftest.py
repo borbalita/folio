@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import functools
+import os
 import uuid
 from collections.abc import Callable, Iterator
+
+# Importing app.main configures tracing, so these must be set before any app import. With
+# keys from a local .env, tests would trace to the real Langfuse and shutdown_tracing can hang.
+os.environ["LANGFUSE_PUBLIC_KEY"] = ""
+os.environ["LANGFUSE_SECRET_KEY"] = ""
 
 import pytest
 import structlog
 from fastapi.testclient import TestClient
 from langfuse import Langfuse
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+    InMemorySpanExporter,
+)
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.main import app
