@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.models.base import Base
@@ -20,6 +20,10 @@ class ChatThread(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="New chat")
     agent: Mapped[str] = mapped_column(
         String(32), nullable=False, server_default="documents"
+    )
+    # News threads opened from a story: [{"email_id", "position"}], stable across re-embedding.
+    story_items: Mapped[list[dict[str, str | int]] | None] = mapped_column(
+        JSONB, nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

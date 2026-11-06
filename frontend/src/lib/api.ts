@@ -265,8 +265,19 @@ export const api = {
 
   listThreads: (agent: AgentName) => http.get<Thread[]>(`/threads?agent=${agent}`),
 
-  createThread: (agent: AgentName, title?: string) =>
-    http.post<Thread>('/threads', title ? { agent, title } : { agent }),
+  createThread: (agent: AgentName, title?: string, storyItems?: NewsStory['items']) =>
+    http.post<Thread>('/threads', {
+      agent,
+      ...(title ? { title } : {}),
+      ...(storyItems
+        ? {
+            story_items: storyItems.map((item) => ({
+              email_id: item.emailId,
+              position: item.position,
+            })),
+          }
+        : {}),
+    }),
 
   listNewsStories: (params: { before?: string; only?: 'big' }) => {
     const query = new URLSearchParams()

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 
 import { NewsStoryCard } from '@/components/news/NewsStoryCard'
 import { Button } from '@/components/ui/button'
-import { api, type NewsDay } from '@/lib/api'
+import { api, type NewsDay, type NewsStory } from '@/lib/api'
 import { formatIsoDay } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
+import type { ChatOutletContext } from '@/pages/chat/ChatPage'
 
 type Filter = 'all' | 'big'
 
@@ -22,6 +24,24 @@ export function NewsDashboard() {
   const [filter, setFilter] = useState<Filter>('all')
   const [state, setState] = useState<State>(EMPTY)
   const latest = useRef(0)
+  const { agent, refreshThreads } = useOutletContext<ChatOutletContext>()
+  const navigate = useNavigate()
+  const [opening, setOpening] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+
+  async function openChat(story: NewsStory) {
+    setOpening(true)
+    setChatError(null)
+    try {
+      const thread = await api.createThread('news', story.title.slice(0, 255), story.items)
+      await refreshThreads()
+      void navigate(`${agent.path}/${thread.id}`, { state: { firstMessage: 'Explain this story' } })
+    } catch (caught: unknown) {
+      setChatError(describeApiError(caught))
+    } finally {
+      setOpening(false)
+    }
+  }
 
   const load = useCallback(
     async (before: string | undefined, replace: boolean) => {
@@ -78,6 +98,7 @@ export function NewsDashboard() {
           </div>
         </div>
         {state.error ? <p className="text-sm text-destructive">{state.error}</p> : null}
+        {chatError ? <p className="text-sm text-destructive">{chatError}</p> : null}
         {state.days.map((day) => (
           <section key={day.date} className="flex flex-col gap-2">
             <h2 className="text-sm font-medium text-muted-foreground">
@@ -85,7 +106,14 @@ export function NewsDashboard() {
             </h2>
             <ul className="flex flex-col gap-2">
               {day.stories.map((story) => (
-                <NewsStoryCard key={story.key} story={story} />
+                <NewsStoryCard
+                  key={story.key}
+                  story={story}
+                  chatDisabled={opening}
+                  onChat={(chosen) => {
+                    void openChat(chosen)
+                  }}
+                />
               ))}
             </ul>
           </section>

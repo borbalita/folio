@@ -17,9 +17,15 @@ class StreamChatRequest(BaseModel):
     messages: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class StoryItemRef(BaseModel):
+    email_id: uuid.UUID
+    position: int = Field(ge=0)
+
+
 class CreateThreadRequest(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=255)
     agent: AgentName = "documents"
+    story_items: list[StoryItemRef] | None = Field(default=None, min_length=1, max_length=20)
 
 
 def extract_latest_user_text(messages: list[dict[str, Any]]) -> str:

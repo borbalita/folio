@@ -1,9 +1,16 @@
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
 import type { NewsStory } from '@/lib/api'
 
-export function NewsStoryCard({ story }: { story: NewsStory }) {
+interface NewsStoryCardProps {
+  story: NewsStory
+  chatDisabled: boolean
+  onChat: (story: NewsStory) => void
+}
+
+export function NewsStoryCard({ story, chatDisabled, onChat }: NewsStoryCardProps) {
   const [open, setOpen] = useState(false)
   const Chevron = open ? ChevronDown : ChevronRight
   return (
@@ -37,6 +44,17 @@ export function NewsStoryCard({ story }: { story: NewsStory }) {
             </p>
           ) : null}
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={chatDisabled}
+          onClick={() => {
+            onChat(story)
+          }}
+        >
+          <MessageSquare className="size-3.5" />
+          Chat
+        </Button>
         {story.explanation ? (
           <button
             type="button"
