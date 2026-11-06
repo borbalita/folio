@@ -2,13 +2,14 @@
 
 - Created: 2026-11-05
 - Status: In progress
-- Current stage: 002/01–04 implemented with PRs open, each with browser and manual checks still to do; 002/05 blocked on a live check
+- Current stage: 002/01–04 implemented with PRs open, each with browser and manual checks still to do; 002/05 unblocked by the 2026-11-06 live check and owner's decision
 
 ## Approval state
 
 - 2026-11-05: in chat, the owner asked for a dashboard of AI news by date, notifications about security news, Telegram messages with a simple explanation, and chat about the news. They chose: a short explainer as the message form; AI security plus major incidents as the alert scope; all stories on the dashboard with filters; a Chat button that opens a new thread, reads the newsletter text and can search the web; one alert per incident plus real updates; the stored newsletter as the source of fuller text; one classification call per ingest run.
 - 2026-11-05: the owner approved the written spec and tasks as written, including quiet hours for security alerts and web search in every news thread; the plan is Ready.
 - 2026-11-05: the owner's preference on length, relayed from their main session ("i just want something long enough to understand"), replaces the 3–5 sentence limit.
+- 2026-11-06: after the live check in 002/05, the owner chose how web citations are grounded: a URL counts if it was a search result or a page the model opened in this turn; a citation matching neither is removed and the answer kept; URLs compare ignoring query string, fragment, scheme, a leading `www.`, host case and a trailing slash. This replaces "its URL must come from this turn's search results".
 
 ## Problem
 
@@ -52,6 +53,7 @@ Other decisions:
 - **Repeats:** one alert per incident, plus a follow-up when something materially changed. The same call decides, by comparing with the last 7 days of alerts. It may occasionally miss or repeat one, which is accepted. Rejected: strictly one (would hide that a flaw is now under attack); one per story (PHP2Shell would have sent several).
 - **Dashboard shows everything,** filterable. Stories with a Telegram message also show their explanation. Rejected: only big and security (hides the other 30 stories a day); explanations for all (about 33 more calls a weekday, and most stories don't need one).
 - **Web search is off for demo accounts.** Their stories are invented, so the web would contradict them or find nothing.
+- **Web citations are removed, not refused (owner, 2026-11-06).** A web citation counts if its URL was a search result or a page the model opened in this turn; the live check showed a correct citation to an opened page that the search sources didn't list. One matching neither is removed and the answer is kept, because the rest of the answer can still stand. URLs compare ignoring query string, fragment, scheme, a leading `www.`, host case and a trailing slash, because sources carry tracking parameters. Newsletter item citations keep their strict grounding. Rejected: search results only (rejects correct answers); failing the turn (loses a good answer over one bad link).
 - **Quiet hours apply to security alerts,** 22:00–07:00 like every other message. Newsletters arrive in the morning, and an AI newsletter's story isn't an emergency that needs waking up for.
 
 ## Design
@@ -77,7 +79,7 @@ email ingest run
 - **Classification:** in the notify step, items from the last 2 days without a classification, non-demo, go to one structured call with their titles and blurbs and the last 7 days of alert headlines. For each item it returns `security` and, when true, `new`, `update` or `repeat`; it marks repeats within the batch too. Answers with unknown indices are dropped. A failed call logs its type and retries next run; big-story messages still go out.
 - **Security messages:** a new notification kind `news_security`. A story with a `new` or `update` item in the 2-day lookback is sent `🔒 <headline>`, or `🔒 Update: <headline>`, with the explanation, which also says who is affected and what to do when the newsletter does. It uses the same `news:<email>:<position>` keys, so a big security story sends one message and the Big path doesn't announce it again.
 - **Backfill:** `python -m ingest.news_security --days 30` classifies older items for the dashboard's badges. It writes `security` only, with `alert_status` null, so it never sends anything.
-- **Web search:** PydanticAI's `WebSearchTool` on the News agent for non-demo users. The instructions say to search only for details the newsletters lack about a story or topic, and to say which part came from the web. A web citation is a second citation kind in storage, grounding and the source panel; its URL must come from this turn's search results. 002/05 begins by checking how structured output and search sources combine.
+- **Web search:** PydanticAI's `WebSearchTool` on the News agent for non-demo users. The instructions say to search only for details the newsletters lack about a story or topic, and to say which part came from the web. A web citation is a second citation kind in storage, grounding and the source panel. Its URL must be a search result or a page the model opened in this turn, compared by the rule in Decisions; otherwise that citation is removed and the answer kept. Sources have no titles, so the panel's title comes from the model's citation. Raw citation markers in the model's text are stripped before it is stored or shown.
 - **Failure modes:** no newsletters that day means no section; an empty filter says so; a newsletter body too large for a call isn't expected at about 10k characters. A web page can carry injected text, but the agent's other tools are read-only and scoped to the user's news, and it can send nothing.
 - **Demo accounts:** the dashboard and chat work from their own items. They never get classified or get notes, so they show Big but no Security badges or explanations. The presenter's Telegram button keeps working and gets the new explanation form.
 - **Tracing:** stays content-free. The explanation and classification calls, like extraction, use the OpenAI SDK directly and aren't traced.
@@ -107,5 +109,5 @@ email ingest run
 - **Classifier quality:** the alert scope is a judgment call and there is no labelled set. Next action: the owner reviews the 30-day backfill in 002/04 before alerts go on, and the rubric is adjusted there.
 - **Alert volume:** about one a day is an estimate from a hand count. Next action: watch the first two weeks; narrow the rubric if it's too many.
 - **Neighbouring stories in explanations:** the model reads a whole newsletter and could mix in another story. Next action: check real messages in 002/01; if it happens, cut the text down to the story's passage.
-- **Web sources with structured output:** PydanticAI may not hand URL sources over cleanly alongside `NewsAnswer`. Next action: the first step of 002/05; if it doesn't work, raise it with the owner before building.
+- **Web sources with structured output:** resolved by the live checks of 2026-11-05 and 2026-11-06 in [002/05](tasks/05-web-search.md): the sources and opened pages arrive in the same run's messages as `NewsAnswer`, and grounding follows the owner's rule in Decisions. Each web turn used about 21k–38k input tokens, so the instructions keep searching to when the newsletters lack the detail.
 - **Explanations only when Telegram is on:** they are written for pending messages, so a local run with Telegram off shows none on the dashboard. Accepted.

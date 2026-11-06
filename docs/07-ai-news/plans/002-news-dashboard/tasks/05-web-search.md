@@ -1,13 +1,16 @@
 # 002/05 — Web search in the News agent
 
+Plan: [05-web-search.plan.md](05-web-search.plan.md)
+
 ## Goal
 When the newsletters don't answer a question about a story, the News agent searches the web and cites what it finds, marked as coming from the web.
 
 ## Scope
-- First step: check with a live call how PydanticAI 2.55's `WebSearchTool` exposes URL sources alongside `NewsAnswer` on the Responses API. If sources can't be grounded, stop and raise it with the owner.
+- First step, done: check with a live call how PydanticAI 2.55's `WebSearchTool` exposes URL sources alongside `NewsAnswer` on the Responses API. See Live check.
 - `WebSearchTool` on the News agent for non-demo users; demo accounts run without it.
 - Instructions: newsletters first; search only for details they lack about a story or topic, never to browse general news; say which part came from the web. Replaces "answer only from tools" for web results; `insufficient_evidence` still applies when the web doesn't help either.
-- A web citation as a second citation kind on news answers: storage (reviewed migration), grounding (its URL must come from this turn's search results), streaming, and the source panel (title, URL, "Open page").
+- A web citation as a second citation kind on news answers: storage (reviewed migration), grounding (its URL must be a search result or a page the model opened in this turn; otherwise that citation is removed and the answer kept), streaming, and the source panel (title, URL, "Open page").
+- Raw citation markers in the model's text are stripped before it is stored or shown.
 - Old threads and their item citations render as before.
 - Privacy page: news questions may go to OpenAI's web search; update "Last updated".
 
@@ -15,7 +18,11 @@ When the newsletters don't answer a question about a story, the News agent searc
 - Web search in other agents; fetching articles at ingest; web results on the dashboard.
 
 ## Acceptance criteria
-- Given a web citation whose URL this turn's search didn't return, when the turn ends, then grounding rejects it. (test)
+- Given a web citation whose URL was neither a search result nor a page opened in this turn, when the turn ends, then that citation is removed and the answer kept. (test)
+- Given a web citation to a page the model opened in this turn, when the turn ends, then it is kept. (test)
+- Given a web citation whose URL differs from a source only by query string, fragment, scheme, a leading `www.`, host case or a trailing slash, when the turn ends, then it is kept. (test)
+- Given a newsletter item citation no tool returned, when the turn ends, then grounding still rejects the answer. (test)
+- Given an answer with raw citation markers, with or without private-use characters, when it is stored and shown, then the markers are gone. (test)
 - Given a web citation and an item citation in one answer, when stored and read back, then both render with their own kind. (test)
 - Given a demo user, when the agent is built, then it has no web search. (test)
 - Given a stored thread with only item citations, when it is read, then it renders unchanged. (test)
@@ -28,6 +35,8 @@ When the newsletters don't answer a question about a story, the News agent searc
 002/03.
 
 ## Blocked
+**Resolved 2026-11-06:** the live check below confirmed the facts, and the owner decided the grounding rule (spec, Approval state and Decisions). History:
+
 2026-11-05, unattended run. Not implemented, and left unticked.
 
 The task's first step is a live call to check how PydanticAI 2.55's `WebSearchTool` exposes URL sources alongside `NewsAnswer` on the Responses API, and the spec says to raise it with the owner before building if sources can't be grounded. This run was told to make no live model calls, so the check couldn't happen. The citation storage, grounding and source panel all depend on its answer, so building first would be a guess.
@@ -49,3 +58,13 @@ All acceptance criteria are open: 4 (test), 4 (browser).
 - Not checked: streaming, and how often a citation falls outside the sources (one run only). Token usage wasn't captured.
 
 **Decision for the owner:** whether a URL the model opened in the same turn counts as a search result for grounding. Doing so needs one more live call to confirm the URL is in the call's args.
+
+2026-11-06, verified by the owner with PydanticAI 2.55 on the Responses API against gpt-6.1-sol. This settles the question above.
+
+- **Enabling it:** `Agent(..., capabilities=[NativeTool(WebSearchTool())])`; the `native_tools=` kwarg doesn't exist. Model setting: `OpenAIResponsesModelSettings(openai_include_web_search_sources=True)`.
+- **Parts:** `run.all_messages()` has `NativeToolCallPart` and `NativeToolReturnPart` named `web_search`. `call.args_as_dict()` is `{"type": "search", "queries": [...], "query": ...}` or `{"type": "open_page", "url": "..."}`. A return's `content` is `{"status", "sources": [{"type", "url"}]}`, with 0 sources for open_page. Other action types may exist and are ignored.
+- **Opened pages are in the args,** so they can be grounded. The owner chose that a citation counts if it is a search result or an opened page, and that one matching neither is removed with the answer kept.
+- **Structured output** comes back normally alongside those parts.
+- **Markers:** `answer` can hold markers made of private-use characters; older runs showed them without those characters (`citeturn323873search4turn270125view0`). Both forms are stripped.
+- **Cost:** each web turn used about 21k–38k input tokens.
+- Streaming with this tool wasn't tested. The orchestrator doesn't use model streaming: see the plan.
