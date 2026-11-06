@@ -55,6 +55,18 @@ Per-stack specifics live in `backend/AGENTS.md` and `frontend/AGENTS.md`.
 - **Backend:** add or update pytest tests in the same change. Run `uv run pytest -m "not integration"` from `backend/` before finishing. Details in `backend/AGENTS.md`.
 - **Frontend:** no test runner — manual QA, `pnpm exec tsc -b --noEmit`, `pnpm lint`. Details in `frontend/AGENTS.md`.
 
+### Browser checks
+
+`(browser)` checks run against the local app and the test Supabase project, signed in as the demo user.
+
+1. In a new worktree, copy `backend/.env` and `frontend/.env` from the main checkout.
+2. Start the backend (`uv run uvicorn app.main:app --port 8000`) and the frontend (`pnpm exec vite --port 5173 --strictPort`).
+3. Sign in at `http://localhost:5173/login` with the login in [frontend/e2e/test-user.json](frontend/e2e/test-user.json).
+
+That login is public and works only on the test project: it reaches invented demo data. Never use it on prod, and never reuse its password anywhere else. To reseed, run `uv run python -m app.demo.reset` from `backend/`.
+
+Agents don't read `.env` files. Local `.env` still holds other real credentials, so a check that needs real newsletters, mail or Telegram stays `(manual)`.
+
 ## Implementing a planned task
 
 Plans live in `docs/<area>/plans/NNN-<topic>/`: a `README.md` spec and one file per task in `tasks/NN-<name>.md`. A request like "Implement 001/03" means that task. These rules apply whichever skills or plugins you use.
