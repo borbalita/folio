@@ -2,7 +2,7 @@
 
 - Created: 2026-11-05
 - Status: In progress
-- Current stage: 002/01 (Telegram explanations) is being implemented
+- Current stage: 002/01–04 implemented with PRs open, each with browser and manual checks still to do; 002/05 blocked on a live check
 
 ## Approval state
 
