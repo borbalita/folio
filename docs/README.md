@@ -74,4 +74,4 @@ Linked from the Enable Banking application.
 
 A safe place for agent runs to test against.
 
-- [001 — Test database for agent runs](08-test-environment/plans/001-test-database/README.md) (draft)
+- [001 — Test database for agent runs](08-test-environment/plans/001-test-database/README.md) (in progress)
