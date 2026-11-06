@@ -25,8 +25,8 @@ def test_the_list_is_built_from_the_users_news_mailboxes_only(
     seen: list[tuple] = []
     monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [MAILBOX])
 
-    def list_stories(mailbox_ids, *, before, days, only_big):
-        seen.append((mailbox_ids, before, days, only_big))
+    def list_stories(mailbox_ids, *, before, days, only):
+        seen.append((mailbox_ids, before, days, only))
         return {"days": [], "nextBefore": None}
 
     monkeypatch.setattr(news_feed, "list_stories", list_stories)
@@ -35,7 +35,7 @@ def test_the_list_is_built_from_the_users_news_mailboxes_only(
 
     assert response.status_code == 200
     assert response.json() == {"days": [], "nextBefore": None}
-    assert seen == [([MAILBOX], date(2026, 11, 1), 7, True)]
+    assert seen == [([MAILBOX], date(2026, 11, 1), 7, "big")]
 
 
 def test_without_parameters_the_window_ends_after_today(
@@ -46,18 +46,33 @@ def test_without_parameters_the_window_ends_after_today(
     monkeypatch.setattr(
         news_feed,
         "list_stories",
-        lambda ids, *, before, days, only_big: seen.append((before, days, only_big))
+        lambda ids, *, before, days, only: seen.append((before, days, only))
         or {"days": [], "nextBefore": None},
     )
 
     authed_client.get("/news/stories")
 
-    (before, days, only_big) = seen[0]
-    assert days == 14 and only_big is False
+    (before, days, only) = seen[0]
+    assert days == 14 and only is None
     assert before > date(2026, 11, 5)
+
+
+def test_the_security_filter_is_passed_on(
+    authed_client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list = []
+    monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [MAILBOX])
+    monkeypatch.setattr(
+        news_feed,
+        "list_stories",
+        lambda ids, *, before, days, only: seen.append(only) or {"days": [], "nextBefore": None},
+    )
+
+    assert authed_client.get("/news/stories?only=security").status_code == 200
+    assert seen == ["security"]
 
 
 def test_an_unknown_filter_is_rejected(authed_client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [MAILBOX])
 
-    assert authed_client.get("/news/stories?only=security").status_code == 422
+    assert authed_client.get("/news/stories?only=funding").status_code == 422

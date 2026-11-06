@@ -8,7 +8,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Literal
 
-Kind = Literal["invoice_new", "invoice_due", "news_big"]
+Kind = Literal["invoice_new", "invoice_due", "news_big", "news_security"]
 Status = Literal["pending", "skipped"]
 
 DUE_SOON_DAYS = 3
@@ -41,13 +41,24 @@ class NewsItemFacts:
     title: str
     blurb: str
     url: str
+    # `new`, `update` or `repeat` once classified as security; None otherwise.
+    alert_status: str | None = None
 
 
 @dataclass(frozen=True)
 class StoryFacts:
-    """A big story's items, oldest first."""
+    """The items of a big story or of one with a security alert, oldest first."""
 
     items: list[NewsItemFacts]
+    big: bool
+
+    @property
+    def alert(self) -> str | None:
+        """What the story's alert is: `new` wins, since the first alert of an incident is not an update."""
+        statuses = {item.alert_status for item in self.items}
+        if "new" in statuses:
+            return "new"
+        return "update" if "update" in statuses else None
 
 
 @dataclass(frozen=True)
@@ -58,6 +69,8 @@ class NewNotification:
     text: str
     # A pending big-news row's story, for the summary written before it is stored.
     story: tuple[NewsItemFacts, ...] = ()
+    # A security row that follows an earlier alert about the same incident.
+    update: bool = False
 
 
 def format_amount(amount: Decimal | None, currency: str | None) -> str:
@@ -130,6 +143,18 @@ def news_fallback_text(items: list[NewsItemFacts]) -> str:
     return news_message(items[0].title, items[0].blurb, items)
 
 
+def security_message(
+    headline: str, body: str | None, items: list[NewsItemFacts], *, update: bool = False
+) -> str:
+    lock = "🔒 Update:" if update else "🔒"
+    lines = [f"{lock} {headline}", body, news_links(items)]
+    return "\n".join(line for line in lines if line)
+
+
+def security_fallback_text(items: list[NewsItemFacts], *, update: bool = False) -> str:
+    return security_message(items[0].title, items[0].blurb, items, update=update)
+
+
 def plan_notifications(
     invoices: list[InvoiceFacts],
     stories: list[StoryFacts],
@@ -143,12 +168,19 @@ def plan_notifications(
     rows: list[NewNotification] = []
 
     def add(
-        key: str, kind: Kind, status: Status, text: str, story: tuple[NewsItemFacts, ...] = ()
+        key: str,
+        kind: Kind,
+        status: Status,
+        text: str,
+        story: tuple[NewsItemFacts, ...] = (),
+        update: bool = False,
     ) -> None:
         if key in known_keys:
             return
         known_keys.add(key)
-        rows.append(NewNotification(key, kind, status if enabled else "skipped", text, story))
+        rows.append(
+            NewNotification(key, kind, status if enabled else "skipped", text, story, update)
+        )
 
     for invoice in invoices:
         new_key = f"invoice_new:{invoice.id}"
@@ -166,16 +198,23 @@ def plan_notifications(
     for story in stories:
         # Stories are rebuilt with new ids on every run, and news items get new ids when they
         # are re-embedded, so "announced" is remembered per article: newsletter and link.
+        # Big and security share these keys: a story is announced once, whichever it is, and
+        # one that gains a security item after its message went out sends nothing more.
         announced = any(news_key(item) in known_keys for item in story.items)
+        alert = story.alert
+        if alert is None and not story.big:
+            # Security items that only repeat an earlier alert announce nothing.
+            continue
+        kind: Kind = "news_security" if alert else "news_big"
         for index, item in enumerate(story.items):
             if index == 0 and not announced:
-                add(
-                    news_key(item),
-                    "news_big",
-                    "pending",
-                    news_fallback_text(story.items),
-                    tuple(story.items),
+                update = alert == "update"
+                text = (
+                    security_fallback_text(story.items, update=update)
+                    if alert
+                    else news_fallback_text(story.items)
                 )
+                add(news_key(item), kind, "pending", text, tuple(story.items), update)
             else:
-                add(news_key(item), "news_big", "skipped", "")
+                add(news_key(item), kind, "skipped", "")
     return rows

@@ -47,3 +47,9 @@ None.
 - Presenter's button sends the new form (manual): **skipped**, needs the running app and Telegram.
 - `/privacy` shows the updated line and date (browser): **skipped**, the app wasn't started. The source of `PrivacyPage.tsx` has the new line and date.
 - Full fast suite: 1046 passed; ruff, tsc and eslint clean.
+
+2026-11-06, browser check on the local app against the test Supabase project:
+
+- `/privacy` shows the updated line and date (browser): pass, "big AI news headlines with short explanations", "Last updated: 5 November 2026".
+- Reading real explanations (manual) is still open, so the task stays unticked.
+- Presenter's button sends the new form (manual): the agent pressed it on the local app against the test project. The page showed "Sent: Eight flawed eMudhra certificates trigger emergency revocations" and the request returned 200. The owner confirmed it arrived and reads well: pass.

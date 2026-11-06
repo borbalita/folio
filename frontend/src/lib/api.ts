@@ -31,7 +31,7 @@ export interface NewsStory {
   title: string
   /** Empty when no newsletter gave one. */
   blurb: string
-  badges: 'big'[]
+  badges: ('big' | 'security')[]
   links: NewsStoryLink[]
   items: { emailId: string; position: number }[]
   /** Set when a Telegram message was written for the story. */
@@ -279,7 +279,7 @@ export const api = {
         : {}),
     }),
 
-  listNewsStories: (params: { before?: string; only?: 'big' }) => {
+  listNewsStories: (params: { before?: string; only?: 'big' | 'security' }) => {
     const query = new URLSearchParams()
     if (params.before) {
       query.set('before', params.before)

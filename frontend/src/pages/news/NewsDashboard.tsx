@@ -8,7 +8,14 @@ import { formatIsoDay } from '@/lib/format'
 import { describeApiError } from '@/lib/http'
 import type { ChatOutletContext } from '@/pages/chat/ChatPage'
 
-type Filter = 'all' | 'big'
+type Filter = 'all' | 'big' | 'security'
+
+const FILTER_LABELS: Record<Filter, string> = { all: 'All', big: 'Big', security: 'Security' }
+const EMPTY_TEXT: Record<Filter, string> = {
+  all: 'No stories in this period.',
+  big: 'No big stories in this period.',
+  security: 'No security stories in this period.',
+}
 
 interface State {
   days: NewsDay[]
@@ -51,7 +58,7 @@ export function NewsDashboard() {
       try {
         const page = await api.listNewsStories({
           before,
-          only: filter === 'big' ? 'big' : undefined,
+          only: filter === 'all' ? undefined : filter,
         })
         if (request !== latest.current) {
           return
@@ -82,7 +89,7 @@ export function NewsDashboard() {
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-lg font-medium">AI News</h1>
           <div className="flex gap-1" role="group" aria-label="Filter stories">
-            {(['all', 'big'] as const).map((value) => (
+            {(['all', 'big', 'security'] as const).map((value) => (
               <Button
                 key={value}
                 size="sm"
@@ -92,7 +99,7 @@ export function NewsDashboard() {
                   setFilter(value)
                 }}
               >
-                {value === 'all' ? 'All' : 'Big'}
+                {FILTER_LABELS[value]}
               </Button>
             ))}
           </div>
@@ -119,9 +126,7 @@ export function NewsDashboard() {
           </section>
         ))}
         {!state.loading && !state.error && state.days.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {filter === 'big' ? 'No big stories in this period.' : 'No stories in this period.'}
-          </p>
+          <p className="text-sm text-muted-foreground">{EMPTY_TEXT[filter]}</p>
         ) : null}
         {state.loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
         {state.nextBefore && !state.loading ? (

@@ -24,6 +24,7 @@ def _item(
     blurb: str = "Blurb.",
     url: str = "",
     big: bool = False,
+    security: bool = False,
     headline: str | None = None,
     explanation: str | None = None,
     email_id: uuid.UUID | None = None,
@@ -41,6 +42,7 @@ def _item(
         is_big=big,
         headline=headline,
         explanation=explanation,
+        security=security,
     )
 
 
@@ -82,7 +84,7 @@ def test_only_big_keeps_stories_both_newsletters_cover() -> None:
         _item("b", date(2026, 11, 5), title="Small one"),
     ]
 
-    days = build_days(items, before=BEFORE, days=14, only_big=True)
+    days = build_days(items, before=BEFORE, days=14, only="big")
 
     assert _titles(days) == [("2026-11-05", ["Big one"])]
     assert days[0]["stories"][0]["badges"] == ["big"]
@@ -233,7 +235,8 @@ def _row(item: FeedItem, *, is_big: bool | None = False) -> SimpleNamespace:
         story_id=item.story_id,
     )
     return SimpleNamespace(
-        NewsItem=stored, is_big=is_big, headline=item.headline, explanation=item.explanation
+        NewsItem=stored, is_big=is_big, headline=item.headline, explanation=item.explanation,
+        security=item.security,
     )
 
 
@@ -244,7 +247,7 @@ def _list(monkeypatch: pytest.MonkeyPatch, rows: list[SimpleNamespace], older: b
 
     monkeypatch.setattr(news_feed, "get_session", session)
     return news_feed.list_stories(
-        [uuid.UUID(int=1)], before=BEFORE, days=7, only_big=False
+        [uuid.UUID(int=1)], before=BEFORE, days=7, only=None
     )
 
 
@@ -268,3 +271,67 @@ def test_list_stories_has_no_next_page_when_nothing_is_older(monkeypatch: pytest
 
     assert result["nextBefore"] is None
     assert result["days"][0]["stories"][0]["badges"] == []
+
+
+def test_a_security_story_has_the_badge_and_a_story_can_be_both() -> None:
+    items = [
+        _item("a", date(2026, 11, 5), security=True, position=1),
+        _item("b", date(2026, 11, 5), security=True, big=True, position=2),
+        _item("c", date(2026, 11, 5), position=3),
+    ]
+
+    (day,) = build_days(items, before=BEFORE, days=14)
+
+    badges = {story["items"][0]["position"]: story["badges"] for story in day["stories"]}
+    assert badges == {1: ["security"], 2: ["big", "security"], 3: []}
+
+
+def test_one_security_item_marks_the_whole_story() -> None:
+    items = [
+        _item("a", date(2026, 11, 4), position=1),
+        _item("a", date(2026, 11, 5), security=True, source="alpha_signal", position=2),
+    ]
+
+    (day,) = build_days(items, before=BEFORE, days=14)
+
+    assert day["stories"][0]["badges"] == ["security"]
+
+
+def test_within_a_day_big_comes_first_then_security_then_newsletter_order() -> None:
+    items = [
+        _item("plain1", date(2026, 11, 5), position=0, title="Plain 1"),
+        _item("sec2", date(2026, 11, 5), position=1, title="Security 2", security=True),
+        _item("plain3", date(2026, 11, 5), position=2, title="Plain 3"),
+        _item("sec4", date(2026, 11, 5), position=3, title="Security 4", security=True),
+        _item("big5", date(2026, 11, 5), position=4, title="Big 5", big=True),
+        _item("bigsec6", date(2026, 11, 5), position=5, title="Big security 6", big=True, security=True),
+    ]
+
+    days = build_days(items, before=BEFORE, days=14)
+
+    assert _titles(days) == [
+        (
+            "2026-11-05",
+            ["Big 5", "Big security 6", "Security 2", "Security 4", "Plain 1", "Plain 3"],
+        )
+    ]
+
+
+def test_only_security_keeps_the_marked_stories() -> None:
+    items = [
+        _item("a", date(2026, 11, 5), title="Flaw", security=True),
+        _item("b", date(2026, 11, 5), title="Funding"),
+        _item("c", date(2026, 11, 5), title="Big flaw", security=True, big=True),
+    ]
+
+    days = build_days(items, before=BEFORE, days=14, only="security")
+
+    assert _titles(days) == [("2026-11-05", ["Big flaw", "Flaw"])]
+
+
+def test_the_items_query_reads_the_security_mark_from_the_notes() -> None:
+    statement = items_statement([uuid.UUID(int=1)], start=date(2026, 10, 30), before=BEFORE)
+
+    sql = str(statement.compile(dialect=postgresql.dialect()))
+
+    assert "news_item_notes.security" in sql.split("FROM")[0]

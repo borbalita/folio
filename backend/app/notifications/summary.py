@@ -16,6 +16,8 @@ from app.notifications.detect import (
     NewsItemFacts,
     news_fallback_text,
     news_message,
+    security_fallback_text,
+    security_message,
 )
 
 log = structlog.get_logger(__name__)
@@ -28,6 +30,10 @@ SYSTEM_PROMPT = (
     "and why it matters. Be as long as that needs and no longer; it is not a briefing. State "
     "facts about the event only from the newsletters. Plain-word definitions and why it "
     "matters may go beyond them. Plain text, no markdown, in English."
+)
+SECURITY_PROMPT = (
+    " This is a security story: also say who is affected and what to do about it, where the "
+    "newsletters say so."
 )
 
 
@@ -42,7 +48,7 @@ def _client() -> OpenAI:
 
 
 def summary_messages(
-    items: list[NewsItemFacts], editions: dict[uuid.UUID, str]
+    items: list[NewsItemFacts], editions: dict[uuid.UUID, str], *, security: bool = False
 ) -> list[dict[str, str]]:
     # Links stay outside the model: they go into the message as they are.
     titles = "\n".join(f"- {item.title}" for item in items)
@@ -53,27 +59,29 @@ def summary_messages(
         for email_id, source in sources.items()
     )
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SYSTEM_PROMPT + (SECURITY_PROMPT if security else "")},
         {"role": "user", "content": f"The story:\n{titles}\n\n{newsletters}"},
     ]
 
 
 def request_summary(
-    items: list[NewsItemFacts], editions: dict[uuid.UUID, str]
+    items: list[NewsItemFacts], editions: dict[uuid.UUID, str], security: bool = False
 ) -> ParsedChatCompletion[NewsSummary]:
     effort = settings.news_extraction_reasoning_effort
     return _client().chat.completions.parse(
         model=settings.news_extraction_model or settings.openai_chat_model,
-        messages=summary_messages(items, editions),
+        messages=summary_messages(items, editions, security=security),
         response_format=NewsSummary,
         reasoning_effort=effort if effort is not None else NOT_GIVEN,
     )
 
 
-def explain(items: list[NewsItemFacts], editions: dict[uuid.UUID, str]) -> NewsSummary | None:
+def explain(
+    items: list[NewsItemFacts], editions: dict[uuid.UUID, str], *, security: bool = False
+) -> NewsSummary | None:
     """The headline and explanation, or None when the call failed."""
     try:
-        parsed = request_summary(items, editions).choices[0].message.parsed
+        parsed = request_summary(items, editions, security=security).choices[0].message.parsed
     except (OpenAIError, ValueError) as exc:
         # Any failure (API, content filter, length, unparseable output) falls back: a summary
         # that can't be written must not block this or any other notification.
@@ -84,8 +92,20 @@ def explain(items: list[NewsItemFacts], editions: dict[uuid.UUID, str]) -> NewsS
     return parsed
 
 
-def message(items: list[NewsItemFacts], explained: NewsSummary | None) -> str:
-    """The big-news message; without an explanation: the first headline, its blurb and the links."""
+def message(
+    items: list[NewsItemFacts],
+    explained: NewsSummary | None,
+    *,
+    security: bool = False,
+    update: bool = False,
+) -> str:
+    """The news message; without an explanation: the first headline, its blurb and the links."""
+    if security:
+        if explained is None:
+            return security_fallback_text(items, update=update)
+        return security_message(
+            explained.headline.strip(), explained.summary.strip(), items, update=update
+        )
     if explained is None:
         return news_fallback_text(items)
     return news_message(explained.headline.strip(), explained.summary.strip(), items)
