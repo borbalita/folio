@@ -118,13 +118,18 @@ export function ChatThreadView({
 
   const firstSent = useRef(false)
   useEffect(() => {
-    // The guard keeps a re-render or a dev double-mount from sending it twice.
+    // The guard keeps a re-render from sending it twice.
     if (!firstMessage || initialMessages.length > 0 || firstSent.current) {
       return
     }
-    firstSent.current = true
-    void sendMessage({ text: firstMessage })
-    onFirstMessageSent?.()
+    // Deferred because useChat stops the chat on unmount: React's dev double-mount would abort a
+    // message sent directly from this effect.
+    const timer = setTimeout(() => {
+      firstSent.current = true
+      void sendMessage({ text: firstMessage })
+      onFirstMessageSent?.()
+    }, 0)
+    return () => clearTimeout(timer)
   }, [firstMessage, initialMessages.length, sendMessage, onFirstMessageSent])
 
   const busy = status === 'submitted' || status === 'streaming'

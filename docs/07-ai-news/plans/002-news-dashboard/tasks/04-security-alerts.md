@@ -67,3 +67,9 @@ Security stories in scope reach the owner's Telegram once per incident, with rea
 - Security filter shows only marked stories with their badge (browser): **skipped**, the app wasn't started.
 - `/privacy` mentions security alerts with the new date (browser): **skipped**, the app wasn't started. The source of `PrivacyPage.tsx` has the new line and date.
 - Full fast suite: 1142 passed; ruff, tsc and eslint clean.
+
+2026-11-06, browser checks on the local app against the test Supabase project, signed in as the demo user. The migration applied cleanly. The security mark was a hand-added test note, because demo items are never classified, so the classifier itself wasn't exercised.
+
+- Security filter shows only marked stories, with their badge (browser): pass on demo data. One story, with its badge.
+- `/privacy` mentions security alerts and the date is updated (browser): pass. **To review:** the line says "alerts about AI security news", while the alert scope also covers major incidents outside AI.
+- The manual checks are still open, so the task stays unticked.
