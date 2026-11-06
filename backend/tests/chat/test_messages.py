@@ -60,3 +60,17 @@ def test_assistant_message_for_storage_shape() -> None:
         "content": "answer",
         "parts": [{"type": "text", "text": "answer"}],
     }
+
+
+def test_extract_latest_user_text_empty_message_does_not_leak_structure() -> None:
+    messages = [{"role": "user", "content": "", "parts": []}]
+
+    assert extract_latest_user_text(messages) == ""
+
+
+def test_extract_latest_user_text_parts_without_text_does_not_leak_structure() -> None:
+    messages = [
+        {"role": "user", "parts": [{"type": "file", "url": "x"}, {"type": "text", "text": "  "}]}
+    ]
+
+    assert extract_latest_user_text(messages) == ""
