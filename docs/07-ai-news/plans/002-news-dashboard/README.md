@@ -2,7 +2,7 @@
 
 - Created: 2026-11-05
 - Status: In progress
-- Current stage: 002/01–04 implemented with PRs open, each with browser and manual checks still to do; 002/05 unblocked by the 2026-11-06 live check and owner's decision
+- Current stage: 002/01–04 implemented with PRs open, each with browser and manual checks still to do; 002/05 implemented on `feat/news-web-search`, not pushed, with its migration and browser checks open
 
 ## Approval state
 

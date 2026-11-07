@@ -68,3 +68,21 @@ All acceptance criteria are open: 4 (test), 4 (browser).
 - **Markers:** `answer` can hold markers made of private-use characters; older runs showed them without those characters (`citeturn323873search4turn270125view0`). Both forms are stripped.
 - **Cost:** each web turn used about 21k–38k input tokens.
 - Streaming with this tool wasn't tested. The orchestrator doesn't use model streaming: see the plan.
+
+## Verified
+2026-11-07, fast tests and static checks only, with no app, database or live model calls. The migration `1b1a67f3980a` was hand-written and not applied. Not pushed, so no PR yet. Left unticked because the browser checks are open.
+
+- A web citation matching neither a search result nor an opened page is removed and the answer kept (test): pass, `test_a_web_citation_this_turn_did_not_return_is_removed_and_the_answer_kept`, `test_an_answer_whose_only_citations_were_removed_is_kept`, `test_a_made_up_web_citation_is_removed_and_the_answer_kept`.
+- A citation to a page opened this turn is kept (test): pass, `test_search_results_and_opened_pages_are_this_turns_urls`, `test_a_user_who_is_not_demo_gets_web_search_and_its_sources`.
+- URLs compare by the owner's rule (test): pass, `test_urls_compare_ignoring_the_owners_differences`, `test_a_web_citation_with_a_noisy_url_is_kept`.
+- An item citation no tool returned still fails the answer (test): pass, `test_an_unknown_item_citation_is_still_rejected_next_to_a_good_web_one`.
+- Markers are gone, with or without private-use characters (test): pass, `test_citation_markers_are_stripped`, `test_markers_never_reach_the_stream_or_storage`.
+- A web and an item citation, stored and read back, each have their own kind (test): pass, `test_web_and_item_citations_are_stored_and_read_back_with_their_own_kind`, `test_item_and_web_citations_are_stored_with_their_own_target`. Checked on what the backend streams and stores, with the database mocked. The frontend has no tests, so how they render is for the browser checks.
+- A demo user's agent has no web search (test): pass, `test_a_demo_user_runs_with_no_web_search`, `test_turns_of_different_users_do_not_share_tools`.
+- A stored thread with only item citations renders unchanged (test): pass, `test_a_stored_thread_with_only_item_citations_keeps_its_shape`. This checks that item citations keep the shape stored threads hold. Rendering an old thread is for the browser.
+- A story thread's question the newsletters don't cover is answered from the web, and its citation opens the page (browser): **open**.
+- "What were the big stories this week?" makes no web search (browser): **open**.
+- A demo account says its newsletters don't cover it (browser): **open**.
+- `/privacy` mentions web search under OpenAI, with the new date (browser): **open**. The source of `PrivacyPage.tsx` has the line and the date, 7 November 2026.
+- Migration applied and `alembic check` clean on the test project: **open**, for the owner.
+- Fast suite: 1197 passed, 4 deselected; ruff, tsc and eslint clean. Run with `unshare -rn` and loopback up, so nothing could leave the machine; see the plan's note on Langfuse.
