@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { FilingDetails } from '@/components/chat/FilingDetails'
 import { MailDetails } from '@/components/chat/MailDetails'
 import { NewsDetails } from '@/components/chat/NewsDetails'
+import { WebDetails } from '@/components/chat/WebDetails'
 import { Button } from '@/components/ui/button'
 import {
   citationKind,
@@ -17,6 +18,9 @@ interface SourcePanelProps {
 }
 
 function heading(citation: CitationData, kind: CitationKind) {
+  if (kind === 'web') {
+    return { title: citation.title?.trim(), subtitle: 'From the web' }
+  }
   if (kind === 'news') {
     return { title: citation.title?.trim(), subtitle: newsSourceName(citation.source) }
   }
@@ -50,6 +54,7 @@ export function SourcePanel({ citation, onClose }: SourcePanelProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {kind === 'news' ? <NewsDetails citation={citation} /> : null}
+        {kind === 'web' ? <WebDetails citation={citation} /> : null}
         {kind === 'mail' ? <MailDetails citation={citation} /> : null}
         {kind === 'filing' ? <FilingDetails citation={citation} /> : null}
         {excerpt ? <p className="mt-4 text-sm leading-relaxed">{excerpt}</p> : null}
