@@ -88,7 +88,7 @@ def _scripted(calls: list[str], cite: uuid.UUID, prompts: list[str]) -> Function
 
 def _turn(deps: NewsAgentDeps, model: FunctionModel):
     async def go():
-        with get_agent().override(model=model):
+        with get_agent(web_search=True).override(model=model):
             return await run_news_agent("Explain this story", deps)
 
     return asyncio.run(go())

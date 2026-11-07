@@ -7,13 +7,15 @@ from datetime import date
 from types import SimpleNamespace
 
 import pytest
+from pydantic_ai import ModelResponse
+from pydantic_ai.messages import NativeToolCallPart, NativeToolReturnPart
 
 from app.auth.dependencies import CurrentUser
 from app.chat.orchestrator import run_turn
 from app.database import chats, mailboxes
 from app.grounding import UNKNOWN_CHUNK, GroundingError, NewsGrounder
 from app.news_assistant.deps import NewsAgentDeps
-from app.news_assistant.outputs import NewsAnswer, NewsCitationRef
+from app.news_assistant.outputs import NewsAnswer, NewsCitationRef, WebCitationRef
 from app.news_assistant.tools import execute_list_big_news
 from app.retrieval.news.retriever import NewsPassage, Story
 from tests.conftest import TEST_THREAD_ID, TEST_USER_ID
@@ -57,12 +59,19 @@ class _Agent:
                 answer="A lab shipped a new model.", citations=self.citations
             ),
             usage=_Usage(),
+            new_messages=list,
         )
 
 
-def _run(monkeypatch: pytest.MonkeyPatch, agent: _Agent) -> tuple[str, list[dict]]:
+def _run(
+    monkeypatch: pytest.MonkeyPatch,
+    agent: _Agent,
+    stored_messages: list[dict] | None = None,
+) -> tuple[str, list[dict]]:
     stored: list[dict] = []
-    monkeypatch.setattr("app.news_assistant.agent.get_agent", lambda: agent)
+    monkeypatch.setattr(
+        "app.news_assistant.agent.get_agent", lambda *, web_search: agent
+    )
     monkeypatch.setattr(mailboxes, "news_mailbox_ids", lambda user_id: [uuid.uuid4()])
     monkeypatch.setattr(
         "app.retrieval.news.retriever.NewsRetriever.stories",
@@ -82,10 +91,10 @@ def _run(monkeypatch: pytest.MonkeyPatch, agent: _Agent) -> tuple[str, list[dict
     monkeypatch.setattr(
         chats,
         "append_messages",
-        lambda thread_id, messages: [
-            {"id": str(uuid.uuid4())},
-            {"id": str(uuid.uuid4())},
-        ],
+        lambda thread_id, messages: (
+            stored_messages.extend(messages) if stored_messages is not None else None,
+            [{"id": str(uuid.uuid4())}, {"id": str(uuid.uuid4())}],
+        )[1],
     )
     monkeypatch.setattr(
         chats, "insert_email_citations", lambda message_id, rows: stored.extend(rows)
@@ -151,6 +160,7 @@ class _EmptyAgent:
                 insufficient_evidence=True,
             ),
             usage=_Usage(),
+            new_messages=list,
         )
 
 
@@ -159,3 +169,148 @@ def test_an_empty_period_answer_is_shown(monkeypatch: pytest.MonkeyPatch) -> Non
 
     assert stored == []
     assert _streamed_text(body) == "There were no big stories since Saturday."
+
+
+WEB_URL = "https://example.com/report?sid=1"
+
+
+class _WebAgent:
+    """Reads the newsletters, searches the web, and cites both plus a made-up page."""
+
+    def __init__(self, *, answer: str = "From the newsletter and the web.") -> None:
+        self.answer = answer
+
+    async def run(self, prompt: str, deps: NewsAgentDeps) -> SimpleNamespace:
+        execute_list_big_news(deps)
+        return SimpleNamespace(
+            output=NewsAnswer(
+                answer=self.answer,
+                citations=[_cite(ALPHA_ITEM, 1)],
+                web_citations=[
+                    WebCitationRef(
+                        url=WEB_URL,
+                        title="The report",
+                        citation_index=2,
+                        excerpt="from the page",
+                    ),
+                    WebCitationRef(
+                        url="https://made.up/page",
+                        title="Made up",
+                        citation_index=3,
+                        excerpt="nothing",
+                    ),
+                ],
+            ),
+            usage=_Usage(),
+            new_messages=lambda: [
+                ModelResponse(
+                    parts=[
+                        NativeToolCallPart(
+                            "web_search", {"type": "search", "queries": ["q"]}
+                        ),
+                        NativeToolReturnPart(
+                            "web_search",
+                            {
+                                "status": "completed",
+                                "sources": [
+                                    {"type": "url", "url": "https://example.com/report"}
+                                ],
+                            },
+                        ),
+                    ]
+                )
+            ],
+        )
+
+
+def _citation_parts(message: dict) -> list[dict]:
+    return [part["data"] for part in message["parts"] if part["type"] == "data-citation"]
+
+
+def test_web_and_item_citations_are_stored_and_read_back_with_their_own_kind(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages: list[dict] = []
+
+    body, rows = _run(monkeypatch, _WebAgent(), messages)
+
+    item, web = _citation_parts(messages[1]["message"])
+    assert "kind" not in item
+    assert item["chunkId"] == str(ALPHA_ITEM)
+    assert item["title"] == "Lab ships a new model"
+    assert item["source"] == "alpha_signal"
+    assert web == {
+        "chunkId": WEB_URL,
+        "citationIndex": 2,
+        "excerpt": "from the page",
+        "kind": "web",
+        "title": "The report",
+        "url": WEB_URL,
+    }
+    assert '"kind": "web"' in body or '"kind":"web"' in body
+
+    assert rows == [
+        {
+            "email_chunk_id": None,
+            "news_item_id": ALPHA_ITEM,
+            "citation_index": 1,
+            "excerpt": "new model",
+        },
+        {
+            "email_chunk_id": None,
+            "news_item_id": None,
+            "web_url": WEB_URL,
+            "web_title": "The report",
+            "citation_index": 2,
+            "excerpt": "from the page",
+        },
+    ]
+
+
+def test_a_made_up_web_citation_is_removed_and_the_answer_kept(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages: list[dict] = []
+
+    body, _rows = _run(monkeypatch, _WebAgent(), messages)
+
+    assert _streamed_text(body) == "From the newsletter and the web."
+    assert "made.up" not in body
+    assert "made.up" not in json.dumps(messages)
+
+
+def test_markers_never_reach_the_stream_or_storage(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    messages: list[dict] = []
+    agent = _WebAgent(
+        answer="It shipped. \ue200cite\ue202turn593528view1\ue201 citeturn1search2turn3view4"
+    )
+
+    body, _rows = _run(monkeypatch, agent, messages)
+
+    assert _streamed_text(body) == "It shipped."
+    stored = json.dumps(messages, ensure_ascii=False)
+    assert "turn593528" not in stored and "\ue200" not in stored
+    assert "citeturn" not in stored
+
+
+def test_a_stored_thread_with_only_item_citations_keeps_its_shape(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Item citations written from now on match what stored threads already hold."""
+    messages: list[dict] = []
+
+    _body, _rows = _run(monkeypatch, _Agent([_cite(ALPHA_ITEM, 1)]), messages)
+
+    assert _citation_parts(messages[1]["message"]) == [
+        {
+            "chunkId": str(ALPHA_ITEM),
+            "citationIndex": 1,
+            "excerpt": "new model",
+            "title": "Lab ships a new model",
+            "source": "alpha_signal",
+            "date": "2026-10-20",
+            "url": "https://example.com/model",
+        }
+    ]

@@ -242,9 +242,10 @@ def insert_email_citations(
     for item in citations:
         chunk_id = item.get("email_chunk_id")
         news_id = item.get("news_item_id")
-        if (chunk_id is None) == (news_id is None):
+        web_url = item.get("web_url")
+        if sum(target is not None for target in (chunk_id, news_id, web_url)) != 1:
             raise ValueError(
-                "An email citation needs exactly one of email_chunk_id or news_item_id"
+                "An email citation needs exactly one of email_chunk_id, news_item_id or web_url"
             )
         rows.append(
             {
@@ -252,6 +253,8 @@ def insert_email_citations(
                 "message_id": str(message_id),
                 "email_chunk_id": None if chunk_id is None else str(chunk_id),
                 "news_item_id": None if news_id is None else str(news_id),
+                "web_url": web_url,
+                "web_title": item.get("web_title"),
                 "citation_index": item["citation_index"],
                 "excerpt": item.get("excerpt"),
             }

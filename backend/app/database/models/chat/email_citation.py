@@ -38,6 +38,8 @@ class EmailCitation(Base):
         ForeignKey("news_items.id", ondelete="CASCADE"),
         nullable=True,
     )
+    web_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    web_title: Mapped[str | None] = mapped_column(Text, nullable=True)
     citation_index: Mapped[int] = mapped_column(Integer, nullable=False)
     excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -46,7 +48,7 @@ class EmailCitation(Base):
 
     __table_args__ = (
         CheckConstraint(
-            "(email_chunk_id IS NOT NULL) <> (news_item_id IS NOT NULL)",
+            "num_nonnulls(email_chunk_id, news_item_id, web_url) = 1",
             name="ck_email_citations_one_target",
         ),
         UniqueConstraint(
