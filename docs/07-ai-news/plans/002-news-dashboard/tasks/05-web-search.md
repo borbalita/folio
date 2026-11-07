@@ -86,3 +86,14 @@ All acceptance criteria are open: 4 (test), 4 (browser).
 - `/privacy` mentions web search under OpenAI, with the new date (browser): **open**. The source of `PrivacyPage.tsx` has the line and the date, 7 November 2026.
 - Migration applied and `alembic check` clean on the test project: **open**, for the owner.
 - Fast suite: 1197 passed, 4 deselected; ruff, tsc and eslint clean. Run with `unshare -rn` and loopback up, so nothing could leave the machine; see the plan's note on Langfuse.
+
+2026-11-07, browser checks on the local app against the test Supabase project, signed in as the demo user, with live model calls. These replace the **open** lines above. Migration `1b1a67f3980a` applied to the test project and `uv run alembic check` found no drift.
+
+The only test login is a demo user, which has no web search by design. So the first two checks ran the real backend from a throwaway wrapper that gave that user the web agent and counted each turn's web URLs. The demo check ran on the unmodified backend.
+
+- A story thread's question the newsletters don't cover is answered from the web, and its citation opens the page (browser): pass. In the PHP story thread, "Which CVE numbers..." got an answer saying the newsletter doesn't name them and it checked PHP's site, with a `Web · php.net` citation. The panel showed "From the web" and "Open page". After a reload, the answer and citation were still there, with no leaked markers. The turn saw 43 web URLs. The cited URL was php.net's front page rather than a specific advisory.
+- "What were the big stories this week?" makes no web search (browser): pass. Three big stories from the newsletters, with 0 web URLs.
+- A demo account says its newsletters don't cover it (browser): pass. "Which banks are underwriting this IPO?" got "does not name the banks", with no web citation.
+- `/privacy` mentions web search under OpenAI, with the new date (browser): pass. "Last updated: 7 November 2026".
+- Not exercised live: the removal of a citation matching neither a source nor an opened page. That's covered by tests only.
+- Finding, not part of this task: at phone width (375px) and in narrow windows the `/news` dashboard is hard to use. The thread sidebar takes most of the screen, story cards squeeze into a one-word column, and the Chat button overlaps the title. It comes from 002/02.
