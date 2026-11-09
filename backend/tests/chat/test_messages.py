@@ -43,6 +43,16 @@ def test_extract_latest_user_text_empty_when_no_user_message() -> None:
     assert extract_latest_user_text([{"role": "assistant", "content": "hi"}]) == ""
 
 
+def test_extract_latest_user_text_empty_when_message_has_no_text() -> None:
+    messages = [{"role": "user", "content": "", "parts": []}]
+    assert extract_latest_user_text(messages) == ""
+
+
+def test_extract_latest_user_text_empty_when_parts_have_no_text() -> None:
+    messages = [{"role": "user", "parts": [{"type": "file", "url": "x"}]}]
+    assert extract_latest_user_text(messages) == ""
+
+
 def test_user_message_for_storage_returns_last_user_message() -> None:
     first = {"role": "user", "content": "first"}
     second = {"role": "user", "content": "second"}

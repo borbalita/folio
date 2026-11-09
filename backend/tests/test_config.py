@@ -5,7 +5,12 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from app.config import Settings
+from app.config import Settings, settings
+
+
+def test_the_suite_ignores_local_langfuse_keys() -> None:
+    assert not settings.langfuse_public_key
+    assert not settings.langfuse_secret_key
 
 
 def test_blank_demo_user_id_is_none() -> None:

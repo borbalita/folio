@@ -6,6 +6,8 @@ export default defineRailway(() => {
   const backend = service("backend", {
     source: folio,
     start: "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+    // A failed migration stops the deploy, so new code never runs on an old schema.
+    preDeploy: "alembic upgrade head",
     healthcheck: "/health",
     replicas: { "ams": 1 },
     domains: ["api.folio.tasnadi-ai.de"],

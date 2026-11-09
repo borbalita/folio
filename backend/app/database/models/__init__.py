@@ -10,6 +10,7 @@ from app.database.models.email.chunk import EmailChunk
 from app.database.models.email.mailbox import Mailbox
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
+from app.database.models.email.news_item_note import NewsItemNote
 from app.database.models.email.story import NewsStory
 from app.database.models.finance.bank_account import BankAccount
 from app.database.models.finance.bank_connection import BankConnection
@@ -38,6 +39,7 @@ __all__ = [
     "Mailbox",
     "MessageCitation",
     "NewsItem",
+    "NewsItemNote",
     "NewsStory",
     "Notification",
     "PaymentDraft",
