@@ -19,6 +19,37 @@ export interface ThreadMessage {
   createdAt: string
 }
 
+export interface NewsStoryLink {
+  source: string
+  name: string
+  url: string
+}
+
+export interface NewsStory {
+  /** Stable across rebuilds: the first item's email and position. */
+  key: string
+  title: string
+  /** Empty when no newsletter gave one. */
+  blurb: string
+  badges: ('big' | 'security')[]
+  links: NewsStoryLink[]
+  items: { emailId: string; position: number }[]
+  /** Set when a Telegram message was written for the story. */
+  explanation: string | null
+}
+
+export interface NewsDay {
+  /** `YYYY-MM-DD` */
+  date: string
+  stories: NewsStory[]
+}
+
+export interface NewsStoriesPage {
+  days: NewsDay[]
+  /** Pass as `before` for the next older page; null when nothing is older. */
+  nextBefore: string | null
+}
+
 export interface Me {
   id: string
   email: string
@@ -234,8 +265,30 @@ export const api = {
 
   listThreads: (agent: AgentName) => http.get<Thread[]>(`/threads?agent=${agent}`),
 
-  createThread: (agent: AgentName, title?: string) =>
-    http.post<Thread>('/threads', title ? { agent, title } : { agent }),
+  createThread: (agent: AgentName, title?: string, storyItems?: NewsStory['items']) =>
+    http.post<Thread>('/threads', {
+      agent,
+      ...(title ? { title } : {}),
+      ...(storyItems
+        ? {
+            story_items: storyItems.map((item) => ({
+              email_id: item.emailId,
+              position: item.position,
+            })),
+          }
+        : {}),
+    }),
+
+  listNewsStories: (params: { before?: string; only?: 'big' | 'security' }) => {
+    const query = new URLSearchParams()
+    if (params.before) {
+      query.set('before', params.before)
+    }
+    if (params.only) {
+      query.set('only', params.only)
+    }
+    return http.get<NewsStoriesPage>(`/news/stories?${query.toString()}`)
+  },
 
   getMessages: (threadId: string) => http.get<ThreadMessage[]>(`/threads/${threadId}/messages`),
 

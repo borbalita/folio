@@ -41,11 +41,12 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
   news: {
     name: 'news',
     title: 'AI News',
-    description: 'Big AI stories and briefings from your newsletters, with citations.',
+    description:
+      'Every AI story from your newsletters by day, plus questions and briefings with citations.',
     path: '/news',
     emptyTitle: 'Ask about AI news',
     emptyHint:
-      'Start a new chat and ask "What were the big stories this week?" or "Catch me up since Monday".',
+      'Scan the stories on the dashboard, or start a new chat and ask "What were the big stories this week?" or "Catch me up since Monday".',
     placeholder: 'Ask about AI news…',
     hasThreads: true,
     icon: Newspaper,

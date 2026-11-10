@@ -15,7 +15,7 @@ from app.config import settings
 from app.database.job_runs import run_job
 from app.database.matches import match_for_user
 from app.logging import configure_logging
-from app.notifications.store import record_notifications
+from app.notifications.store import classify_recent, record_notifications
 from app.notifications.telegram import send_pending
 from app.observability import configure_tracing, shutdown_tracing
 from ingest.email.pipeline import ingest_fetched, open_session, upsert_yahoo_mailbox
@@ -76,6 +76,7 @@ def _notify() -> dict[str, int]:
     session = open_session()
     try:
         now = datetime.now(UTC)
+        classified = classify_recent(session, now)
         new = record_notifications(session, now)
         sent = send_pending(session, now)
     except Exception as exc:  # noqa: BLE001
@@ -87,6 +88,7 @@ def _notify() -> dict[str, int]:
     finally:
         session.close()
     return {
+        "news_classified": classified,
         "notifications_new": new,
         "notifications_sent": sent["sent"],
         "notifications_failed": sent["failed"],
