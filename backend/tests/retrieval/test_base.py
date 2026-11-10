@@ -121,5 +121,5 @@ def test_search_span_has_settings_not_query(
     search = span_text(spans, "hybrid-search")
     assert "SECRET" not in search
     assert "langfuse.observation.metadata.top_k" in search
-    assert "'langfuse.observation.metadata.passage_count': 2" in search
+    assert "'langfuse.observation.metadata.passage_count': '2'" in search
     assert "SECRET" not in span_text(spans, "embed-query")
