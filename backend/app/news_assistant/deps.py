@@ -17,6 +17,9 @@ class NewsAgentDeps:
     seen_ids: set[UUID] = field(default_factory=set)
     seen_passages: dict[UUID, NewsPassage] = field(default_factory=dict)
     status_queue: asyncio.Queue[str | None] | None = None
+    # The story a thread was opened from, as (email id, position) refs.
+    story_items: list[tuple[UUID, int]] = field(default_factory=list)
+    story_title: str | None = None
 
     def remember(self, item_id: UUID, passage: NewsPassage) -> None:
         """Mark an item the model may cite this turn."""

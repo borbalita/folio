@@ -10,10 +10,17 @@ def test_instructions_define_big_and_name_the_tools() -> None:
         assert tool in text
 
 
-def test_agent_has_exactly_the_three_news_tools() -> None:
+def test_instructions_send_deep_questions_to_read_story_and_keep_stories_apart() -> None:
+    text = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+
+    assert "read_story" in text
+    assert "Never present another story in the same newsletter as this one" in text
+
+
+def test_agent_has_exactly_the_four_news_tools() -> None:
     names = set(get_agent()._function_toolset.tools)
 
-    assert names == {"list_big_news", "catch_up", "search_news"}
+    assert names == {"list_big_news", "catch_up", "search_news", "read_story"}
 
 
 def test_prompt_starts_with_todays_date() -> None:
@@ -30,3 +37,10 @@ def test_an_empty_period_is_answered_as_insufficient_evidence() -> None:
 
     sentence = text[text.index("If a period has no stories") :].split(". ", 1)[0]
     assert "insufficient_evidence" in sentence
+
+
+def test_every_listed_item_is_read_before_it_is_cited() -> None:
+    text = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+
+    assert "cite only items whose edition you read with read_story" in text
+    assert "for each listed id" in text

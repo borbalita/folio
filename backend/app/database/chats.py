@@ -26,6 +26,7 @@ def _thread_row_to_api(row: dict[str, Any]) -> dict[str, Any]:
         "id": row["id"],
         "title": row["title"],
         "agent": row["agent"],
+        "storyItems": row.get("story_items"),
         "createdAt": row["created_at"],
         "updatedAt": row["updated_at"],
     }
@@ -45,9 +46,10 @@ def _latest_empty_thread(user_id: uuid.UUID, agent: str) -> dict[str, Any] | Non
     result = (
         get_admin_client()
         .table("chat_threads")
-        .select("id, title, agent, created_at, updated_at, chat_messages(count)")
+        .select("id, title, agent, story_items, created_at, updated_at, chat_messages(count)")
         .eq("user_id", str(user_id))
         .eq("agent", agent)
+        .is_("story_items", "null")
         .order("created_at", desc=True)
         .execute()
     )
@@ -62,13 +64,15 @@ def create_thread_for_user(
     email: str,
     title: str | None = None,
     agent: str = "documents",
+    story_items: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return the user's latest empty thread for this agent, or insert a new one.
 
     Reuse keeps "New chat" from piling up threads nobody typed into.
     """
     ensure_user(user_id, email)
-    if title is None:
+    # A story thread is its own: never reuse an empty one for it or hand it out as "New chat".
+    if title is None and story_items is None:
         empty = _latest_empty_thread(user_id, agent)
         if empty is not None:
             return _thread_row_to_api(empty)
@@ -81,6 +85,7 @@ def create_thread_for_user(
                 "user_id": str(user_id),
                 "title": title or DEFAULT_THREAD_TITLE,
                 "agent": agent,
+                "story_items": story_items,
                 "created_at": datetime.now(UTC).isoformat(),
                 "updated_at": datetime.now(UTC).isoformat(),
             }
@@ -94,7 +99,7 @@ def list_threads(user_id: uuid.UUID, agent: str = "documents") -> list[dict[str,
     result = (
         get_admin_client()
         .table("chat_threads")
-        .select("id, title, agent, created_at, updated_at")
+        .select("id, title, agent, story_items, created_at, updated_at")
         .eq("user_id", str(user_id))
         .eq("agent", agent)
         .order("updated_at", desc=True)
@@ -107,7 +112,7 @@ def get_thread_for_user(thread_id: uuid.UUID, user_id: uuid.UUID) -> dict[str, A
     result = (
         get_admin_client()
         .table("chat_threads")
-        .select("id, user_id, title, agent, created_at, updated_at")
+        .select("id, user_id, title, agent, story_items, created_at, updated_at")
         .eq("id", str(thread_id))
         .limit(1)
         .execute()
