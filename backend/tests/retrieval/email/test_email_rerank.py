@@ -227,4 +227,4 @@ def test_rerank_span_keeps_counts_not_query(
     exported = span_text(langfuse_spans(), "rerank")
     assert "SECRET" not in exported
     for count, value in (("candidates", 3), ("kept", 2), ("dropped", 1), ("failed", 1)):
-        assert f"'langfuse.observation.metadata.{count}': {value}" in exported
+        assert f"'langfuse.observation.metadata.{count}': '{value}'" in exported

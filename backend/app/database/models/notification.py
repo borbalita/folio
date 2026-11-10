@@ -13,6 +13,7 @@ class NotificationKind(StrEnum):
     INVOICE_NEW = "invoice_new"
     INVOICE_DUE = "invoice_due"
     NEWS_BIG = "news_big"
+    NEWS_SECURITY = "news_security"
 
 
 class NotificationStatus(StrEnum):

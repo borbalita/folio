@@ -1,6 +1,6 @@
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { ChatInput } from '@/components/chat/ChatInput'
 import { MessageList, type SelectedCitation } from '@/components/chat/MessageList'
@@ -22,6 +22,10 @@ interface ChatThreadViewProps {
   threadId: string
   initialMessages: CopilotUIMessage[]
   placeholder: string
+  /** Sent once when the thread is still empty, e.g. when a thread is opened from a story. */
+  firstMessage?: string
+  /** Called right after `firstMessage` is sent, so the caller can drop it from history. */
+  onFirstMessageSent?: () => void
   onTurnFinished: () => void
 }
 
@@ -66,6 +70,8 @@ export function ChatThreadView({
   threadId,
   initialMessages,
   placeholder,
+  firstMessage,
+  onFirstMessageSent,
   onTurnFinished,
 }: ChatThreadViewProps) {
   const isDesktop = useIsDesktop()
@@ -109,6 +115,22 @@ export function ChatThreadView({
       setStage(null)
     },
   })
+
+  const firstSent = useRef(false)
+  useEffect(() => {
+    // The guard keeps a re-render from sending it twice.
+    if (!firstMessage || initialMessages.length > 0 || firstSent.current) {
+      return
+    }
+    // Deferred because useChat stops the chat on unmount: React's dev double-mount would abort a
+    // message sent directly from this effect.
+    const timer = setTimeout(() => {
+      firstSent.current = true
+      void sendMessage({ text: firstMessage })
+      onFirstMessageSent?.()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [firstMessage, initialMessages.length, sendMessage, onFirstMessageSent])
 
   const busy = status === 'submitted' || status === 'streaming'
   const lastMessage = messages.at(-1)
