@@ -97,3 +97,4 @@ The only test login is a demo user, which has no web search by design. So the fi
 - `/privacy` mentions web search under OpenAI, with the new date (browser): pass. "Last updated: 7 November 2026".
 - Not exercised live: the removal of a citation matching neither a source nor an opened page. That's covered by tests only.
 - Finding, not part of this task: at phone width (375px) and in narrow windows the `/news` dashboard is hard to use. The thread sidebar takes most of the screen, story cards squeeze into a one-word column, and the Chat button overlaps the title. It comes from 002/02.
+- PR: https://github.com/borbalita/folio/pull/117. Fast suite after merging main: 1199 passed, with outside network blocked.
