@@ -1,15 +1,26 @@
 # 001 — Test database for agent runs
 
 - Created: 2026-11-05
-- Status: Draft
-- Current stage: idea saved; not specified yet
+- Status: In progress
+- Current stage: test project set up and sign-in works; removing other prod values from local `.env` is left
 
 ## Problem
 
-Unattended runs can't do `(browser)` checks or run migrations, because the only known database holds real data. Those checks need Supabase Auth, migrations and RLS somewhere safe.
+Unattended runs couldn't do `(browser)` checks or run migrations, because the only database held real data. Those checks need Supabase Auth, migrations and RLS somewhere safe.
 
-## Idea
+## Decisions
 
-A second, free Supabase project with its keys in a separate env file. The owner creates the project and the secrets. Migrations run against it, and the demo reset can probably seed its invented newsletters as test data (not confirmed). `/overnight`'s pre-flight then checks that it exists. Checks that need real newsletters stay manual.
+- **A second Supabase project** (`eu-central-1`), not plain Postgres: login uses Supabase Auth, and chat threads use the Data API.
+- **Local `.env` points at the test project;** prod values live in Railway. Rejected: a separate `.env.test`, because a wrong line could still run a migration or reset against prod.
+- **Demo data comes from the demo reset,** not a copy from prod.
+- **The test login is a public fixture,** [frontend/e2e/test-user.json](../../../../frontend/e2e/test-user.json) (owner's choice, 2026-11-06). Agents can't read `.env`, and shouldn't, because it holds other real credentials. The login is useless without the project's URL and reaches only invented data. Rejected: a permission rule letting agents read `.env`.
 
-Rejected: making this a task in AI News plan 002, because an unattended run can't create the project and it serves every later plan. `docker-compose.eval.yml`: a local database for evals, with no Auth.
+## Done
+
+- 2026-11-06: migrations at head, demo user created, demo reset seeded 9 invoices, 40 transactions, 29 stories and 40 mails. An agent read the fixture and signed in; the picker and `/news` loaded with no console errors, and a thread opened.
+
+## Left
+
+- Clear the prod values still in local `backend/.env` and remove leftover `.env` copies. Prod migrations then run with `railway run --service backend uv run alembic upgrade head`.
+- Add test-project checks to `/overnight`'s pre-flight.
+- Not checked yet: a full chat turn on the test project.
