@@ -81,7 +81,7 @@ def test_owner_can_list_create_and_post_to_email(
     monkeypatch.setattr(
         chats,
         "create_thread_for_user",
-        lambda user_id, email, title=None, agent="documents": {
+        lambda user_id, email, title=None, agent="documents", story_items=None: {
             "id": str(TEST_THREAD_ID),
             "title": title or "New chat",
             "agent": agent,
@@ -131,7 +131,7 @@ def test_document_routes_stay_open_without_a_mailbox(
     monkeypatch.setattr(
         chats,
         "create_thread_for_user",
-        lambda user_id, email, title=None, agent="documents": {
+        lambda user_id, email, title=None, agent="documents", story_items=None: {
             "id": str(TEST_THREAD_ID),
             "title": "New chat",
             "agent": agent,

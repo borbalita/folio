@@ -18,6 +18,7 @@ import { InvoicePage } from '@/pages/finance/InvoicePage'
 import { InvoicesPage } from '@/pages/finance/InvoicesPage'
 import { PaymentsPage } from '@/pages/finance/PaymentsPage'
 import { TransactionsPage } from '@/pages/finance/TransactionsPage'
+import { NewsDashboard } from '@/pages/news/NewsDashboard'
 import { PrivacyPage } from '@/pages/legal/PrivacyPage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
@@ -49,7 +50,7 @@ export default function App() {
               <Route path="/email/invoices/:emailId" element={<LegacyInvoiceRedirect />} />
               <Route element={<AgentRoute agent="news" />}>
                 <Route path="/news" element={<ChatPage key="news" agentName="news" />}>
-                  <Route index element={<ChatEmptyState />} />
+                  <Route index element={<NewsDashboard />} />
                   <Route path=":threadId" element={<ChatThreadPage />} />
                 </Route>
               </Route>

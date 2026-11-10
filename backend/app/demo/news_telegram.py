@@ -16,7 +16,7 @@ from app.database.models.email.mailbox import Mailbox, MailboxProvider
 from app.database.models.email.message import EmailMessage
 from app.database.models.email.news_item import NewsItem
 from app.database.models.email.story import NewsStory
-from app.notifications import summary, telegram
+from app.notifications import store, summary, telegram
 from app.notifications.detect import NewsItemFacts
 
 LOOKBACK = timedelta(days=6)
@@ -72,7 +72,7 @@ def load_demo_stories(
 def send_demo_summary(
     user_id: uuid.UUID, *, client: httpx.Client | None = None
 ) -> dict[str, object]:
-    """Summarise the most covered big story like a real news message and post it now.
+    """Explain the most covered big story like a real news message and post it now.
 
     Ignores quiet hours and writes no notifications row: it is a one-off for the presenter.
     """
@@ -80,10 +80,11 @@ def send_demo_summary(
         raise TelegramNotConfigured
     with get_session() as session:
         stories = load_demo_stories(session, user_id)
-    if not stories:
-        raise NoBigStories
-    items = stories[0]
-    text = summary.news_text(items)
+        if not stories:
+            raise NoBigStories
+        items = stories[0]
+        editions = store.load_editions(session, list({item.email_id for item in items}))
+    text = summary.news_text(items, editions)
     telegram.send_text(text, client=client)
     headline = text.split("\n", 1)[0].removeprefix("📰").strip()
     return {"sent": True, "headline": headline}

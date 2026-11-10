@@ -1,18 +1,23 @@
-"""list_big_news, catch_up and search_news, scoped to the user's news mailboxes."""
+"""list_big_news, catch_up, search_news and read_story, scoped to the user's news mailboxes."""
 
 from __future__ import annotations
 
 import asyncio
 from datetime import date, datetime, timedelta
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 from pydantic_ai import RunContext
 
 from app.config import settings
-from app.database import mailboxes
+from app.database import mailboxes, news_story
 from app.email_assistant.tools.status import emit_status
 from app.news_assistant.deps import NewsAgentDeps
-from app.retrieval.news.formatting import format_news_passages, format_stories
+from app.retrieval.news.formatting import (
+    format_news_passages,
+    format_stories,
+    format_story_text,
+)
 from app.retrieval.news.queries import NewsSearchFilters
 from app.retrieval.news.retriever import Story
 
@@ -63,6 +68,12 @@ async def search_news(
     )
 
 
+async def read_story(ctx: RunContext[NewsAgentDeps], item_id: UUID) -> str:
+    """The whole newsletter text around one item, with its story named. Use it to explain a story or go deeper."""
+    await emit_status(ctx.deps, READING_NEWSLETTERS)
+    return await asyncio.to_thread(execute_read_story, ctx.deps, item_id)
+
+
 def execute_list_big_news(
     deps: NewsAgentDeps, *, since: date | None = None, until: date | None = None
 ) -> str:
@@ -100,6 +111,14 @@ def execute_search_news(
     for passage in passages:
         deps.remember(passage.item_id, passage)
     return format_news_passages(passages)
+
+
+def execute_read_story(deps: NewsAgentDeps, item_id: UUID) -> str:
+    found = news_story.read_story(mailboxes.news_mailbox_ids(deps.user_id), item_id)
+    if found is None:
+        return "No such story in your newsletters."
+    deps.remember(found.item.item_id, found.item)
+    return format_story_text(found.item, found.body)
 
 
 def _period(since: date | None, until: date | None) -> tuple[date | None, date | None]:

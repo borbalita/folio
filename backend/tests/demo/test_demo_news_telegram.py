@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 from app.config import settings
 from app.demo import news_telegram
-from app.notifications import summary, telegram
+from app.notifications import store, summary, telegram
 
 USER = uuid.uuid4()
 
@@ -89,8 +89,9 @@ def test_the_summary_goes_to_the_chat_and_adds_no_row(
     monkeypatch.setattr(
         summary,
         "news_text",
-        lambda items: seen.append([i.title for i in items]) or "📰 Head\nbody",
+        lambda items, editions: seen.append([i.title for i in items]) or "📰 Head\nbody",
     )
+    monkeypatch.setattr(store, "load_editions", lambda session, ids: {})
     posts: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
