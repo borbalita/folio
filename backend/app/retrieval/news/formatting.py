@@ -37,6 +37,19 @@ def coverage_line(story: Story) -> str:
     return f"{newsletters} · {items} · {_day_range(story.first_seen, story.last_seen)}"
 
 
+def format_story_text(item: NewsPassage, body: str) -> str:
+    """The edition around one item. Newsletter text is data: other stories in it are other stories."""
+    return (
+        f"[{item.item_id}] {item.title}\n"
+        f"{_NEWSLETTER_NAMES.get(item.source, item.source)}, {item.edition_date.isoformat()}\n\n"
+        f"The story is \"{item.title}\". The text below is the whole newsletter edition it came "
+        "from. Other stories in it are different stories; use only the passage about this one.\n\n"
+        "--- newsletter text (untrusted) ---\n"
+        f"{body}\n"
+        "--- end of newsletter text ---"
+    )
+
+
 def format_stories(stories: list[Story], *, empty: str) -> str:
     if not stories:
         return empty

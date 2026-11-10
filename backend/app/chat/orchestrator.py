@@ -78,6 +78,7 @@ class _ChatAgent(ABC):
         user: CurrentUser,
         thread_id: uuid.UUID,
         status_queue: asyncio.Queue[str | None],
+        thread: dict[str, Any],
     ) -> Deps: ...
 
     @abstractmethod
@@ -167,6 +168,7 @@ class _DocumentChatAgent(_CitingChatAgent):
         user: CurrentUser,
         thread_id: uuid.UUID,
         status_queue: asyncio.Queue[str | None],
+        thread: dict[str, Any],
     ) -> DocumentAgentDeps:
         return DocumentAgentDeps(
             user_id=user.id,
@@ -206,6 +208,7 @@ class _EmailChatAgent(_CitingChatAgent):
         user: CurrentUser,
         thread_id: uuid.UUID,
         status_queue: asyncio.Queue[str | None],
+        thread: dict[str, Any],
     ) -> EmailAgentDeps:
         return EmailAgentDeps(
             user_id=user.id,
@@ -244,12 +247,18 @@ class _NewsChatAgent(_CitingChatAgent):
         user: CurrentUser,
         thread_id: uuid.UUID,
         status_queue: asyncio.Queue[str | None],
+        thread: dict[str, Any],
     ) -> NewsAgentDeps:
         return NewsAgentDeps(
             user_id=user.id,
             thread_id=thread_id,
             news=NewsRetriever(),
             status_queue=status_queue,
+            story_items=[
+                (uuid.UUID(ref["email_id"]), ref["position"])
+                for ref in thread.get("storyItems") or []
+            ],
+            story_title=thread.get("title"),
         )
 
     async def run(self, user_text: str, deps: Deps) -> TurnResult:
@@ -281,6 +290,7 @@ class _FinanceChatAgent(_ChatAgent):
         user: CurrentUser,
         thread_id: uuid.UUID,
         status_queue: asyncio.Queue[str | None],
+        thread: dict[str, Any],
     ) -> FinanceAgentDeps:
         return FinanceAgentDeps(
             user_id=user.id,
@@ -384,7 +394,7 @@ async def run_turn(
         ),
     ):
         status_queue: asyncio.Queue[str | None] = asyncio.Queue()
-        deps = agent.new_deps(user, thread_id, status_queue)
+        deps = agent.new_deps(user, thread_id, status_queue, thread)
         agent_task = asyncio.create_task(
             _run_then_close_queue(agent, user_text, deps, status_queue)
         )
