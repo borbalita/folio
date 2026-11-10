@@ -84,9 +84,9 @@ export function NewsDashboard() {
   }, [load])
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <h1 className="text-lg font-medium">AI News</h1>
           <div className="flex gap-1" role="group" aria-label="Filter stories">
             {(['all', 'big', 'security'] as const).map((value) => (
