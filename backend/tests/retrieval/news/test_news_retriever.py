@@ -278,7 +278,7 @@ def test_search_span_has_settings_not_query_or_filters(
     search = span_text(spans, "news-search")
     assert "SECRET" not in search
     assert "2026-09-17" not in search
-    assert "'langfuse.observation.metadata.passage_count': 1" in search
+    assert "'langfuse.observation.metadata.passage_count': '1'" in search
     assert "SECRET" not in span_text(spans, "embed-query")
 
 
