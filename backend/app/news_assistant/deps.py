@@ -20,6 +20,8 @@ class NewsAgentDeps:
     # The story a thread was opened from, as (email id, position) refs.
     story_items: list[tuple[UUID, int]] = field(default_factory=list)
     story_title: str | None = None
+    # Comparison keys of the URLs this turn's web search returned or opened.
+    web_urls: set[str] = field(default_factory=set)
 
     def remember(self, item_id: UUID, passage: NewsPassage) -> None:
         """Mark an item the model may cite this turn."""
