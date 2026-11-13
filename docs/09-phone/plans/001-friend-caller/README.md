@@ -1,8 +1,8 @@
 # 001 — Phone agent: a friend calls you
 
 - Created: 2026-11-13
-- Status: In progress
-- Current stage: 001/01 in progress
+- Status: Complete
+- Current stage: 001/01 done
 
 ## Approval state
 
@@ -63,4 +63,4 @@ browser: getUserMedia ─► RTCPeerConnection ─SDP─► api.openai.com/v1/re
 
 ## Tasks
 
-- [ ] [01 — Friend caller](tasks/01-friend-caller.md)
+- [x] [01 — Friend caller](tasks/01-friend-caller.md)
