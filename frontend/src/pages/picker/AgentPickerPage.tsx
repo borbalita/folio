@@ -13,7 +13,7 @@ import { describeApiError } from '@/lib/http'
 import { useMe } from '@/lib/me'
 
 // Document Copilot is left out: it stays reachable at /documents but is no longer offered.
-const PICKER_ORDER: AgentName[] = ['finance', 'email', 'news']
+const PICKER_ORDER: AgentName[] = ['finance', 'email', 'news', 'phone']
 
 function AgentCard({
   agent,
@@ -98,7 +98,7 @@ export function AgentPickerPage() {
         </div>
         <div
           className={
-            available.length >= 3
+            available.length === 3
               ? 'grid w-full max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3'
               : 'grid w-full max-w-2xl gap-4 sm:grid-cols-2'
           }

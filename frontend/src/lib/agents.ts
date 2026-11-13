@@ -1,4 +1,4 @@
-import { FileText, Mail, Newspaper, Wallet, type LucideIcon } from 'lucide-react'
+import { FileText, Mail, Newspaper, Phone, Wallet, type LucideIcon } from 'lucide-react'
 
 import type { AgentName } from '@/lib/api'
 
@@ -61,5 +61,16 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
     placeholder: 'Ask about your finances…',
     hasThreads: false,
     icon: Wallet,
+  },
+  phone: {
+    name: 'phone',
+    title: 'Phone',
+    description: 'Talk out loud with a friend, a doctor or an AI-job interviewer, like a phone call.',
+    path: '/phone',
+    emptyTitle: 'Who do you want to talk to?',
+    emptyHint: 'Pick a persona to start a call.',
+    placeholder: '',
+    hasThreads: false,
+    icon: Phone,
   },
 }

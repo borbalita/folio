@@ -19,15 +19,20 @@ export type CitationData = {
   subject?: string
   mailbox?: string
   date?: string
-  // AI newsletter item
+  // AI newsletter item; a web page uses title and url too
   title?: string
   source?: string
   url?: string
+  // Only web pages carry a kind; stored item, mail and filing citations have none
+  kind?: 'web'
 }
 
-export type CitationKind = 'filing' | 'mail' | 'news'
+export type CitationKind = 'filing' | 'mail' | 'news' | 'web'
 
 export function citationKind(data: CitationData): CitationKind {
+  if (data.kind === 'web') {
+    return 'web'
+  }
   if (data.url !== undefined || data.title !== undefined) {
     return 'news'
   }
@@ -165,8 +170,20 @@ export function financeCardsOf(message: CopilotUIMessage): FinanceCardData[] {
     .map((part) => part.data)
 }
 
+function webHost(url: string | undefined): string | null {
+  try {
+    return new URL(url ?? '').hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
 export function citationLabel(data: CitationData): string {
   const kind = citationKind(data)
+  if (kind === 'web') {
+    const host = webHost(data.url)
+    return host ? `Web · ${host}` : `Web ${data.citationIndex}`
+  }
   if (kind === 'news') {
     return newsSourceName(data.source) ?? `Source ${data.citationIndex}`
   }

@@ -34,7 +34,7 @@ export function PrivacyPage() {
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-4 pb-16 text-sm leading-relaxed sm:px-6">
         <div className="flex flex-col gap-1">
           <h1 className="font-heading text-2xl font-semibold tracking-tight">Privacy</h1>
-          <p className="text-muted-foreground">Last updated: 5 November 2026</p>
+          <p className="text-muted-foreground">Last updated: 13 November 2026</p>
         </div>
 
         <Section title="1. Controller">
@@ -52,6 +52,13 @@ export function PrivacyPage() {
           <p>
             For demonstrations, a separate demo account shows invented data only: fictional
             vendors, invoices, transactions and newsletters. No real person's data is in it.
+          </p>
+          <p>
+            The Phone page lets the demo account talk out loud with a fictional persona. It
+            asks for microphone access only when you answer a call, and what you say goes to
+            OpenAI for that call only (see section 5). Nothing from the call is stored by
+            Borbfolio, so avoid sharing personal details in it. The doctor persona asks how
+            you have been feeling; please don't share real health information with it.
           </p>
           <p>
             Emails in my mailbox naturally contain the names and addresses of the people and
@@ -100,7 +107,12 @@ export function PrivacyPage() {
               <span className="font-medium">OpenAI</span>: answers questions in the chats,
               extracts payment data from invoices and news items from newsletters, writes
               plain explanations of news stories from the newsletters, marks security
-              stories from their titles and blurbs, and creates search embeddings.
+              stories from their titles and blurbs, and creates search embeddings. Questions
+              in the news chat may also go to OpenAI's web search, to look up details the
+              newsletters lack. On the Phone page, your voice is sent from your browser
+              straight to OpenAI's Realtime service during a call, which answers out loud and
+              transcribes both sides. The transcript is shown only on your screen; Borbfolio
+              stores neither the audio nor the transcript.
             </li>
             <li>
               <span className="font-medium">TypeSafe</span>: sorts incoming emails into

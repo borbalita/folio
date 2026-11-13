@@ -15,7 +15,7 @@ export function NewsStoryCard({ story, chatDisabled, onChat }: NewsStoryCardProp
   const Chevron = open ? ChevronDown : ChevronRight
   return (
     <li className="rounded-md border border-border p-3">
-      <div className="flex items-start gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-medium">{story.title}</h3>
@@ -49,30 +49,32 @@ export function NewsStoryCard({ story, chatDisabled, onChat }: NewsStoryCardProp
             </p>
           ) : null}
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={chatDisabled}
-          onClick={() => {
-            onChat(story)
-          }}
-        >
-          <MessageSquare className="size-3.5" />
-          Chat
-        </Button>
-        {story.explanation ? (
-          <button
-            type="button"
-            aria-expanded={open}
+        <div className="flex shrink-0 items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={chatDisabled}
             onClick={() => {
-              setOpen((current) => !current)
+              onChat(story)
             }}
-            className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
           >
-            <Chevron className="size-3.5" />
-            Explanation
-          </button>
-        ) : null}
+            <MessageSquare className="size-3.5" />
+            Chat
+          </Button>
+          {story.explanation ? (
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => {
+                setOpen((current) => !current)
+              }}
+              className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Chevron className="size-3.5" />
+              Explanation
+            </button>
+          ) : null}
+        </div>
       </div>
       {open && story.explanation ? (
         <p className="mt-3 border-t border-border pt-3 text-sm whitespace-pre-line">
