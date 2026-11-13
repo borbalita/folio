@@ -15,6 +15,8 @@ class Persona:
     description: str
     voice: str
     available: bool
+    # None: the default cap in settings.
+    max_seconds: int | None = None
 
     def instructions(self) -> str:
         return (PROMPTS_DIR / f"{self.id}.md").read_text(encoding="utf-8")
@@ -33,14 +35,16 @@ PERSONAS: tuple[Persona, ...] = (
         name="Doctor",
         description="A GP calls about how you've been feeling.",
         voice="cedar",
-        available=False,
+        available=True,
     ),
     Persona(
         id="interviewer",
         name="AI-job Interviewer",
         description="A recruiter screens you for an AI engineering role.",
         voice="ash",
-        available=False,
+        available=True,
+        # A screening interview needs more room than a catch-up.
+        max_seconds=600,
     ),
 )
 

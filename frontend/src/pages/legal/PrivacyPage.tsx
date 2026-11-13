@@ -57,7 +57,8 @@ export function PrivacyPage() {
             The Phone page lets the demo account talk out loud with a fictional persona. It
             asks for microphone access only when you answer a call, and what you say goes to
             OpenAI for that call only (see section 5). Nothing from the call is stored by
-            Borbfolio, so avoid sharing personal details in it.
+            Borbfolio, so avoid sharing personal details in it. The doctor persona asks how
+            you have been feeling; please don't share real health information with it.
           </p>
           <p>
             Emails in my mailbox naturally contain the names and addresses of the people and

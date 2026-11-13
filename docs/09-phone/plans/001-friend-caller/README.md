@@ -2,11 +2,12 @@
 
 - Created: 2026-11-13
 - Status: Complete
-- Current stage: 001/01 done
+- Current stage: 001/01–02 done
 
 ## Approval state
 
 - 2026-11-13: in chat, the owner asked for a phone agent: pick a persona (doctor, AI-job interviewer, friend) and talk to it like a phone call. They chose: voice in the browser (not a real phone number, not text); the owner and demo visitors can call; nothing is stored after hang-up. Approach A (browser talks to OpenAI Realtime over WebRTC with a short-lived key from the backend) chosen over a backend audio relay and over speech-to-text → LLM → text-to-speech. Design approved; the owner asked to build it as one PR.
+- 2026-11-13 (later): the owner asked for the doctor and interviewer personas (001/02). Approved in chat: Dr. Lee (GP check-in; never diagnoses or prescribes; points to 112 for urgent signs), Alex (AI Engineer screening at a made-up startup), a per-persona cap with 10 minutes for the interviewer, and a privacy note not to share real health details. Separate PR.
 
 ## Problem
 
@@ -26,7 +27,7 @@ Goals:
 - The friend rings you; you answer and talk out loud; the friend talks back in real time; a live transcript shows on screen.
 - Calls end at a time cap; a user can start only a few calls per hour.
 
-Non-goals: real phone numbers; saved transcripts or call history; the doctor and interviewer prompts (later tasks); memory of past calls.
+Non-goals: real phone numbers; saved transcripts or call history; memory of past calls.
 
 ## Decisions
 
@@ -64,3 +65,4 @@ browser: getUserMedia ─► RTCPeerConnection ─SDP─► api.openai.com/v1/re
 ## Tasks
 
 - [x] [01 — Friend caller](tasks/01-friend-caller.md)
+- [x] [02 — Doctor and interviewer](tasks/02-doctor-and-interviewer.md)

@@ -94,26 +94,36 @@ def test_demo_user_gets_a_friend_secret(
     assert secrets.calls[0]["session"] == session_config(friend)
 
 
-def test_personas_list_marks_who_can_be_called(
+def test_personas_list_has_all_three(
     authed_client: TestClient, demo_user: None
 ) -> None:
     personas = authed_client.get("/phone/personas").json()
 
     assert [(p["id"], p["available"]) for p in personas] == [
         ("friend", True),
-        ("doctor", False),
-        ("interviewer", False),
+        ("doctor", True),
+        ("interviewer", True),
     ]
     assert all(p["name"] and p["description"] for p in personas)
 
 
-@pytest.mark.parametrize("persona", ["doctor", "pirate"])
-def test_unavailable_or_unknown_persona_is_404(
-    authed_client: TestClient, demo_user: None, secrets: FakeClientSecrets, persona: str
+def test_interviewer_session_has_the_longer_cap(
+    authed_client: TestClient, demo_user: None, secrets: FakeClientSecrets
 ) -> None:
     _limit(10)
 
-    response = authed_client.post("/phone/session", json={"persona": persona})
+    response = authed_client.post("/phone/session", json={"persona": "interviewer"})
+
+    assert response.status_code == 200
+    assert response.json()["maxSeconds"] == 600
+
+
+def test_unknown_persona_is_404(
+    authed_client: TestClient, demo_user: None, secrets: FakeClientSecrets
+) -> None:
+    _limit(10)
+
+    response = authed_client.post("/phone/session", json={"persona": "pirate"})
 
     assert response.status_code == 404
     assert secrets.calls == []
