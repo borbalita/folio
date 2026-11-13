@@ -22,6 +22,7 @@ import { NewsDashboard } from '@/pages/news/NewsDashboard'
 import { PrivacyPage } from '@/pages/legal/PrivacyPage'
 import { LoginPage } from '@/pages/login/LoginPage'
 import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
+import { PhonePage } from '@/pages/phone/PhonePage'
 import { AgentPickerPage } from '@/pages/picker/AgentPickerPage'
 
 export default function App() {
@@ -69,6 +70,9 @@ export default function App() {
                     <Route path=":threadId" element={<ChatThreadPage />} />
                   </Route>
                 </Route>
+              </Route>
+              <Route element={<AgentRoute agent="phone" />}>
+                <Route path="/phone" element={<PhonePage />} />
               </Route>
               <Route path="/chat" element={<LegacyChatRedirect />} />
               <Route path="/chat/:threadId" element={<LegacyChatRedirect />} />

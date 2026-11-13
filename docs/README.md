@@ -1,6 +1,6 @@
 # Docs
 
-Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `09-`.
+Folders are numbered by when they were started. A folder keeps growing after that; the number does not change. The next folder takes `10-`.
 
 ## Platform
 
@@ -75,3 +75,9 @@ Linked from the Enable Banking application.
 A safe place for agent runs to test against.
 
 - [001 — Test database for agent runs](08-test-environment/plans/001-test-database/README.md) (in progress)
+
+## 09-phone
+
+The phone agent: voice calls in the browser with a persona.
+
+- [Plans](09-phone/plans/README.md)
