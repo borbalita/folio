@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     invoice_check_model: str = "gpt-6-luna"
     invoice_check_reasoning_effort: ReasoningEffort | None = "none"
     ai_newsletter_domains: Annotated[dict[str, str], NoDecode] = {}
+    openai_realtime_model: str = "gpt-realtime-mini"
+    openai_realtime_transcribe_model: str = "gpt-4o-mini-transcribe"
+    # Realtime audio is billed per minute, and the demo login is public.
+    phone_call_max_seconds: int = Field(default=300, gt=0)
+    phone_calls_per_hour: int = Field(default=10, gt=0)
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
