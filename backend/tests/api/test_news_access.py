@@ -33,7 +33,7 @@ def test_demo_user_gets_email_news_and_finance(
 
     response = authed_client.get("/me")
 
-    assert response.json()["agents"] == ["documents", "email", "news", "finance"]
+    assert response.json()["agents"] == ["documents", "email", "news", "finance", "phone"]
 
 
 def test_owner_with_a_real_mailbox_gets_email_news_and_finance(
@@ -44,7 +44,7 @@ def test_owner_with_a_real_mailbox_gets_email_news_and_finance(
 
     response = authed_client.get("/me")
 
-    assert response.json()["agents"] == ["documents", "email", "news", "finance"]
+    assert response.json()["agents"] == ["documents", "email", "news", "finance", "phone"]
 
 
 def test_news_access_follows_the_news_scope_not_the_email_scope(
