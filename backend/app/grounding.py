@@ -2,14 +2,33 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import ClassVar, Protocol
+from urllib.parse import urlsplit
 from uuid import UUID
+
+from app.news_assistant.outputs import NewsAnswer
 
 MISSING_CITATIONS = "missing_citations"
 UNKNOWN_CHUNK = "unknown_chunk"
 DUPLICATE_INDEX = "duplicate_index"
 INSUFFICIENT_WITH_CITATIONS = "insufficient_with_citations"
+
+
+def normalize_url(url: str) -> str | None:
+    """A web address's key for comparing citations with sources; None if it isn't one.
+
+    Ignores query string, fragment, scheme, a leading www., host case and a trailing slash.
+    Only http and https get a key: ignoring the scheme must not let a javascript: URL match
+    a source and reach a link.
+    """
+    try:
+        parts = urlsplit(url.strip())
+    except ValueError:
+        return None
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        return None
+    return f"{parts.netloc.lower().removeprefix('www.')}{parts.path.rstrip('/')}"
 
 
 class GroundingError(Exception):
@@ -111,6 +130,37 @@ class EmailGrounder(Grounder):
 
 
 class NewsGrounder(Grounder):
+    """Item citations are strict. A web citation this turn can't support is only removed."""
+
+    def validate(
+        self,
+        answer: NewsAnswer,
+        seen_ids: set[UUID],
+        web_urls: Collection[str] = frozenset(),
+    ) -> None:
+        had_web_citations = bool(answer.web_citations)
+        answer.web_citations = [
+            citation
+            for citation in answer.web_citations
+            if normalize_url(citation.url) in web_urls
+        ]
+        # An answer whose only citations were web ones stands even if all were removed.
+        if answer.citations or not had_web_citations:
+            super().validate(answer, seen_ids)
+        if answer.web_citations and answer.insufficient_evidence:
+            raise GroundingError(
+                INSUFFICIENT_WITH_CITATIONS,
+                "Insufficient-evidence answers must not include citations.",
+            )
+        indexes = [
+            citation.citation_index
+            for citation in (*answer.citations, *answer.web_citations)
+        ]
+        if len(indexes) != len(set(indexes)):
+            raise GroundingError(
+                DUPLICATE_INDEX, "An item and a web citation share a citation_index."
+            )
+
     user_answers: ClassVar[dict[str, str]] = {
         MISSING_CITATIONS: (
             "This answer had no cited newsletter items, so it is not shown. "

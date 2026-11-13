@@ -1,3 +1,5 @@
+import pytest
+
 from app.news_assistant.agent import INSTRUCTIONS_PATH, get_agent, news_prompt
 
 
@@ -17,8 +19,9 @@ def test_instructions_send_deep_questions_to_read_story_and_keep_stories_apart()
     assert "Never present another story in the same newsletter as this one" in text
 
 
-def test_agent_has_exactly_the_four_news_tools() -> None:
-    names = set(get_agent()._function_toolset.tools)
+@pytest.mark.parametrize("web_search", [True, False])
+def test_agent_has_exactly_the_four_news_tools(web_search: bool) -> None:
+    names = set(get_agent(web_search=web_search)._function_toolset.tools)
 
     assert names == {"list_big_news", "catch_up", "search_news", "read_story"}
 

@@ -264,6 +264,61 @@ class _NewsChatAgent(_CitingChatAgent):
     async def run(self, user_text: str, deps: Deps) -> TurnResult:
         return await run_news_agent(user_text, deps)
 
+    def validate(self, result: TurnResult, deps: Deps) -> None:
+        answer = result.answer
+        before = len(answer.web_citations)
+        self.grounder.validate(answer, deps.seen_ids, deps.web_urls)
+        removed = before - len(answer.web_citations)
+        if removed:
+            # A count, not the URLs: logs and traces stay free of content.
+            log.warning(
+                "news_web_citation_removed",
+                count=removed,
+                thread_id=str(deps.thread_id),
+            )
+
+    def turn_metadata(self, result: TurnResult, deps: Deps) -> dict[str, Any]:
+        return {
+            **super().turn_metadata(result, deps),
+            "web_citation_count": len(result.answer.web_citations),
+        }
+
+    def data_parts(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]]:
+        return [
+            *super().data_parts(result, deps),
+            *(
+                {
+                    "type": "data-citation",
+                    "data": {
+                        # The frontend only uses chunkId as a list key; a page has no chunk.
+                        "chunkId": citation.url,
+                        "citationIndex": citation.citation_index,
+                        "excerpt": citation.excerpt,
+                        "kind": "web",
+                        "title": citation.title,
+                        "url": citation.url,
+                    },
+                }
+                for citation in result.answer.web_citations
+            ),
+        ]
+
+    def citation_rows(self, result: TurnResult, deps: Deps) -> list[dict[str, Any]]:
+        return [
+            *super().citation_rows(result, deps),
+            *(
+                {
+                    "email_chunk_id": None,
+                    "news_item_id": None,
+                    "web_url": citation.url,
+                    "web_title": citation.title,
+                    "citation_index": citation.citation_index,
+                    "excerpt": citation.excerpt,
+                }
+                for citation in result.answer.web_citations
+            ),
+        ]
+
     def passage_fields(self, passage: Any) -> dict[str, Any]:
         return {
             "title": passage.title,

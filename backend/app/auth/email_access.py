@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 
 from app.auth.dependencies import CurrentUser
 from app.auth.finance_access import is_finance_user, require_finance_user
+from app.auth.phone_access import is_phone_user
 from app.database import mailboxes
 
 
@@ -39,6 +40,8 @@ async def agents_for(user: CurrentUser) -> list[str]:
         agents.append("news")
     if is_finance_user(user):
         agents.append("finance")
+    if is_phone_user(user):
+        agents.append("phone")
     return agents
 
 

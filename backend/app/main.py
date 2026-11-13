@@ -17,11 +17,13 @@ from app.api.chat import router as chat_router
 from app.api.demo import router as demo_router
 from app.api.finance import router as finance_router
 from app.api.news import router as news_router
+from app.api.phone import router as phone_router
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.email_access import agents_for
 from app.config import settings
 from app.logging import configure_logging
 from app.observability import configure_tracing, shutdown_tracing
+from app.phone.session import CallLimiter
 
 configure_logging()
 configure_tracing()
@@ -65,6 +67,8 @@ app.include_router(chat_router)
 app.include_router(finance_router)
 app.include_router(demo_router)
 app.include_router(news_router)
+app.include_router(phone_router)
+app.state.phone_call_limiter = CallLimiter(per_hour=settings.phone_calls_per_hour)
 
 
 @app.on_event("startup")

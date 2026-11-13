@@ -25,7 +25,7 @@ def test_me_lists_finance_for_the_owner(
     response = authed_client.get("/me")
 
     assert response.status_code == 200
-    assert response.json()["agents"] == ["documents", "finance"]
+    assert response.json()["agents"] == ["documents", "finance", "phone"]
 
 
 def test_me_omits_finance_for_another_user(
@@ -86,7 +86,7 @@ def test_me_lists_finance_for_the_demo_user(
     monkeypatch.setattr(settings, "finance_owner_user_id", uuid.uuid4())
     monkeypatch.setattr(settings, "demo_user_id", TEST_USER_ID)
 
-    assert authed_client.get("/me").json()["agents"] == ["documents", "finance"]
+    assert authed_client.get("/me").json()["agents"] == ["documents", "finance", "phone"]
 
 
 def test_finance_routes_answer_for_the_demo_user(

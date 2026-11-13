@@ -1,6 +1,6 @@
 import { http } from '@/lib/http'
 
-export type AgentName = 'documents' | 'email' | 'finance' | 'news'
+export type AgentName = 'documents' | 'email' | 'finance' | 'news' | 'phone'
 
 export interface Thread {
   id: string
@@ -48,6 +48,21 @@ export interface NewsStoriesPage {
   days: NewsDay[]
   /** Pass as `before` for the next older page; null when nothing is older. */
   nextBefore: string | null
+}
+
+export interface PhonePersona {
+  id: string
+  name: string
+  description: string
+  /** False for personas listed as coming soon. */
+  available: boolean
+}
+
+export interface PhoneSession {
+  /** Short-lived OpenAI Realtime client secret for this one call. */
+  secret: string
+  expiresAt: number
+  maxSeconds: number
 }
 
 export interface Me {
@@ -289,6 +304,11 @@ export const api = {
     }
     return http.get<NewsStoriesPage>(`/news/stories?${query.toString()}`)
   },
+
+  listPhonePersonas: () => http.get<PhonePersona[]>('/phone/personas'),
+
+  createPhoneSession: (persona: string) =>
+    http.post<PhoneSession>('/phone/session', { persona }),
 
   getMessages: (threadId: string) => http.get<ThreadMessage[]>(`/threads/${threadId}/messages`),
 
