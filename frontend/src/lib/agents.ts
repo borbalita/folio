@@ -65,7 +65,7 @@ export const AGENTS: Record<AgentName, AgentInfo> = {
   phone: {
     name: 'phone',
     title: 'Phone',
-    description: 'Talk out loud with a persona, like a phone call. A friend is ringing.',
+    description: 'Talk out loud with a friend, a doctor or an AI-job interviewer, like a phone call.',
     path: '/phone',
     emptyTitle: 'Who do you want to talk to?',
     emptyHint: 'Pick a persona to start a call.',

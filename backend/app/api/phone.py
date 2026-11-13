@@ -10,7 +10,6 @@ from pydantic.alias_generators import to_camel
 
 from app.auth.dependencies import CurrentUser, get_current_user
 from app.auth.phone_access import require_phone_user
-from app.config import settings
 from app.phone import session
 from app.phone.personas import PERSONAS, persona_by_id
 from app.phone.session import CallLimiter
@@ -75,5 +74,5 @@ async def create_session(
     return SessionOut(
         secret=secret.secret,
         expires_at=secret.expires_at,
-        max_seconds=settings.phone_call_max_seconds,
+        max_seconds=session.max_seconds(persona),
     )

@@ -52,6 +52,10 @@ def realtime_client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=settings.openai_api_key)
 
 
+def max_seconds(persona: Persona) -> int:
+    return persona.max_seconds or settings.phone_call_max_seconds
+
+
 def session_config(persona: Persona) -> dict[str, Any]:
     return {
         "type": "realtime",
